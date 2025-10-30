@@ -17,11 +17,11 @@
     },
     {
       "src": "/",
-      "dest": "/frontend/auth.html"
+      "dest": "/auth.html"
     },
     {
       "src": "/(.*)",
-      "dest": "/frontend/$1"
+      "dest": "/$1"
     }
   ]
 }
