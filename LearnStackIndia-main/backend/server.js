@@ -139,5 +139,6 @@ process.on('uncaughtException', (err) => {
   process.exit(1);
 });
 
+connectDB();
 
 module.exports = app; // Export app for potential testing
