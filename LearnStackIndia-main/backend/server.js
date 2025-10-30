@@ -36,9 +36,7 @@ app.use('/api/', limiter);
 
 // CORS middleware
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production'
-    ? process.env.FRONTEND_URL
-    : ['http://localhost:3000', 'http://127.0.0.1:5500', 'http://127.0.0.1:5501'], // Add your frontend origin here
+  origin: true, // This will reflect the request origin, which is safe
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -142,3 +140,4 @@ process.on('uncaughtException', (err) => {
 connectDB();
 
 module.exports = app; // Export app for potential testing
+
