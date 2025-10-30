@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSA Visualizer - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563eb',
+                        secondary: '#64748b',
+                        accent: '#f59e0b',
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 3s ease-in-out infinite',
+                        'fade-in': 'fadeIn 0.5s ease-out',
+                        'slide-up': 'slideUp 0.4s ease-out',
+                        'bounce-gentle': 'bounceGentle 2s infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(30px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        bounceGentle: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-5px)' },
+                        },
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+
+        .floating-shapes {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .shape {
+            position: absolute;
+            opacity: 0.1;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .shape:nth-child(1) { top: 10%; left: 10%; animation-delay: 0s; }
+        .shape:nth-child(2) { top: 20%; right: 10%; animation-delay: 2s; }
+        .shape:nth-child(3) { bottom: 20%; left: 15%; animation-delay: 4s; }
+        .shape:nth-child(4) { bottom: 10%; right: 15%; animation-delay: 1s; }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .dark .glass-effect {
+            background: rgba(17, 24, 39, 0.8);
+            border: 1px solid rgba(75, 85, 99, 0.3);
+        }
+
+        .card-hover { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .card-hover:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        }
+        .dark .card-hover:hover { box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4); }
+
+        .neon-glow { box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
+        .dark .neon-glow { box-shadow: 0 0 20px rgba(147, 197, 253, 0.3); }
+
+        .topic-icon { transition: all 0.3s ease; }
+        .card-hover:hover .topic-icon { transform: scale(1.1) rotate(5deg); }
+
+        .progress-ring {
+            transition: stroke-dasharray 0.35s;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+
+        .floating-particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: floatParticle 20s infinite linear;
+        }
+
+        @keyframes floatParticle {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+        }
+
+        .hero-text {
+            background: linear-gradient(135deg, #ccccd9 0%, #be8eef 50%, #eca2ec 100%);
+            background-size: 200% 200%;
+            animation: gradientShift 3s ease infinite;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .text-6xl { line-height: 1.5; }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .stats-card {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(147, 51, 234, 0.1));
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .dark .stats-card {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(147, 51, 234, 0.2));
+            border: 1px solid rgba(147, 197, 253, 0.3);
+        }
+
+        .loading-skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+
+        .dark .loading-skeleton {
+            background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
+            background-size: 200% 100%;
+        }
+
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        /* --- New Styles for Algorithm List --- */
+        .algorithm-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .algorithm-card:hover {
+            transform: translateY(-4px) scale(1.03);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        .dark .algorithm-card:hover {
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+        .hidden { display: none; } /* Ensure hidden class works */
+        /* --- End New Styles --- */
+    </style>
+</head>
+
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300 min-h-screen">
+    <div class="floating-particles">
+        </div>
+
+    <nav class="bg-white dark:bg-gray-800 shadow-xl relative z-10 border-b border-gray-200 dark:border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <div
+                        class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                        <i class="fas fa-code mr-2 text-blue-600"></i>
+                        DSA Visualizer
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-4">
+                    <button id="themeToggle"
+                        class="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 neon-glow">
+                        <i id="themeIcon" class="fas fa-moon text-lg"></i>
+                    </button>
+
+                    <div class="flex items-center space-x-3">
+                        <div class="flex items-center space-x-2">
+                            <div
+                                class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                                <span id="userInitial">U</span>
+                            </div>
+                            <span id="welcomeText"
+                                class="text-gray-700 dark:text-gray-300 font-semibold">Loading...</span>
+                        </div>
+                        <button id="logoutBtn"
+                            class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-all duration-300 shadow-lg hover:shadow-red-500/25 font-medium">
+                            <i class="fas fa-sign-out-alt mr-1"></i>
+                            Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="relative z-10">
+        <section class="gradient-bg text-white py-20 relative overflow-hidden">
+             <div class="floating-shapes">
+                <div class="shape w-32 h-32 bg-white rounded-full"></div>
+                <div class="shape w-24 h-24 bg-blue-200 rounded-lg transform rotate-45"></div>
+                <div class="shape w-20 h-20 bg-purple-200 rounded-full"></div>
+                <div class="shape w-28 h-28 bg-pink-200 rounded-lg transform rotate-12"></div>
+            </div>
+
+            <div class="absolute inset-0 bg-black opacity-10"></div>
+            <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h1 class="text-6xl font-bold mb-6 animate-fade-in hero-text" style="line-height: 1.5;">
+                    Master Data Structures & Algorithms
+                </h1>
+                <p class="text-xl mb-8 max-w-3xl mx-auto animate-slide-up opacity-90">
+                    Interactive visualizations and step-by-step learning to help you understand complex algorithms
+                </p>
+                <div class="flex justify-center space-x-6 animate-slide-up">
+                    <div class="stats-card p-4 rounded-xl backdrop-blur-sm">
+                        <div class="text-2xl font-bold" id="totalTopics">
+                             <span class="loading-skeleton w-8 h-8 rounded inline-block"></span>
+                        </div>
+                        <div class="text-sm opacity-80">Topics Available</div>
+                    </div>
+                    <div class="stats-card p-4 rounded-xl backdrop-blur-sm">
+                        <div class="text-2xl font-bold" id="totalAlgorithms">
+                            <span class="loading-skeleton w-8 h-8 rounded inline-block"></span>
+                        </div>
+                        <div class="text-sm opacity-80">Algorithms</div>
+                    </div>
+                    <div class="stats-card p-4 rounded-xl backdrop-blur-sm">
+                        <div class="text-2xl font-bold">Interactive</div>
+                        <div class="text-sm opacity-80">Learning</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="py-8 bg-gray-100 dark:bg-gray-800">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div
+                        class="bg-white dark:bg-gray-700 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-600 animate-fade-in">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Learning Progress</p>
+                                <p class="text-2xl font-bold text-blue-600 dark:text-blue-400" id="learningProgress">
+                                    <span class="loading-skeleton w-12 h-6 rounded inline-block"></span>
+                                </p>
+                            </div>
+                            <div class="relative">
+                                <svg class="w-12 h-12" id="progressRing">
+                                    <circle cx="24" cy="24" r="20" fill="transparent" stroke="#e5e7eb" stroke-width="4">
+                                    </circle>
+                                    <circle cx="24" cy="24" r="20" fill="transparent" stroke="#3b82f6" stroke-width="4"
+                                        stroke-dasharray="125.6" stroke-dashoffset="125.6" class="progress-ring"
+                                        id="progressCircle"></circle>
+                                </svg>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <i class="fas fa-chart-line text-blue-600 text-lg"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="bg-white dark:bg-gray-700 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-600 animate-fade-in">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Algorithms Mastered</p>
+                                <p class="text-2xl font-bold text-green-600 dark:text-green-400"
+                                    id="algorithmsCompleted">
+                                    <span class="loading-skeleton w-8 h-6 rounded inline-block"></span>
+                                </p>
+                            </div>
+                            <div
+                                class="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-trophy text-green-600 dark:text-green-400 text-lg"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="bg-white dark:bg-gray-700 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-600 animate-fade-in">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Time Spent Today</p>
+                                <p class="text-2xl font-bold text-purple-600 dark:text-purple-400" id="timeToday">
+                                    <span class="loading-skeleton w-12 h-6 rounded inline-block"></span>
+                                </p>
+                            </div>
+                            <div
+                                class="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-clock text-purple-600 dark:text-purple-400 text-lg"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="bg-white dark:bg-gray-700 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-600 animate-fade-in">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Current Rank</p>
+                                <p class="text-2xl font-bold text-orange-600 dark:text-orange-400" id="currentRank">
+                                    <span class="loading-skeleton w-16 h-6 rounded inline-block"></span>
+                                </p>
+                            </div>
+                            <div
+                                class="w-12 h-12 bg-orange-100 dark:bg-orange-900 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-medal text-orange-600 dark:text-orange-400 text-lg"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+            <div id="topicsSection">
+                <div class="text-center mb-12">
+                    <h2 class="text-4xl font-bold text-gray-800 dark:text-white mb-4 animate-fade-in">
+                        Explore DSA Topics
+                    </h2>
+                    <p class="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto animate-slide-up">
+                        Choose a topic to start learning with interactive visualizations and comprehensive explanations
+                    </p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="topicsGrid">
+                    <div class="loading-skeleton rounded-xl h-48"></div>
+                    <div class="loading-skeleton rounded-xl h-48"></div>
+                    <div class="loading-skeleton rounded-xl h-48"></div>
+                    <div class="loading-skeleton rounded-xl h-48"></div>
+                    <div class="loading-skeleton rounded-xl h-48 md:hidden lg:block"></div>
+                    <div class="loading-skeleton rounded-xl h-48 md:hidden lg:block"></div>
+                    <div class="loading-skeleton rounded-xl h-48 md:hidden lg:block"></div>
+                    <div class="loading-skeleton rounded-xl h-48 md:hidden lg:block"></div>
+                    </div>
+            </div>
+
+            <div id="algorithmsSection" class="hidden">
+                 <div class="flex justify-between items-center mb-12">
+                     <h2 id="algorithmTopicTitle" class="text-4xl font-bold text-gray-800 dark:text-white animate-fade-in">
+                         Algorithms
+                     </h2>
+                     <button id="backToTopicsBtn" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-300 font-medium">
+                         <i class="fas fa-arrow-left mr-2"></i>Back to Topics
+                     </button>
+                 </div>
+                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="algorithmsGrid">
+                     <div class="loading-skeleton rounded-xl h-32"></div>
+                      <div class="loading-skeleton rounded-xl h-32"></div>
+                      <div class="loading-skeleton rounded-xl h-32"></div>
+                 </div>
+             </div>
+
+        </section>
+
+        <section class="py-16 bg-gray-100 dark:bg-gray-800">
+             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white dark:bg-gray-700 rounded-2xl p-8 shadow-xl animate-fade-in">
+                        <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
+                            <i class="fas fa-route text-blue-600 mr-3"></i>
+                            Your Learning Path
+                        </h3>
+                        <div class="space-y-4" id="learningPath">
+                            <div class="loading-skeleton h-16 rounded-xl"></div>
+                            <div class="loading-skeleton h-16 rounded-xl"></div>
+                            <div class="loading-skeleton h-16 rounded-xl"></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-gray-700 rounded-2xl p-8 shadow-xl animate-fade-in">
+                        <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
+                            <i class="fas fa-trophy text-yellow-600 mr-3"></i>
+                            Recent Achievements
+                        </h3>
+                        <div class="grid grid-cols-2 gap-4" id="recentAchievements">
+                            <div class="loading-skeleton h-24 rounded-xl"></div>
+                            <div class="loading-skeleton h-24 rounded-xl"></div>
+                            <div class="loading-skeleton h-24 rounded-xl"></div>
+                            <div class="loading-skeleton h-24 rounded-xl"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="py-16">
+           <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h3 class="text-3xl font-bold text-gray-800 dark:text-white mb-8 animate-fade-in">
+                    Ready to Continue Learning?
+                </h3>
+                <div class="flex flex-wrap justify-center gap-4">
+                    <button id="continueCurrentTopic"
+                        class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-8 py-4 rounded-xl font-semibold shadow-lg hover:shadow-blue-500/25 hover:scale-105 transition-all duration-300 animate-fade-in">
+                        <i class="fas fa-play mr-2"></i>
+                        Continue Current Topic
+                    </button>
+                    <button id="randomChallenge"
+                        class="bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-4 rounded-xl font-semibold shadow-lg hover:shadow-green-500/25 hover:scale-105 transition-all duration-300 animate-fade-in">
+                        <i class="fas fa-random mr-2"></i>
+                        Random Challenge
+                    </button>
+                    <button id="viewProgress"
+                        class="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold shadow-lg hover:shadow-purple-500/25 hover:scale-105 transition-all duration-300 animate-fade-in">
+                        <i class="fas fa-chart-line mr-2"></i>
+                        View Progress
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Application state
+        let currentUser = null;
+        let dashboardData = null;
+        // Removed topicsFullData as dashboardData now contains necessary topic info
+
+        // API Configuration
+        const API_BASE_URL = '/api';
+
+        // Utility function to get auth token
+        function getAuthToken() {
+            return localStorage.getItem('authToken');
+        }
+
+        // API call with authentication and better error handling
+        async function makeAuthenticatedAPICall(endpoint, options = {}) {
+            const token = getAuthToken();
+            if (!token) {
+                redirectToAuth();
+                // Throw an error to stop execution in the calling function
+                throw new Error("Authentication token not found.");
+            }
+
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    signal: controller.signal, // Pass the signal here
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                        ...options.headers
+                    },
+                    ...options // Spread other options like method, body
+                });
+
+                clearTimeout(timeoutId);
+
+                if (response.status === 401) {
+                    console.error('❌ Authentication failed - redirecting to login');
+                    redirectToAuth();
+                    throw new Error("Authentication failed (401)."); // Stop execution
+                }
+
+                const contentType = response.headers.get("content-type");
+                let data;
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                     data = await response.json();
+                 } else {
+                     const text = await response.text(); // Read text for better debugging
+                     console.log("Non-JSON response:", response.status, text);
+                     data = { success: response.ok, message: text || `HTTP ${response.status}` };
+                 }
+
+                if (!response.ok) {
+                    throw new Error(data.message || `HTTP error! status: ${response.status}`);
+                }
+
+                return data;
+
+            } catch (error) {
+                 if (error.name === 'AbortError') {
+                    console.error('❌ Request timeout');
+                    showAlert('Request timeout. Please check your connection.', 'error');
+                } else if (error.message.includes("Authentication failed")) {
+                    // Already handled by redirect, just log
+                    console.error("Redirecting due to auth error.");
+                }
+                 else {
+                    console.error(`API call error (${endpoint}):`, error);
+                    showAlert(`API Error: ${error.message}`, 'error');
+                }
+                // Throw error so calling function knows it failed
+                throw error;
+            }
+        }
+
+        // Theme Management
+        function initializeTheme() {
+            const themeToggle = document.getElementById('themeToggle');
+            const themeIcon = document.getElementById('themeIcon');
+            const html = document.documentElement;
+
+            let currentTheme = localStorage.getItem('theme') || 'dark'; // Default dark
+            applyTheme(currentTheme);
+
+            themeToggle.addEventListener('click', () => {
+                currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+                applyTheme(currentTheme);
+                localStorage.setItem('theme', currentTheme);
+            });
+
+            function applyTheme(theme) {
+                html.classList.toggle('dark', theme === 'dark');
+                themeIcon.className = `fas ${theme === 'dark' ? 'fa-sun' : 'fa-moon'} text-lg`;
+            }
+        }
+
+        // Initialize user data from localStorage first
+        function initializeUser() {
+            const userData = localStorage.getItem('currentUser');
+            if (userData) {
+                try {
+                    currentUser = JSON.parse(userData);
+                    if (!currentUser || !currentUser.username) throw new Error("Invalid user data structure.");
+                    document.getElementById('welcomeText').textContent = `Welcome, ${currentUser.username}`;
+                    document.getElementById('userInitial').textContent = currentUser.username.charAt(0).toUpperCase();
+                } catch (error) {
+                    console.error('Error parsing user data:', error);
+                    redirectToAuth();
+                }
+            } else {
+                redirectToAuth();
+            }
+        }
+
+        // Fetch dashboard data ONLY (backend now includes topic info)
+        async function loadDashboardData() {
+            showSkeletonLoaders(); // Show loading states
+            try {
+                console.log('🔄 Fetching dashboard data...');
+                dashboardData = await makeAuthenticatedAPICall('/auth/dashboard');
+
+                if (dashboardData) {
+                    console.log('✅ Dashboard data loaded:', dashboardData);
+                    updateDashboardUI(dashboardData);
+                } else {
+                    // Error handled in makeAuthenticatedAPICall, just show empty state
+                    console.error('❌ Failed to load dashboard data (API call returned null)');
+                    showEmptyDashboard();
+                    // Alert was likely shown by makeAuthenticatedAPICall already
+                }
+            } catch (error) { // Catch errors thrown by makeAuthenticatedAPICall
+                console.error('❌ Critical error loading dashboard:', error);
+                showEmptyDashboard();
+                // Alert was likely shown already, but ensure user sees something
+                showAlert(`Critical error loading dashboard. Please try again later.`, 'error');
+            }
+        }
+
+        // Show loading skeletons
+        function showSkeletonLoaders() {
+            // Stats
+            document.getElementById('learningProgress').innerHTML = `<span class="loading-skeleton w-12 h-6 rounded inline-block"></span>`;
+            document.getElementById('algorithmsCompleted').innerHTML = `<span class="loading-skeleton w-8 h-6 rounded inline-block"></span>`;
+            document.getElementById('timeToday').innerHTML = `<span class="loading-skeleton w-12 h-6 rounded inline-block"></span>`;
+            document.getElementById('currentRank').innerHTML = `<span class="loading-skeleton w-16 h-6 rounded inline-block"></span>`;
+            document.getElementById('totalTopics').innerHTML = `<span class="loading-skeleton w-8 h-8 rounded inline-block"></span>`;
+            document.getElementById('totalAlgorithms').innerHTML = `<span class="loading-skeleton w-8 h-8 rounded inline-block"></span>`;
+            updateProgressRing(0); // Reset ring
+
+            // Topics
+            showDefaultTopics();
+
+            // Learning Path & Achievements
+            showEmptyLearningPath();
+            showEmptyAchievements();
+        }
+
+        // Update UI with real data (with added safety checks)
+        function updateDashboardUI(data) {
+            // Ensure data and nested objects exist before accessing properties
+            const stats = data?.stats || {};
+            const user = data?.user || {}; // Get user object safely
+            const rank = stats.rank || {};
+            const achievements = data?.achievements || {};
+            const learningPath = data?.learningPath;
+            const topicsDataFromDashboard = data?.topics || {}; // Use topic data from dashboard response
+
+            // Update user display first
+            document.getElementById('welcomeText').textContent = `Welcome, ${user.username || 'User'}`;
+            document.getElementById('userInitial').textContent = (user.username || 'U').charAt(0).toUpperCase();
+
+
+            // Update stats safely
+            document.getElementById('learningProgress').textContent = `${stats.overallProgress ?? 0}%`;
+            document.getElementById('algorithmsCompleted').textContent = stats.algorithmsCompleted ?? 0;
+            document.getElementById('timeToday').textContent = formatTime(stats.timeToday ?? 0);
+            document.getElementById('currentRank').textContent = rank.level ?? 'Bronze';
+
+            // Update total algorithms/topics safely using data from dashboard
+             const totalAlgoCount = stats.totalAlgorithms ?? '?'; // Use totalAlgorithms from stats object
+             const totalTopicCount = Object.keys(topicsDataFromDashboard).length > 0 ? Object.keys(topicsDataFromDashboard).length : '?'; // Count topics received
+            document.getElementById('totalAlgorithms').textContent = totalAlgoCount;
+            document.getElementById('totalTopics').textContent = totalTopicCount;
+
+            // Update progress ring
+            updateProgressRing(stats.overallProgress ?? 0);
+
+            // Update topics grid (pass topic data directly from dashboard response)
+            updateTopicsGrid(topicsDataFromDashboard);
+
+            // Update learning path
+            updateLearningPath(learningPath, topicsDataFromDashboard);
+
+            // Update recent achievements
+            updateRecentAchievements(achievements);
+        }
+
+        // Show empty/default dashboard
+        function showEmptyDashboard() {
+            document.getElementById('learningProgress').textContent = '0%';
+            document.getElementById('algorithmsCompleted').textContent = '0';
+            document.getElementById('timeToday').textContent = '0m';
+            document.getElementById('currentRank').textContent = 'Bronze';
+            document.getElementById('totalAlgorithms').textContent = '?';
+            document.getElementById('totalTopics').textContent = '?';
+            updateProgressRing(0);
+            showDefaultTopics();
+            showEmptyLearningPath();
+            showEmptyAchievements();
+        }
+
+        // Format time helper
+        function formatTime(minutes) {
+             if (minutes === 0 || minutes === undefined || minutes === null) return '0m';
+            if (minutes < 60) return `${Math.round(minutes)}m`; // Round minutes
+            const hours = Math.floor(minutes / 60);
+            const mins = Math.round(minutes % 60);
+            return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+        }
+
+        // Update progress ring
+        function updateProgressRing(percentage) {
+            const circle = document.getElementById('progressCircle');
+            if (!circle) return;
+            const radius = circle.r.baseVal.value;
+            const circumference = 2 * Math.PI * radius;
+            // Ensure percentage is between 0 and 100
+            const validPercentage = Math.max(0, Math.min(100, percentage || 0));
+            const offset = circumference - (validPercentage / 100 * circumference);
+            circle.style.strokeDasharray = `${circumference} ${circumference}`;
+            // Use setTimeout to allow initial render before transition
+            setTimeout(() => { circle.style.strokeDashoffset = offset; }, 50);
+        }
+
+        // --- Modified Topic Grid Update ---
+        // Accepts the topics object directly from the dashboard response
+        function updateTopicsGrid(topicsData) {
+            const grid = document.getElementById('topicsGrid');
+            grid.innerHTML = ''; // Clear existing cards/skeletons
+
+            const topicIds = Object.keys(topicsData);
+
+            if (topicIds.length === 0) {
+                 grid.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 col-span-full">No topics available or failed to load.</p>';
+                return;
+            }
+
+            // Sort topics by order before rendering
+            const sortedTopicIds = topicIds.sort((a, b) => (topicsData[a].order || 0) - (topicsData[b].order || 0));
+
+            sortedTopicIds.forEach(topicId => {
+                 const topic = topicsData[topicId]; // topic now contains config + user progress
+                 // Pass the combined topic object to createTopicCard
+                const card = createTopicCard(topic);
+                grid.appendChild(card);
+            });
+        }
+
+        // --- Modified Topic Card Creation ---
+        // Accepts the combined topic object { id, name, ..., algorithms (defs), status, completion, userAlgoProgress }
+        function createTopicCard(topic) {
+            const div = document.createElement('div');
+            const isLocked = topic.status === 'locked';
+
+            div.className = `card-hover bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 animate-fade-in group ${isLocked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`;
+
+            const statusInfo = getStatusInfo(topic.status);
+            const descriptionSnippet = topic.description ? topic.description.substring(0, 30) + (topic.description.length > 30 ? '...' : '') : 'No description';
+
+            div.innerHTML = `
+                <div class="text-center mb-4 relative">
+                    ${isLocked ? '<div class="absolute top-0 right-0 -mt-2 -mr-2 text-red-500 dark:text-red-400" title="Locked"><i class="fas fa-lock"></i></div>' : ''}
+                    <div class="w-16 h-16 bg-${topic.color || 'gray'}-100 dark:bg-${topic.color || 'gray'}-900 rounded-lg flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-${topic.icon || 'book'} text-2xl text-${topic.color || 'gray'}-600 dark:text-${topic.color || 'gray'}-400 topic-icon"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-800 dark:text-white mb-1">${topic.name}</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">${descriptionSnippet}</p>
+                    ${topic.completion > 0 ? `<p class="text-xs text-gray-600 dark:text-gray-300 mt-1">${topic.completion}% Complete</p>` : ''}
+                </div>
+                <div class="text-center">
+                    <div class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${statusInfo.class}">
+                        <i class="fas ${statusInfo.icon} mr-1"></i>
+                        ${statusInfo.text}
+                    </div>
+                </div>
+            `;
+
+            if (!isLocked) {
+                div.addEventListener('click', () => handleTopicClick(topic)); // Pass the combined topic object
+            } else {
+                 div.addEventListener('click', () => showAlert('This topic is currently locked. Complete prerequisites or check admin settings.', 'warning'));
+                 div.setAttribute('title', 'This topic is currently locked.');
+            }
+
+            return div;
+        }
+
+        // Get status info for topic (no changes needed)
+        function getStatusInfo(status) {
+           switch (status) {
+                case 'available': return { class: 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300', icon: 'fa-check', text: 'Available' };
+                case 'in-progress': return { class: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300', icon: 'fa-hourglass-half', text: 'In Progress' };
+                case 'completed': return { class: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300', icon: 'fa-trophy', text: 'Completed' };
+                default: return { class: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400', icon: 'fa-lock', text: 'Locked' };
+            }
+        }
+
+        // --- Modified Topic Click Handler ---
+        // Accepts the combined topic object
+        function handleTopicClick(topic) {
+            console.log("Topic clicked:", topic.id, "Status:", topic.status);
+            if (topic.status === 'locked') {
+                showAlert('This topic is locked. Complete previous topics to unlock it!', 'warning');
+            } else {
+                 // Pass the combined topic object to showAlgorithmList
+                 showAlgorithmList(topic);
+            }
+        }
+
+        // --- MODIFIED: Function to display the algorithm list ---
+        // Accepts the combined topic object
+        function showAlgorithmList(topic) {
+            const topicsSection = document.getElementById('topicsSection');
+            const algorithmsSection = document.getElementById('algorithmsSection');
+            const algorithmsGrid = document.getElementById('algorithmsGrid');
+            const topicTitle = document.getElementById('algorithmTopicTitle');
+
+            console.log("Showing algorithms for:", topic.name);
+            console.log("Algorithm definitions:", topic.algorithms); // Definitions are here
+            console.log("User progress for algorithms:", topic.userAlgoProgress); // User progress is here
+
+            topicTitle.textContent = `${topic.name}`; // Set the title
+            algorithmsGrid.innerHTML = ''; // Clear previous algorithms
+
+             // Use the algorithms array (definitions) directly from the combined topic object
+             if (!topic.algorithms || topic.algorithms.length === 0) {
+                 algorithmsGrid.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 col-span-full">No algorithms found for this topic.</p>';
+             } else {
+                 topic.algorithms.forEach(algoDef => { // algoDef is the definition
+                     // Look up user progress using the algoDef.id from the userAlgoProgress map
+                     const algoProgress = topic.userAlgoProgress[algoDef.id] || { completed: false, accuracyPractice: 0, attemptsPractice: 0 };
+                     const card = createAlgorithmCard(topic.id, algoDef, algoProgress); // Pass topicId, definition, progress
+                     algorithmsGrid.appendChild(card);
+                 });
+             }
+
+             // Show algorithm section, hide topic section
+             topicsSection.classList.add('hidden');
+             algorithmsSection.classList.remove('hidden');
+         }
+
+         // --- MODIFIED: Function to create an algorithm card --- (No change needed in logic, already correct)
+        function createAlgorithmCard(topicId, algoDef, algoProgress) {
+    const div = document.createElement('div');
+    // Read the effective status calculated by the backend
+    const effectiveStatus = algoProgress.effectiveStatus || 'available'; // Default to available if missing
+    const isLocked = effectiveStatus === 'locked';
+
+    div.className = `algorithm-card bg-white dark:bg-gray-800 rounded-xl p-4 shadow-md border border-gray-200 dark:border-gray-700 flex items-center justify-between animate-fade-in ${isLocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-600'}`; // Add locking styles
+
+    const isCompleted = algoProgress.completed === true;
+    // Use lock icon if locked, otherwise checkmark/circle
+    const statusIcon = isLocked
+        ? '<i class="fas fa-lock text-red-500 ml-2" title="Locked"></i>'
+        : (isCompleted
+            ? '<i class="fas fa-check-circle text-green-500 ml-2" title="Completed"></i>'
+            : '<i class="far fa-circle text-gray-400 ml-2" title="Not Completed"></i>');
+
+    const attemptsPractice = algoProgress.attemptsPractice || 0;
+    const accuracyPractice = algoProgress.accuracyPractice || 0;
+    const accuracyText = attemptsPractice > 0 ? `<span class="text-xs text-blue-600 dark:text-blue-400">${accuracyPractice.toFixed(0)}%</span>` : '';
+
+    div.innerHTML = `
+        <div>
+            <h4 class="text-lg font-semibold text-gray-800 dark:text-white">${algoDef.name} ${statusIcon}</h4>
+            <p class="text-sm text-gray-500 dark:text-gray-400">${(algoDef.description || '').substring(0, 40)}...</p>
+        </div>
+        <div class="text-right">
+            <span class="text-xs font-medium px-2 py-0.5 rounded ${getDifficultyClass(algoDef.difficulty)}">${algoDef.difficulty}</span>
+            ${accuracyText}
+        </div>
+    `;
+
+    // Only add click listener if NOT locked
+    if (!isLocked) {
+        div.addEventListener('click', () => handleAlgorithmClick(topicId, algoDef.id));
+    } else {
+         div.setAttribute('title', 'This algorithm is currently locked.'); // Add tooltip for locked items
+    }
+    return div;
+}
+
+        // --- NEW: Function to get difficulty badge class --- (No change needed)
+        function getDifficultyClass(difficulty) { /* ... keep existing ... */
+            switch (difficulty) {
+                case 'easy': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+                case 'medium': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+                case 'hard': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+                default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+            }
+        }
+
+        // --- NEW: Function to handle algorithm click --- (No change needed)
+        function handleAlgorithmClick(topicId, algorithmId) { /* ... keep existing ... */
+             const filePath = `topics/${algorithmId}/index.html`;
+             console.log(`Navigating to: ${filePath}`);
+             window.location.href = filePath;
+         }
+
+         // --- NEW: Function to go back to topics view --- (No change needed)
+         function showTopicsView() { /* ... keep existing ... */
+             document.getElementById('topicsSection').classList.remove('hidden');
+             document.getElementById('algorithmsSection').classList.add('hidden');
+         }
+
+        // Show default topics (for skeleton loading - no change needed)
+        function showDefaultTopics() { /* ... keep existing ... */
+            const grid = document.getElementById('topicsGrid');
+            grid.innerHTML = `<div class="loading-skeleton rounded-xl h-48"></div>`.repeat(8);
+        }
+
+        // --- Modified Learning Path Update ---
+        function updateLearningPath(learningPath, topicsData) {
+            const container = document.getElementById('learningPath');
+            container.innerHTML = ''; // Clear
+
+            // Basic validation
+            if (!learningPath || !learningPath.currentTopic || !topicsData || !topicsData[learningPath.currentTopic]) {
+                showEmptyLearningPath();
+                return;
+            }
+
+            const currentTopicId = learningPath.currentTopic;
+            const currentTopicData = topicsData[currentTopicId]; // Combined topic data
+
+            // Ensure we have algorithm definitions and progress
+            if (!currentTopicData.algorithms || !currentTopicData.userAlgoProgress) {
+                 showEmptyLearningPath();
+                 console.warn(`Missing algorithm definitions or progress for current topic: ${currentTopicId}`);
+                 return;
+            }
+
+            const allAlgoDefs = currentTopicData.algorithms; // Array of definitions
+            const userAlgoProgressMap = currentTopicData.userAlgoProgress; // Object/Map of user progress
+
+            // Find the first algorithm definition NOT marked as completed in user progress
+            let nextAlgDef = allAlgoDefs.find(def => {
+                const progress = userAlgoProgressMap[def.id];
+                return !progress || progress.completed !== true;
+            });
+
+            // If all are completed, show the last one as "Completed"
+            if (!nextAlgDef && allAlgoDefs.length > 0) {
+                nextAlgDef = allAlgoDefs[allAlgoDefs.length - 1];
+            }
+
+            if (nextAlgDef) {
+                const algProgress = userAlgoProgressMap[nextAlgDef.id] || { attemptsPractice: 0, accuracyPractice: 0, completed: false };
+                // Determine status based on whether this specific algo is completed
+                const status = algProgress.completed ? 'completed' : 'in-progress';
+                container.appendChild(createLearningPathItem(currentTopicId, nextAlgDef, algProgress, status)); // Pass topicId
+            } else {
+                showEmptyLearningPath(); // Topic might have no algorithms defined
+            }
+        }
+
+
+        // --- Modified Learning Path Item Creation ---
+        // Accepts topicId, Algorithm Definition, Progress, and Status
+        function createLearningPathItem(topicId, algorithmDef, algProgress, status) {
+            const div = document.createElement('div');
+            let iconHtml, textHtml, statusClass, borderColor;
+
+            if (status === 'completed') {
+                statusClass = 'bg-green-50 dark:bg-green-900/20';
+                borderColor = 'border-green-500';
+                iconHtml = `<div class="flex-shrink-0 w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white font-bold"><i class="fas fa-check text-sm"></i></div>`;
+                textHtml = `
+                    <h4 class="font-semibold text-gray-800 dark:text-white">${algorithmDef.name}</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-300">Completed${algProgress.accuracyPractice ? ` with ${algProgress.accuracyPractice.toFixed(0)}% accuracy` : ''}</p>`;
+            } else { // 'in-progress' or not started
+                statusClass = 'bg-yellow-50 dark:bg-yellow-900/20';
+                borderColor = 'border-yellow-500';
+                iconHtml = `<div class="flex-shrink-0 w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center text-white font-bold"><i class="fas fa-play text-sm"></i></div>`;
+                const attempts = algProgress.attemptsPractice || 0;
+                textHtml = `
+                    <h4 class="font-semibold text-gray-800 dark:text-white">${algorithmDef.name}</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-300">Next up${attempts > 0 ? ` - ${attempts} attempts` : ''}</p>`;
+            }
+
+            div.className = `flex items-center p-4 rounded-xl border-l-4 ${statusClass} ${borderColor} cursor-pointer hover:shadow-md transition-shadow`;
+            div.innerHTML = `
+                ${iconHtml}
+                <div class="ml-4 flex-1">${textHtml}</div>
+                <div class="text-gray-400 hover:text-blue-500">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            `;
+
+            // Use topicId from argument
+            div.addEventListener('click', () => handleAlgorithmClick(topicId, algorithmDef.id));
+
+            return div;
+        }
+
+        // Show empty learning path (no change needed)
+        function showEmptyLearningPath() { /* ... keep existing ... */
+             const container = document.getElementById('learningPath');
+            container.innerHTML = `
+                <div class="text-center py-8">
+                    <i class="fas fa-route text-4xl text-gray-400 dark:text-gray-600 mb-4"></i>
+                    <p class="text-gray-500 dark:text-gray-400">Start learning to see your progress here!</p>
+                </div>
+            `;
+        }
+
+        // Update recent achievements (no change needed)
+        function updateRecentAchievements(achievements) { /* ... keep existing ... */
+             const container = document.getElementById('recentAchievements');
+            container.innerHTML = '';
+            if (!achievements || !achievements.recent || achievements.recent.length === 0) { showEmptyAchievements(); return; }
+            achievements.recent.slice(0, 4).forEach(ach => container.appendChild(createAchievementCard(ach)));
+        }
+
+        // Create achievement card (no change needed)
+        function createAchievementCard(achievement) { /* ... keep existing ... */
+             const div = document.createElement('div');
+            div.className = 'text-center p-4 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl';
+            const iconClass = getAchievementIcon(achievement.icon);
+            const colorClass = getAchievementColor(achievement.category);
+            div.innerHTML = `
+                <div class="w-12 h-12 ${colorClass} rounded-full flex items-center justify-center text-white mx-auto mb-2 animate-bounce-gentle">
+                    <i class="fas ${iconClass}"></i>
+                </div>
+                <h4 class="font-bold text-gray-800 dark:text-white text-sm">${achievement.name}</h4>
+                <p class="text-xs text-gray-600 dark:text-gray-400">${(achievement.description || '').substring(0, 40)}...</p>
+            `;
+            return div;
+        }
+
+        // Get achievement icon (no change needed)
+        function getAchievementIcon(icon) { /* ... keep existing ... */
+            const iconMap = { /* ... keep existing map ... */ }; return iconMap[icon] || 'fa-star';
+        }
+
+        // Get achievement color (no change needed)
+        function getAchievementColor(category) { /* ... keep existing ... */
+            const colorMap = { 'learning': 'bg-blue-500', /* ... keep existing map ... */ }; return colorMap[category] || 'bg-gray-500';
+        }
+
+        // Show empty achievements (no change needed)
+        function showEmptyAchievements() { /* ... keep existing ... */
+            const container = document.getElementById('recentAchievements');
+            container.innerHTML = `
+                <div class="col-span-2 text-center py-8">
+                    <i class="fas fa-trophy text-4xl text-gray-400 dark:text-gray-600 mb-4"></i>
+                    <p class="text-gray-500 dark:text-gray-400">Complete algorithms to earn achievements!</p>
+                </div>
+            `;
+        }
+
+        // Show alert/notification (using a basic alert for now)
+        function showAlert(message, type = 'info') {
+            // Simple alert, consider replacing with a styled component later
+            alert(message);
+        }
+
+        // Redirect to auth page
+        function redirectToAuth() {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('currentUser');
+            window.location.href = 'auth.html';
+        }
+
+        // Handle logout
+        function handleLogout() {
+            if (confirm('Are you sure you want to logout?')) {
+                redirectToAuth();
+            }
+        }
+
+        // Create floating particles (no change needed)
+        function createParticles() { /* ... keep existing ... */ }
+
+        // Initialize everything when page loads
+        document.addEventListener('DOMContentLoaded', async function () {
+            // Check authentication first
+            const token = getAuthToken();
+            if (!token) {
+                redirectToAuth();
+                return; // Stop execution if no token
+            }
+
+            // Initialize basic UI
+            initializeTheme();
+            initializeUser(); // Sets initial username/avatar from localStorage
+            createParticles();
+
+            // Load dashboard data from API (now includes necessary topic data)
+            await loadDashboardData();
+
+            // Event listeners
+            document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+            document.getElementById('backToTopicsBtn').addEventListener('click', showTopicsView);
+
+            // Quick action buttons
+            document.getElementById('continueCurrentTopic').addEventListener('click', () => {
+                 if (dashboardData?.learningPath?.currentTopic && dashboardData?.topics) {
+                     const currentTopicId = dashboardData.learningPath.currentTopic;
+                     const currentTopicData = dashboardData.topics[currentTopicId];
+
+                     if (currentTopicData?.algorithms?.length > 0 && currentTopicData.userAlgoProgress) {
+                         const allAlgoDefs = currentTopicData.algorithms;
+                         const userAlgoProgressMap = currentTopicData.userAlgoProgress;
+
+                         let nextAlgDef = allAlgoDefs.find(def => {
+                             const progress = userAlgoProgressMap[def.id];
+                             return !progress || progress.completed !== true;
+                         });
+
+                         if (!nextAlgDef && allAlgoDefs.length > 0) { nextAlgDef = allAlgoDefs[0]; } // Default to first if all complete
+
+                         if (nextAlgDef) {
+                             handleAlgorithmClick(currentTopicId, nextAlgDef.id);
+                         } else { showAlert('Could not determine the next algorithm.', 'info'); }
+                     } else { showAlert('Current topic has no algorithms or progress data is missing.', 'info'); }
+                 } else { showAlert('Learning path not set or data not loaded.', 'warning'); }
+             });
+
+            document.getElementById('randomChallenge').addEventListener('click', () => {
+                showAlert('Random challenge feature coming soon!', 'info');
+            });
+
+            document.getElementById('viewProgress').addEventListener('click', () => {
+                showAlert('Detailed progress overview coming soon!', 'info');
+            });
+
+             console.log("Dashboard initialized.");
+        });
+    </script>
+</body>
+</html>
