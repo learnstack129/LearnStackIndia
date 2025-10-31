@@ -1015,4 +1015,5 @@ button { position: relative; overflow: hidden; }
 
 /* Focus styles */
 *:focus { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+
 button:focus, input:focus, select:focus { outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
