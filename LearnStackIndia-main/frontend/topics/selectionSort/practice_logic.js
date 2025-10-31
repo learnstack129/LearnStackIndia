@@ -2,6 +2,15 @@
 
 const PRACTICE_API_BASE_URL = '/api';
 
+// --- PAGESHOW LISTENER (GLOBAL SCOPE) ---
+window.addEventListener('pageshow', function(event) {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+        console.log('pageshow: No token, redirecting to login.');
+        redirectToLogin();
+    }
+});
+
 // --- Authentication and Access Check ---
 (async function() {
     const token = localStorage.getItem('authToken');
@@ -10,8 +19,6 @@ const PRACTICE_API_BASE_URL = '/api';
 
     // 1. Check if user is logged in
     if (!token) {
-        console.log('No token found, redirecting to login.');
-        redirectToLogin();
         return; // Stop execution
     } else {
         console.log('Token found, proceeding to access check.');
@@ -929,4 +936,5 @@ async function sendPracticeProgressUpdate(accuracy, timeSpentSeconds, correctCou
         console.error('Error sending practice progress update:', error);
         alert(`Error saving progress: ${error.message}.`);
     }
+
 }
