@@ -1774,3 +1774,48 @@ button:focus, input:focus, select:focus { outline: none; box-shadow: 0 0 0 3px r
 ::-webkit-scrollbar-track { background: var(--bg-tertiary-light); border-radius: var(--border-radius-sm); }
 ::-webkit-scrollbar-thumb { background: var(--accent-primary); border-radius: var(--border-radius-sm); }
 ::-webkit-scrollbar-thumb:hover { background: var(--accent-hover); }
+
+/* --- ADDED RESPONSIVE STYLES --- */
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .main-content { grid-template-columns: 1fr; }
+  .input-container { grid-template-columns: 1fr; gap: var(--spacing-md); }
+  .controls-group { justify-content: flex-start; }
+}
+
+@media (max-width: 768px) {
+  .container { padding: var(--spacing-md); }
+  .input-container { display: flex; flex-direction: column; gap: var(--spacing-sm); }
+  .controls-group { flex-direction: column; align-items: stretch; gap: var(--spacing-sm); }
+  .start-button { width: 100%; }
+  .select-group select { width: 100%; }
+  .complexity-grid { grid-template-columns: 1fr; }
+  .visualization-controls { grid-template-columns: 1fr; gap: var(--spacing-md); }
+  .playback-controls { justify-content: center; }
+  .speed-control { align-items: center; }
+  .slider-container { justify-content: center; }
+  .main-header h1 { font-size: var(--font-size-3xl); }
+  
+  /* Explanation section responsive */
+  .explanation-section { padding: var(--spacing-lg); gap: var(--spacing-md); }
+  .explanation-header { flex-direction: column; align-items: flex-start; }
+  .explanation-title { font-size: var(--font-size-2xl); }
+  .explanation-emoji { font-size: 2.5rem; }
+  .explanation-card { padding: var(--spacing-md); }
+  .card-icon { width: 40px; height: 40px; }
+  .card-icon svg { width: 20px; height: 20px; }
+  .tradeoffs { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  .container { padding: var(--spacing-sm); }
+  .array-container { min-height: 120px; }
+  .array-cell { min-width: 35px; width: 35px; height: 35px; font-size: var(--font-size-xs); }
+  #array-view { gap: 4px; }
+  .array-index { bottom: -16px; font-size: 0.6rem; }
+  .step-description { font-size: 0.7rem; padding: var(--spacing-sm); }
+  .variables-display { font-size: var(--font-size-sm); padding: var(--spacing-xs); }
+  .control-btn { padding: var(--spacing-xs) var(--spacing-sm); min-width: 60px; height: 30px; font-size: 0.7rem;}
+  .speed-display { font-size: var(--font-size-xs); padding: 1px 4px;}
+  .slider-container label { font-size: var(--font-size-xs); }
+}
