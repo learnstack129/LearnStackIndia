@@ -635,6 +635,12 @@
 
         // Initialize everything when page loads
         document.addEventListener('DOMContentLoaded', async function () {
+            // Re-check auth on pageshow (handles browser back button from cache)
+            window.addEventListener('pageshow', function(event) {
+                if (!getAuthToken()) {
+                    redirectToAuth();
+                }
+            });
             // Check authentication first
             const token = getAuthToken();
             if (!token) {
@@ -1093,4 +1099,5 @@
     </main>
 </body>
 </html>
+
 
