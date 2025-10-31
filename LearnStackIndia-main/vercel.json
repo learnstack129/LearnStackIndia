@@ -2,15 +2,15 @@
   "version": 2,
   "routes": [
     {
-      "src": "/api/(.*)",
+      "src": "^/api/(.*)$",
       "dest": "/backend/server.js"
     },
     {
-      "src": "/",
+      "src": "^/$",
       "dest": "/frontend/auth.html"
     },
     {
-      "src": "/(.*)",
+      "src": "^/(.*)$",
       "dest": "/frontend/$1"
     }
   ]
