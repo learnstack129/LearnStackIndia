@@ -108,7 +108,6 @@
 
 html {
   scroll-behavior: smooth;
-  overflow-x: hidden; /* Prevent horizontal scrolling/wobbling */
 }
 
 body {
@@ -118,7 +117,6 @@ body {
   line-height: 1.6;
   transition: background-color var(--transition-normal), color var(--transition-normal);
   min-height: 100vh;
-  overflow-x: hidden; /* Prevent horizontal scrolling/wobbling */
 }
 
 /* Logout Button Styling (Add this) */
@@ -1831,3 +1829,4 @@ button:focus, input:focus, select:focus { outline: none; box-shadow: 0 0 0 3px r
   .speed-display { font-size: var(--font-size-xs); padding: 1px 4px;}
   .slider-container label { font-size: var(--font-size-xs); }
 }
+
