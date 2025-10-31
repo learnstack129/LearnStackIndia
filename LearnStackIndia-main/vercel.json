@@ -10,8 +10,9 @@
       "dest": "/frontend/auth.html"
     },
     {
-      "src": "^/(.*)$",
+      "src": "^/$",
       "dest": "/frontend/$1"
     }
   ]
 }
+
