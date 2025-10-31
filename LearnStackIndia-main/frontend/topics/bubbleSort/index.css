@@ -108,6 +108,7 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden; /* Prevent horizontal scrolling/wobbling */
 }
 
 body {
@@ -117,6 +118,7 @@ body {
   line-height: 1.6;
   transition: background-color var(--transition-normal), color var(--transition-normal);
   min-height: 100vh;
+  overflow-x: hidden; /* Prevent horizontal scrolling/wobbling */
 }
 
 /* Logout Button Styling (Add this) */
@@ -983,6 +985,16 @@ section:hover {
   .speed-control { align-items: center; }
   .slider-container { justify-content: center; }
   .main-header h1 { font-size: var(--font-size-3xl); }
+  
+  /* Explanation section responsive */
+  .explanation-section { padding: var(--spacing-lg); gap: var(--spacing-md); }
+  .explanation-header { flex-direction: column; align-items: flex-start; }
+  .explanation-title { font-size: var(--font-size-2xl); }
+  .explanation-emoji { font-size: 2.5rem; }
+  .explanation-card { padding: var(--spacing-md); }
+  .card-icon { width: 40px; height: 40px; }
+  .card-icon svg { width: 20px; height: 20px; }
+  .tradeoffs { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 480px) {
@@ -1809,7 +1821,7 @@ button:focus, input:focus, select:focus { outline: none; box-shadow: 0 0 0 3px r
 
 @media (max-width: 480px) {
   .container { padding: var(--spacing-sm); }
-  .array-container { min-height: 120px; }
+  .array-container { min-height: 120px; } /* Reduce min height on small screens */
   .array-cell { min-width: 35px; width: 35px; height: 35px; font-size: var(--font-size-xs); }
   #array-view { gap: 4px; }
   .array-index { bottom: -16px; font-size: 0.6rem; }
