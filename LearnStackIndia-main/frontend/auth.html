@@ -1086,18 +1086,24 @@
         }
 
         // Resend reset OTP
+        // frontend/auth.html
+
+        // Resend reset OTP
         async function handleResendResetOTP(email) {
             try {
                 setButtonLoading('resendResetOtp', 'resendResetOtpText', 'resendResetOtpSpinner', true);
                 hideError('passwordResetOtpError');
 
-                await makeAPICall('/auth/forgot-password', {
+                // 1. Capture the response from the API call
+                const response = await makeAPICall('/auth/forgot-password', {
                     method: 'POST',
                     body: JSON.stringify({ email })
                 });
 
                 clearResetOTPInputs();
-                alert('New reset code sent to your email!');
+                
+                // 2. Use the message from the response in the alert
+                alert(response.message || 'New reset code sent to your email!'); // This now uses the backend message
 
             } catch (error) {
                 showError('passwordResetOtpError', error.message);
@@ -1272,3 +1278,4 @@
 </body>
 
 </html>
+
