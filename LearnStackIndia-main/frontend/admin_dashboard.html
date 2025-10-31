@@ -1998,6 +1998,13 @@
                 return;
             }
             console.log("ADMIN PAGE: Auth check PASSED.");
+            // Re-check auth on pageshow (handles browser back button from cache)
+            window.addEventListener('pageshow', function(event) {
+                // event.persisted is true if page is from back/forward cache
+                if (!checkAdminAuth()) {
+                    console.error("ADMIN PAGE: Auth check FAILED on pageshow. Halting script.");
+                }
+            });
 
             // --- Setup Event Listeners ---
             console.log("ADMIN PAGE: Setting up event listeners and navigation...");
@@ -2081,5 +2088,6 @@
         });
     </script>
 </body>
+
 
 </html>
