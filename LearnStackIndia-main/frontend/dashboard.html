@@ -134,7 +134,9 @@
             background-clip: text;
         }
 
-        .text-6xl { line-height: 1.5; }
+        .text-6xl { line-height: 1.2; } /* Adjusted line-height for large text */
+        .text-4xl { line-height: 1.2; } /* Added for smaller screens */
+
 
         @keyframes gradientShift {
             0% { background-position: 0% 50%; }
@@ -181,6 +183,13 @@
         }
         .hidden { display: none; } /* Ensure hidden class works */
         /* --- End New Styles --- */
+
+        /* Responsive Navbar text */
+        @media (max-width: 640px) {
+            #welcomeText {
+                display: none;
+            }
+        }
     </style>
 </head>
 
@@ -193,31 +202,31 @@
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center">
                     <div
-                        class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                        class="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                         <i class="fas fa-code mr-2 text-blue-600"></i>
                         DSA Visualizer
                     </div>
                 </div>
 
-                <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2 sm:space-x-4">
                     <button id="themeToggle"
                         class="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 neon-glow">
                         <i id="themeIcon" class="fas fa-moon text-lg"></i>
                     </button>
 
-                    <div class="flex items-center space-x-3">
+                    <div class="flex items-center space-x-2 sm:space-x-3">
                         <div class="flex items-center space-x-2">
                             <div
-                                class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                                class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
                                 <span id="userInitial">U</span>
                             </div>
                             <span id="welcomeText"
-                                class="text-gray-700 dark:text-gray-300 font-semibold">Loading...</span>
+                                class="hidden sm:block text-gray-700 dark:text-gray-300 font-semibold truncate">Loading...</span>
                         </div>
                         <button id="logoutBtn"
-                            class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-all duration-300 shadow-lg hover:shadow-red-500/25 font-medium">
-                            <i class="fas fa-sign-out-alt mr-1"></i>
-                            Logout
+                            class="bg-red-500 text-white px-2 py-2 sm:px-4 rounded-lg hover:bg-red-600 transition-all duration-300 shadow-lg hover:shadow-red-500/25 font-medium">
+                            <i class="fas fa-sign-out-alt sm:mr-1"></i>
+                            <span class="hidden sm:inline">Logout</span>
                         </button>
                     </div>
                 </div>
@@ -226,7 +235,7 @@
     </nav>
 
     <main class="relative z-10">
-        <section class="gradient-bg text-white py-20 relative overflow-hidden">
+        <section class="gradient-bg text-white py-16 sm:py-20 relative overflow-hidden">
              <div class="floating-shapes">
                 <div class="shape w-32 h-32 bg-white rounded-full"></div>
                 <div class="shape w-24 h-24 bg-blue-200 rounded-lg transform rotate-45"></div>
@@ -236,13 +245,13 @@
 
             <div class="absolute inset-0 bg-black opacity-10"></div>
             <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                <h1 class="text-6xl font-bold mb-6 animate-fade-in hero-text" style="line-height: 1.5;">
+                <h1 class="text-4xl sm:text-6xl font-bold mb-6 animate-fade-in hero-text">
                     Master Data Structures & Algorithms
                 </h1>
-                <p class="text-xl mb-8 max-w-3xl mx-auto animate-slide-up opacity-90">
+                <p class="text-lg sm:text-xl mb-8 max-w-3xl mx-auto animate-slide-up opacity-90">
                     Interactive visualizations and step-by-step learning to help you understand complex algorithms
                 </p>
-                <div class="flex justify-center space-x-6 animate-slide-up">
+                <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-6 animate-slide-up">
                     <div class="stats-card p-4 rounded-xl backdrop-blur-sm">
                         <div class="text-2xl font-bold" id="totalTopics">
                              <span class="loading-skeleton w-8 h-8 rounded inline-block"></span>
@@ -265,7 +274,7 @@
 
         <section class="py-8 bg-gray-100 dark:bg-gray-800">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
                     <div
                         class="bg-white dark:bg-gray-700 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-600 animate-fade-in">
                         <div class="flex items-center justify-between">
@@ -346,35 +355,35 @@
 
             <div id="topicsSection">
                 <div class="text-center mb-12">
-                    <h2 class="text-4xl font-bold text-gray-800 dark:text-white mb-4 animate-fade-in">
+                    <h2 class="text-3xl sm:text-4xl font-bold text-gray-800 dark:text-white mb-4 animate-fade-in">
                         Explore DSA Topics
                     </h2>
                     <p class="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto animate-slide-up">
                         Choose a topic to start learning with interactive visualizations and comprehensive explanations
                     </p>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="topicsGrid">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" id="topicsGrid">
                     <div class="loading-skeleton rounded-xl h-48"></div>
                     <div class="loading-skeleton rounded-xl h-48"></div>
                     <div class="loading-skeleton rounded-xl h-48"></div>
                     <div class="loading-skeleton rounded-xl h-48"></div>
-                    <div class="loading-skeleton rounded-xl h-48 md:hidden lg:block"></div>
-                    <div class="loading-skeleton rounded-xl h-48 md:hidden lg:block"></div>
-                    <div class="loading-skeleton rounded-xl h-48 md:hidden lg:block"></div>
-                    <div class="loading-skeleton rounded-xl h-48 md:hidden lg:block"></div>
+                    <div class="loading-skeleton rounded-xl h-48 hidden sm:block"></div>
+                    <div class="loading-skeleton rounded-xl h-48 hidden sm:block"></div>
+                    <div class="loading-skeleton rounded-xl h-48 hidden sm:block"></div>
+                    <div class="loading-skeleton rounded-xl h-48 hidden sm:block"></div>
                     </div>
             </div>
 
             <div id="algorithmsSection" class="hidden">
-                 <div class="flex justify-between items-center mb-12">
-                     <h2 id="algorithmTopicTitle" class="text-4xl font-bold text-gray-800 dark:text-white animate-fade-in">
+                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-12 gap-4">
+                     <h2 id="algorithmTopicTitle" class="text-3xl sm:text-4xl font-bold text-gray-800 dark:text-white animate-fade-in">
                          Algorithms
                      </h2>
-                     <button id="backToTopicsBtn" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-300 font-medium">
+                     <button id="backToTopicsBtn" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-300 font-medium self-start sm:self-center">
                          <i class="fas fa-arrow-left mr-2"></i>Back to Topics
                      </button>
                  </div>
-                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="algorithmsGrid">
+                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="algorithmsGrid">
                      <div class="loading-skeleton rounded-xl h-32"></div>
                       <div class="loading-skeleton rounded-xl h-32"></div>
                       <div class="loading-skeleton rounded-xl h-32"></div>
@@ -385,8 +394,8 @@
 
         <section class="py-16 bg-gray-100 dark:bg-gray-800">
              <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div class="bg-white dark:bg-gray-700 rounded-2xl p-8 shadow-xl animate-fade-in">
+                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white dark:bg-gray-700 rounded-2xl p-6 sm:p-8 shadow-xl animate-fade-in">
                         <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
                             <i class="fas fa-route text-blue-600 mr-3"></i>
                             Your Learning Path
@@ -398,7 +407,7 @@
                         </div>
                     </div>
 
-                    <div class="bg-white dark:bg-gray-700 rounded-2xl p-8 shadow-xl animate-fade-in">
+                    <div class="bg-white dark:bg-gray-700 rounded-2xl p-6 sm:p-8 shadow-xl animate-fade-in">
                         <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
                             <i class="fas fa-trophy text-yellow-600 mr-3"></i>
                             Recent Achievements
@@ -419,19 +428,19 @@
                 <h3 class="text-3xl font-bold text-gray-800 dark:text-white mb-8 animate-fade-in">
                     Ready to Continue Learning?
                 </h3>
-                <div class="flex flex-wrap justify-center gap-4">
+                <div class="flex flex-col sm:flex-row flex-wrap justify-center gap-4">
                     <button id="continueCurrentTopic"
-                        class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-8 py-4 rounded-xl font-semibold shadow-lg hover:shadow-blue-500/25 hover:scale-105 transition-all duration-300 animate-fade-in">
+                        class="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-blue-600 text-white px-8 py-4 rounded-xl font-semibold shadow-lg hover:shadow-blue-500/25 hover:scale-105 transition-all duration-300 animate-fade-in">
                         <i class="fas fa-play mr-2"></i>
                         Continue Current Topic
                     </button>
                     <button id="randomChallenge"
-                        class="bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-4 rounded-xl font-semibold shadow-lg hover:shadow-green-500/25 hover:scale-105 transition-all duration-300 animate-fade-in">
+                        class="w-full sm:w-auto bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-4 rounded-xl font-semibold shadow-lg hover:shadow-green-500/25 hover:scale-105 transition-all duration-300 animate-fade-in">
                         <i class="fas fa-random mr-2"></i>
                         Random Challenge
                     </button>
                     <button id="viewProgress"
-                        class="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold shadow-lg hover:shadow-purple-500/25 hover:scale-105 transition-all duration-300 animate-fade-in">
+                        class="w-full sm:w-auto bg-gradient-to-r from-purple-500 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold shadow-lg hover:shadow-purple-500/25 hover:scale-105 transition-all duration-300 animate-fade-in">
                         <i class="fas fa-chart-line mr-2"></i>
                         View Progress
                     </button>
