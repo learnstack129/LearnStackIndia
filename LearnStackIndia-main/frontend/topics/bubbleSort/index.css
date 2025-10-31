@@ -1785,6 +1785,11 @@ button:focus, input:focus, select:focus { outline: none; box-shadow: 0 0 0 3px r
 ::-webkit-scrollbar-thumb { background: var(--accent-primary); border-radius: var(--border-radius-sm); }
 ::-webkit-scrollbar-thumb:hover { background: var(--accent-hover); }
 
+.chart-container {
+  height: 250px;
+  margin-top: var(--spacing-md);
+}
+
 /* --- ADDED RESPONSIVE STYLES --- */
 /* Responsive Design */
 @media (max-width: 1200px) {
@@ -1829,4 +1834,5 @@ button:focus, input:focus, select:focus { outline: none; box-shadow: 0 0 0 3px r
   .speed-display { font-size: var(--font-size-xs); padding: 1px 4px;}
   .slider-container label { font-size: var(--font-size-xs); }
 }
+
 
