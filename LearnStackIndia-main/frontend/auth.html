@@ -164,16 +164,25 @@
         }
 
         .otp-input {
-            width: 50px;
-            height: 50px;
+            width: 2.5rem; /* 40px */
+            height: 2.5rem; /* 40px */
             text-align: center;
-            font-size: 1.5rem;
+            font-size: 1.25rem; /* 20px */
             font-weight: bold;
             border: 2px solid #e5e7eb;
             border-radius: 12px;
-            margin: 0 5px;
+            margin: 0; /* Use space-x utility on parent */
             transition: all 0.3s ease;
         }
+        
+        @media (min-width: 640px) { /* sm breakpoint */
+            .otp-input {
+                width: 3rem; /* 48px */
+                height: 3rem; /* 48px */
+                font-size: 1.5rem; /* 24px */
+            }
+        }
+
 
         .otp-input:focus {
             outline: none;
@@ -231,10 +240,8 @@
 </head>
 
 <body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300 overflow-x-hidden">
-    <!-- Animated Background -->
     <div class="fixed inset-0 gradient-bg"></div>
 
-    <!-- Floating Shapes -->
     <div class="floating-shapes">
         <div class="shape w-32 h-32 bg-white rounded-full"></div>
         <div class="shape w-24 h-24 bg-blue-200 rounded-lg transform rotate-45"></div>
@@ -243,10 +250,8 @@
     </div>
 
     <div class="relative min-h-screen flex">
-        <!-- Left Side - Branding -->
-        <div class=" lg:flex lg:w-1/2 items-center justify-center p-8 animate-slide-in-left">
+        <div class="hidden lg:flex lg:w-1/2 items-center justify-center p-8 animate-slide-in-left">
             <div class="max-w-lg text-center">
-                <!-- Theme Toggle -->
                 <div class="absolute top-8 left-8">
                     <button id="themeToggle"
                         class="glass-effect p-3 rounded-full text-white hover:bg-white/20 transition-all duration-300">
@@ -291,10 +296,8 @@
             </div>
         </div>
 
-        <!-- Right Side - Authentication Forms -->
-        <div class="w-full lg:w-1/2 flex items-center justify-center p-8 animate-slide-in-right">
+        <div class="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8 animate-slide-in-right">
             <div class="w-full max-w-md">
-                <!-- Mobile Theme Toggle -->
                 <div class="lg:hidden text-center mb-8">
                     <button id="mobileThemeToggle"
                         class="glass-effect p-3 rounded-full text-white hover:bg-white/20 transition-all duration-300">
@@ -302,14 +305,13 @@
                     </button>
                 </div>
 
-                <!-- Login Form -->
-                <div id="loginForm" class="glass-effect p-8 rounded-2xl animate-fade-in-up">
+                <div id="loginForm" class="glass-effect p-6 sm:p-8 rounded-2xl animate-fade-in-up">
                     <div class="text-center mb-8">
                         <div class="lg:hidden mb-4">
                             <i class="fas fa-code text-4xl text-blue-600 dark:text-blue-400 mb-2 block"></i>
                             <h2 class="text-2xl font-bold text-gray-800 dark:text-white">DSA Visualizer</h2>
                         </div>
-                        <h3 class="text-3xl font-bold text-gray-800 dark:text-white mb-2">Welcome Back!</h3>
+                        <h3 class="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white mb-2">Welcome Back!</h3>
                         <p class="text-gray-600 dark:text-gray-300">Sign in to continue your learning journey</p>
                     </div>
 
@@ -365,14 +367,13 @@
                     </div>
                 </div>
 
-                <!-- Register Form -->
-                <div id="registerForm" class="glass-effect p-8 rounded-2xl animate-fade-in-up hidden">
+                <div id="registerForm" class="glass-effect p-6 sm:p-8 rounded-2xl animate-fade-in-up hidden">
                     <div class="text-center mb-8">
                         <div class="lg:hidden mb-4">
                             <i class="fas fa-code text-4xl text-blue-600 dark:text-blue-400 mb-2 block"></i>
                             <h2 class="text-2xl font-bold text-gray-800 dark:text-white">DSA Visualizer</h2>
                         </div>
-                        <h3 class="text-3xl font-bold text-gray-800 dark:text-white mb-2">Join Us Today!</h3>
+                        <h3 class="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white mb-2">Join Us Today!</h3>
                         <p class="text-gray-600 dark:text-gray-300">Create an account to start mastering DSA</p>
                     </div>
 
@@ -431,8 +432,7 @@
                     </div>
                 </div>
 
-                <!-- OTP Verification -->
-                <div id="otpModal" class="glass-effect p-8 rounded-2xl animate-fade-in-up hidden">
+                <div id="otpModal" class="glass-effect p-6 sm:p-8 rounded-2xl animate-fade-in-up hidden">
                     <div class="text-center mb-8">
                         <div
                             class="mx-auto h-20 w-20 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mb-4">
@@ -450,7 +450,7 @@
                             <label
                                 class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 text-center">Enter
                                 verification code</label>
-                            <div class="flex justify-center space-x-2">
+                            <div class="flex justify-center space-x-1 sm:space-x-2">
                                 <input type="text" maxlength="1" class="otp-input" data-index="0">
                                 <input type="text" maxlength="1" class="otp-input" data-index="1">
                                 <input type="text" maxlength="1" class="otp-input" data-index="2">
@@ -491,8 +491,7 @@
                     </div>
                 </div>
 
-                <!-- Success Message -->
-                <div id="successMessage" class="glass-effect p-8 rounded-2xl animate-fade-in-up hidden text-center">
+                <div id="successMessage" class="glass-effect p-6 sm:p-8 rounded-2xl animate-fade-in-up hidden text-center">
                     <div
                         class="mx-auto h-20 w-20 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mb-6">
                         <i class="fas fa-check-circle text-3xl text-green-600 dark:text-green-400"></i>
@@ -504,8 +503,7 @@
                     <div class="loading-spinner mx-auto"></div>
                 </div>
 
-                <!-- Forgot Password Form -->
-                <div id="forgotPasswordForm" class="glass-effect p-8 rounded-2xl animate-fade-in-up hidden">
+                <div id="forgotPasswordForm" class="glass-effect p-6 sm:p-8 rounded-2xl animate-fade-in-up hidden">
                     <div class="text-center mb-8">
                         <div
                             class="mx-auto h-20 w-20 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center mb-4">
@@ -556,8 +554,7 @@
                     </div>
                 </div>
 
-                <!-- Password Reset OTP Modal (NEW) -->
-                <div id="passwordResetOtpModal" class="glass-effect p-8 rounded-2xl animate-fade-in-up hidden">
+                <div id="passwordResetOtpModal" class="glass-effect p-6 sm:p-8 rounded-2xl animate-fade-in-up hidden">
                     <div class="text-center mb-8">
                         <div
                             class="mx-auto h-20 w-20 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center mb-4">
@@ -575,7 +572,7 @@
                             <label
                                 class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 text-center">Enter
                                 reset code</label>
-                            <div class="flex justify-center space-x-2">
+                            <div class="flex justify-center space-x-1 sm:space-x-2">
                                 <input type="text" maxlength="1" class="otp-input reset-otp-input" data-index="0">
                                 <input type="text" maxlength="1" class="otp-input reset-otp-input" data-index="1">
                                 <input type="text" maxlength="1" class="otp-input reset-otp-input" data-index="2">
@@ -636,9 +633,8 @@
                     </div>
                 </div>
 
-                <!-- Password Reset Success Modal (NEW) -->
                 <div id="passwordResetSuccess"
-                    class="glass-effect p-8 rounded-2xl animate-fade-in-up hidden text-center">
+                    class="glass-effect p-6 sm:p-8 rounded-2xl animate-fade-in-up hidden text-center">
                     <div
                         class="mx-auto h-20 w-20 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mb-6">
                         <i class="fas fa-check-circle text-3xl text-green-600 dark:text-green-400"></i>
