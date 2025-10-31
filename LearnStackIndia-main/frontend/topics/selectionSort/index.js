@@ -3,6 +3,15 @@
 // --- Define Constants First ---
 const API_BASE_URL = '/api'; // Make sure this matches your backend setup
 
+// --- PAGESHOW LISTENER (GLOBAL SCOPE) ---
+window.addEventListener('pageshow', function(event) {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+        console.log('pageshow: No token, redirecting to login.');
+        redirectToLogin();
+    }
+});
+
 // --- Authentication and Access Check ---
 (async function() {
     const token = localStorage.getItem('authToken');
@@ -11,8 +20,6 @@ const API_BASE_URL = '/api'; // Make sure this matches your backend setup
 
     // 1. Check if user is logged in
     if (!token) {
-        console.log('No token found, redirecting to login.');
-        redirectToLogin();
         return; // Stop execution
     } else {
         console.log('Token found, proceeding to access check.');
@@ -1259,4 +1266,5 @@ function initializePageContent() {
 
     console.log("Selection Sort Visualization page fully initialized.");
 }
+
 // --- End Initialization ---
