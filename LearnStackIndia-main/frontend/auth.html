@@ -1112,6 +1112,14 @@
             }
         }
 
+        window.addEventListener('pageshow', function(event) {
+            const token = localStorage.getItem('authToken');
+            if (token) {
+                // User is logged in, redirect them away from auth page
+                window.location.href = 'dashboard.html'; 
+            }
+        });
+        
         // Event Listeners
         document.addEventListener('DOMContentLoaded', function () {
             // Initialize theme
@@ -1278,4 +1286,5 @@
 </body>
 
 </html>
+
 
