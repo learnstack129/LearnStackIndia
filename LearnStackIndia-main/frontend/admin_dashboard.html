@@ -1990,6 +1990,14 @@
         }
         function closeMobileMenu() { document.querySelector('.sidebar').classList.add('-translate-x-full'); document.querySelector('.sidebar').classList.remove('translate-x-0'); document.getElementById('overlay').classList.add('hidden'); }
 
+        // Re-check auth on pageshow (handles browser back button from cache)
+            window.addEventListener('pageshow', function(event) {
+                // event.persisted is true if page is from back/forward cache
+                if (!checkAdminAuth()) {
+                    console.error("ADMIN PAGE: Auth check FAILED on pageshow. Halting script.");
+                }
+            });
+        
         // --- DOMContentLoaded ---
         document.addEventListener('DOMContentLoaded', () => {
             console.log("ADMIN PAGE: Checking auth status...");
@@ -1998,13 +2006,6 @@
                 return;
             }
             console.log("ADMIN PAGE: Auth check PASSED.");
-            // Re-check auth on pageshow (handles browser back button from cache)
-            window.addEventListener('pageshow', function(event) {
-                // event.persisted is true if page is from back/forward cache
-                if (!checkAdminAuth()) {
-                    console.error("ADMIN PAGE: Auth check FAILED on pageshow. Halting script.");
-                }
-            });
 
             // --- Setup Event Listeners ---
             console.log("ADMIN PAGE: Setting up event listeners and navigation...");
@@ -2091,3 +2092,4 @@
 
 
 </html>
+
