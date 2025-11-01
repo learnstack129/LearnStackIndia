@@ -965,7 +965,7 @@ section:hover {
 
 
 /* Responsive Design */
-@media (max-width: 1200px) {
+@media (max-width: 1000px) { /* MODIFIED: Changed from 1200px to 1000px */
   .main-content { grid-template-columns: 1fr; }
   .input-container { grid-template-columns: 1fr; gap: var(--spacing-md); }
   .controls-group { justify-content: flex-start; }
@@ -1006,6 +1006,32 @@ section:hover {
   .control-btn { padding: var(--spacing-xs) var(--spacing-sm); min-width: 60px; height: 30px; font-size: 0.7rem;}
   .speed-display { font-size: var(--font-size-xs); padding: 1px 4px;}
   .slider-container label { font-size: var(--font-size-xs); }
+  
+  /* ADDED: Fixes for small screen wobble */
+  section {
+    padding: var(--spacing-md); /* Reduce section padding */
+  }
+  .main-header h1 {
+    font-size: var(--font-size-2xl); /* Reduce header font size */
+  }
+  .input-group input,
+  .select-group select {
+    padding: var(--spacing-sm); /* Reduce input padding */
+    font-size: var(--font-size-sm); /* Reduce input font size */
+  }
+  .start-button {
+    padding: var(--spacing-sm); /* Reduce button padding */
+    font-size: var(--font-size-sm); /* Reduce button font size */
+  }
+  .visualization-controls {
+     gap: var(--spacing-md); /* Reduce gap in viz controls */
+  }
+  /* Make code blocks wrap to prevent horizontal scroll */
+  .code-content {
+      white-space: pre-wrap;
+      word-break: break-all;
+  }
+  /* END: Fixes for small screen wobble */
 }
 
 /* Ripple effect for buttons */
@@ -1792,7 +1818,7 @@ button:focus, input:focus, select:focus { outline: none; box-shadow: 0 0 0 3px r
 
 /* --- ADDED RESPONSIVE STYLES --- */
 /* Responsive Design */
-@media (max-width: 1200px) {
+@media (max-width: 1000px) { /* MODIFIED: Changed from 1200px to 1000px */
   .main-content { grid-template-columns: 1fr; }
   .input-container { grid-template-columns: 1fr; gap: var(--spacing-md); }
   .controls-group { justify-content: flex-start; }
@@ -1834,7 +1860,34 @@ button:focus, input:focus, select:focus { outline: none; box-shadow: 0 0 0 3px r
   .control-btn { padding: var(--spacing-xs) var(--spacing-sm); min-width: 60px; height: 30px; font-size: 0.7rem;}
   .speed-display { font-size: var(--font-size-xs); padding: 1px 4px;}
   .slider-container label { font-size: var(--font-size-xs); }
+
+  /* ADDED: Fixes for small screen wobble */
+  section {
+    padding: var(--spacing-md); /* Reduce section padding */
+  }
+  .main-header h1 {
+    font-size: var(--font-size-2xl); /* Reduce header font size */
+  }
+  .input-group input,
+  .select-group select {
+    padding: var(--spacing-sm); /* Reduce input padding */
+    font-size: var(--font-size-sm); /* Reduce input font size */
+  }
+  .start-button {
+    padding: var(--spacing-sm); /* Reduce button padding */
+    font-size: var(--font-size-sm); /* Reduce button font size */
+  }
+  .visualization-controls {
+     gap: var(--spacing-md); /* Reduce gap in viz controls */
+  }
+  /* Make code blocks wrap to prevent horizontal scroll */
+  .code-content {
+      white-space: pre-wrap;
+      word-break: break-all;
+  }
+  .code-snippet code {
+      white-space: pre-wrap; /* Apply to snippet code as well */
+      word-break: break-all;
+  }
+  /* END: Fixes for small screen wobble */
 }
-
-
-
