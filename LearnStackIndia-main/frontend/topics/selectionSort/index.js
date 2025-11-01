@@ -195,7 +195,7 @@ function stopTimer() {
 // --- Theme Management ---
 class ThemeManager {
     constructor() {
-        this.theme = localStorage.getItem('theme') || 'dark';
+        this.theme = localStorage.getItem('theme') || 'light';
         this.init();
     }
     init() {
@@ -1268,3 +1268,4 @@ function initializePageContent() {
 }
 
 // --- End Initialization ---
+
