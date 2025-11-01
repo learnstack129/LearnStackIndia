@@ -5,11 +5,19 @@
   <meta charset="UTF-8">
   <title>Bubble Sort Step-by-Step Quiz - Interactive Learning</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>
+    (function() {
+      // Get saved theme, but DEFAULT to 'light'
+      const savedTheme = localStorage.getItem('theme') || 'light'; 
+      // Set the attribute on the <html> tag, not <body>
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    })();
+  </script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="practice_logic.css">
 </head>
 
-<body data-theme="dark">
+<body>
   <div class="theme-toggle">
     <button id="theme-toggle-btn" aria-label="Toggle theme">
       <span class="theme-icon">🌙</span>
@@ -240,5 +248,6 @@
 
   <script src="practice_logic.js"></script>
 </body>
+
 
 </html>
