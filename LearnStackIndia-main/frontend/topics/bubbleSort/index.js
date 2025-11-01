@@ -202,7 +202,7 @@ function stopTimer() {
 // --- Theme Management ---
 class ThemeManager {
     constructor() {
-        this.theme = localStorage.getItem('theme') || 'dark'; // Default to dark
+        this.theme = localStorage.getItem('theme') || 'light'; // Default to dark
         this.init();
     }
     init() {
@@ -1248,3 +1248,4 @@ function sendVisualizationProgressBeacon() {
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { stopTimer(); if (!progressSentForThisView && elapsedTime >= 5) { if (navigator.sendBeacon) sendVisualizationProgressBeacon(); else sendVisualizationProgressUpdate(); } } });
 
 window.addEventListener('pagehide', (event) => { if (!event.persisted) { stopTimer(); if (!progressSentForThisView && elapsedTime >= 5) { if (navigator.sendBeacon) sendVisualizationProgressBeacon(); } } });
+
