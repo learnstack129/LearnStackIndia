@@ -158,7 +158,7 @@ class SelectionSortStepQuiz {
     }
 
     setupTheme() {
-        const savedTheme = localStorage.getItem('theme') || 'dark'; // Default to dark
+        const savedTheme = localStorage.getItem('theme') || 'light'; // Default to dark
         document.body.setAttribute('data-theme', savedTheme);
         this.updateThemeIcon(savedTheme);
     }
@@ -938,3 +938,4 @@ async function sendPracticeProgressUpdate(accuracy, timeSpentSeconds, correctCou
     }
 
 }
+
