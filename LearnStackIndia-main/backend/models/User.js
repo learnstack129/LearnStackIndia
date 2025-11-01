@@ -186,7 +186,7 @@ const userSchema = new mongoose.Schema({
         // Consider limiting the size of this array in production (e.g., keep last 90 days)
     },
     preferences: {
-        theme: { type: String, enum: ['light', 'dark', 'auto'], default: 'dark' },
+        theme: { type: String, enum: ['light', 'dark', 'auto'], default: 'light' },
         notifications: {
             email: { type: Boolean, default: true },
             // Removed push notifications for simplicity
@@ -596,6 +596,7 @@ userSchema.methods.awardAchievement = function (achievementTemplate) {
 userSchema.methods.hasAchievement = function (achievementId) {
     return this.achievements.some(ach => ach.id === achievementId);
 };
+
 
 
 module.exports = mongoose.model('User', userSchema);
