@@ -113,31 +113,56 @@ router.post('/register', async (req, res) => { //
         const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/; //
         if (!emailRegex.test(email)) return res.status(400).json({ message: 'Please provide a valid email address' }); //
 
-        const existingUser = await User.findOne({ $or: [{ email: email.toLowerCase() }, { username: username.trim() }] }); //
-        if (existingUser) { //
-            return res.status(400).json({ //
-                message: existingUser.email === email.toLowerCase() ? 'Email already registered' : 'Username already taken' //
-            });
+        // --- MODIFIED LOGIC START ---
+
+        // 1. Check if email is already in use by a VERIFIED account
+        const verifiedUser = await User.findOne({ email: email.toLowerCase(), isEmailVerified: true });
+        if (verifiedUser) {
+            return res.status(400).json({ message: 'Email already registered' });
         }
 
+        // 2. Check if username is taken by a DIFFERENT user (verified or unverified)
+        const usernameUser = await User.findOne({ username: username.trim() });
+        if (usernameUser && usernameUser.email !== email.toLowerCase()) {
+            return res.status(400).json({ message: 'Username already taken' });
+        }
+        
         const otp = generateOTP(); //
         const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
-        const user = new User({ //
-            username: username.trim(), //
-            email: email.toLowerCase(), //
-            password, //
-            isEmailVerified: false, //
-            emailVerificationToken: otp, //
-            emailVerificationExpires: otpExpiry //
-            // Mongoose pre-save hook will initialize progress map
-        });
-        await user.save(); // Triggers pre-save hook
+        // 3. Find an existing UNVERIFIED user with this email
+        let user = await User.findOne({ email: email.toLowerCase(), isEmailVerified: false });
+
+        if (user) {
+            // 4a. User exists but is unverified - UPDATE them
+            console.log(`[Register] Updating existing unverified user: ${email}`);
+            user.username = username.trim();
+            user.password = password; // pre-save hook will re-hash
+            user.emailVerificationToken = otp;
+            user.emailVerificationExpires = otpExpiry;
+        } else {
+            // 4b. No user found - CREATE a new unverified user
+            console.log(`[Register] Creating new unverified user: ${email}`);
+            user = new User({ //
+                username: username.trim(), //
+                email: email.toLowerCase(), //
+                password, //
+                isEmailVerified: false, //
+                emailVerificationToken: otp, //
+                emailVerificationExpires: otpExpiry //
+                // Mongoose pre-save hook will initialize progress map
+            });
+        }
+       
+        await user.save(); // Save the new or updated user
+
+        // --- MODIFIED LOGIC END ---
 
         const emailSent = await sendOTPEmail(user.email, otp, user.username); //
         if (!emailSent && process.env.NODE_ENV !== 'development') { //
-            console.warn(`Email sending failed for ${email}, rolling back user creation.`); //
-            await User.findByIdAndDelete(user._id); // Rollback
+            console.warn(`Email sending failed for ${email}. User remains unverified.`); //
+            // We DON'T roll back here anymore. The user can try to register again which will re-trigger this flow.
+            // Or they can use a "resend OTP" button on the frontend.
             return res.status(500).json({ message: 'Failed to send verification email. Please try again.' }); //
         }
 
@@ -160,7 +185,7 @@ router.post('/register', async (req, res) => { //
     }
 });
 
-// --- OTP verification route ---
+// --- OTP verification route (NO CHANGES NEEDED) ---
 router.post('/verify-otp', async (req, res) => { //
     try {
         const { email, otp } = req.body; //
