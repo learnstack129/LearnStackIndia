@@ -393,13 +393,15 @@ router.post('/reset-password', async (req, res) => { //
 });
 
 
-// --- ADJUSTED Get dashboard data ---
+// backend/routes/auth.js - MODIFIED GET /dashboard route
 router.get('/dashboard', auth, async (req, res) => {
     try {
         const userId = req.user.id;
+        // Fetch all data as before
         const [user, topics, achievementTemplates, leaderboard] = await Promise.all([
             User.findById(userId).select('-password -emailVerificationToken -passwordResetToken -dailyActivity._id -dailyActivity.sessions._id'),
-            Topic.find({ isActive: true }).select('id name description icon color order estimatedTime difficulty prerequisites algorithms isActive isGloballyLocked').sort({ order: 1 }).lean(), // Fetch topics
+            // Fetch topics and include the new 'subject' field
+            Topic.find({ isActive: true }).select('id name subject description icon color order estimatedTime difficulty prerequisites algorithms isActive isGloballyLocked').sort({ order: 1 }).lean(),
             AchievementTemplate.find({ isActive: true }).select('id name category').lean(),
             Leaderboard.findOne({ type: 'all-time' }).sort({ 'period.start': -1 }).limit(10).populate('rankings.user', 'username profile.avatar stats.rank.level').lean()
         ]);
@@ -409,7 +411,7 @@ router.get('/dashboard', auth, async (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        // --- Calculate User Position --- (Keep existing logic)
+        // --- User Position Logic (remains the same) ---
         let userPosition = null;
         const userRankEntry = await Leaderboard.findOne(
             { type: 'all-time', 'rankings.user': userId },
@@ -419,13 +421,11 @@ router.get('/dashboard', auth, async (req, res) => {
             userPosition = userRankEntry.rankings[0].position;
         }
 
-        // --- Calculate CURRENT total number of active algorithms --- (Keep existing logic)
+        // --- Algorithm Count Logic (remains the same) ---
         let currentTotalAlgorithms = 0;
         topics.forEach(topic => {
             currentTotalAlgorithms += topic.algorithms?.length || 0;
         });
-
-        // --- Calculate USER'S completed algorithms --- (Keep existing logic)
         let userCompletedAlgorithms = 0;
         user.progress.forEach((topicProgress) => {
             if (topicProgress.algorithms && topicProgress.algorithms instanceof Map) {
@@ -436,20 +436,19 @@ router.get('/dashboard', auth, async (req, res) => {
                 });
             }
         });
-
-        // --- Calculate Real-time Overall Progress Percentage --- (Keep existing logic)
         const realTimeOverallProgress = currentTotalAlgorithms > 0
             ? Math.round((userCompletedAlgorithms / currentTotalAlgorithms) * 100)
             : 0;
 
-        // --- Convert Progress Map to Object for Frontend, applying lock logic ---
-        const topicsWithProgress = {};
-        topics.forEach(topic => { // topic here is the definition from Topic model
-            const userProgressForTopic = user.progress.get(topic.id); // User's progress data for this topic
+        // --- MODIFICATION START: Group Topics by Subject ---
+        const subjects = {}; // This will replace topicsWithProgress
 
-            // --- Determine Topic Effective Status (Keep existing logic) ---
+        topics.forEach(topic => { // topic here is the definition from Topic model
+            const userProgressForTopic = user.progress.get(topic.id); // User's progress data
+
+            // --- Determine Topic Effective Status (remains the same) ---
             let topicUserSpecificStatus = 'available';
-            let prereqsMet = true; // Assume true if no prereqs
+            let prereqsMet = true; 
             if (topic.prerequisites && topic.prerequisites.length > 0) {
                 const completedTopicsSet = new Set(user.learningPath?.completedTopics || []);
                 prereqsMet = topic.prerequisites.every(prereqId => completedTopicsSet.has(prereqId));
@@ -462,72 +461,81 @@ router.get('/dashboard', auth, async (req, res) => {
             let topicEffectiveStatus;
             if (topic.isGloballyLocked) {
                 topicEffectiveStatus = (topicUserSpecificStatus !== 'locked') ? topicUserSpecificStatus : 'locked';
+            } else if (!prereqsMet) { // Check prerequisites only if not globally locked
+                topicEffectiveStatus = 'locked';
             } else {
-                topicEffectiveStatus = topicUserSpecificStatus; // Already includes prereq check
+                topicEffectiveStatus = topicUserSpecificStatus;
             }
             // --- End Topic Status ---
 
-
-            // --- Process Algorithms: Calculate effective status for EACH algorithm ---
+            // --- Process Algorithms (remains the same) ---
             const algorithmsProgressObject = {};
-            const algorithmDefinitions = topic.algorithms || []; // Array of algo definitions for this topic
-
+            const algorithmDefinitions = topic.algorithms || []; 
             algorithmDefinitions.forEach(algoDef => {
                 const userAlgoProgress = userProgressForTopic?.algorithms?.get(algoDef.id);
-                const algoUserSpecificStatus = userAlgoProgress?.status || 'available'; // Default if no user record
+                const algoUserSpecificStatus = userAlgoProgress?.status || 'available';
                 const algoIsGloballyLocked = algoDef.isGloballyLocked === true;
-                let algoEffectiveStatus = 'available'; // Default
+                let algoEffectiveStatus = 'available'; 
 
                 if (algoIsGloballyLocked) {
-                    // Global lock takes precedence unless overridden by user status 'available'
                     algoEffectiveStatus = (algoUserSpecificStatus === 'available') ? 'available' : 'locked';
                 } else {
-                    // If not globally locked, user status dictates (can be 'available' or 'locked')
                     algoEffectiveStatus = algoUserSpecificStatus;
                 }
-
-                // *** CRITICAL ADDITION: Also consider the TOPIC's effective status ***
-                // An algorithm cannot be available if its parent topic is locked.
+                
                 if (topicEffectiveStatus === 'locked') {
                     algoEffectiveStatus = 'locked';
                 }
 
-                // Store the calculated effective status along with other progress data
                 algorithmsProgressObject[algoDef.id] = {
-                    ...(userAlgoProgress?.toObject ? userAlgoProgress.toObject() : userAlgoProgress), // User progress data
-                    effectiveStatus: algoEffectiveStatus // Add the calculated status
+                    ...(userAlgoProgress?.toObject ? userAlgoProgress.toObject() : userAlgoProgress),
+                    effectiveStatus: algoEffectiveStatus 
                 };
             });
             // --- End Process Algorithms ---
 
-            topicsWithProgress[topic.id] = {
+            // --- Create the combined topic object ---
+            const combinedTopicData = {
                 // Topic config data
-                id: topic.id, name: topic.name, description: topic.description, icon: topic.icon,
+                id: topic.id, name: topic.name, subject: topic.subject, description: topic.description, icon: topic.icon,
                 color: topic.color, order: topic.order, estimatedTime: topic.estimatedTime,
                 difficulty: topic.difficulty,
-                algorithms: algorithmDefinitions, // Include algo definitions (includes isGloballyLocked)
+                algorithms: algorithmDefinitions, 
                 // User progress data:
-                status: topicEffectiveStatus, // Topic's effective status
+                status: topicEffectiveStatus,
                 completion: userProgressForTopic?.completion ?? 0,
-                userAlgoProgress: algorithmsProgressObject // User progress WITH effectiveStatus added
+                userAlgoProgress: algorithmsProgressObject 
             };
-        });
-        // --- End Convert Progress Map ---
 
-        // --- Prepare Achievements (Keep existing logic) ---
+            // --- Group into subjects object ---
+            const subjectName = topic.subject || 'General';
+            if (!subjects[subjectName]) {
+                subjects[subjectName] = [];
+            }
+            subjects[subjectName].push(combinedTopicData);
+        });
+
+        // Sort topics within each subject by 'order'
+        for (const subjectName in subjects) {
+            subjects[subjectName].sort((a, b) => (a.order || 0) - (b.order || 0));
+        }
+        // --- MODIFICATION END ---
+
+
+        // --- Prepare Achievements (remains the same) ---
         const totalUserAchievements = user.totalAchievements;
         const recentAchievements = [...user.achievements]
             .sort((a, b) => b.earnedAt - a.earnedAt)
             .slice(0, 6)
             .map(ach => ach.toObject ? ach.toObject() : ach);
 
-        // --- Access stats safely (Keep existing logic) ---
+        // --- Access stats safely (remains the same) ---
         const userStats = user.stats || {};
         const userRank = userStats.rank || {};
         const userTimeSpent = userStats.timeSpent || {};
         const userStreak = userStats.streak || {};
 
-        // --- Assemble Dashboard Data (Keep existing structure) ---
+        // --- Assemble Dashboard Data (MODIFIED) ---
         const dashboardData = {
             user: { username: user.username, profile: user.profile?.toObject(), rank: userRank.level ?? 'Bronze', totalUserAchievements },
             stats: {
@@ -538,7 +546,7 @@ router.get('/dashboard', auth, async (req, res) => {
                 rank: { level: userRank.level ?? 'Bronze', points: userRank.points ?? 0, position: userPosition || 'Unranked' },
                 averageAccuracy: userStats.averageAccuracy ?? 0
             },
-            topics: topicsWithProgress, // Includes algo effective status now
+            subjects: subjects, // <-- SEND SUBJECTS, NOT TOPICS
             achievements: { recent: recentAchievements, total: totalUserAchievements, available: achievementTemplates.length },
             learningPath: user.learningPath?.toObject(),
             leaderboard: leaderboard ? {
@@ -900,3 +908,4 @@ router.get('/me', auth, async (req, res) => { //
 
 
 module.exports = router;
+
