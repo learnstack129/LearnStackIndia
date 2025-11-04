@@ -134,8 +134,8 @@
             background-clip: text;
         }
 
-        .text-6xl { line-height: 1.2; } /* Adjusted line-height for large text */
-        .text-4xl { line-height: 1.2; } /* Added for smaller screens */
+        .text-6xl { line-height: 1.2; }
+        .text-4xl { line-height: 1.2; }
 
 
         @keyframes gradientShift {
@@ -169,7 +169,7 @@
             0% { background-position: 200% 0; }
             100% { background-position: -200% 0; }
         }
-        /* --- New Styles for Algorithm List --- */
+        
         .algorithm-card {
             transition: all 0.3s ease;
             cursor: pointer;
@@ -181,10 +181,8 @@
         .dark .algorithm-card:hover {
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
         }
-        .hidden { display: none; } /* Ensure hidden class works */
-        /* --- End New Styles --- */
-
-        /* Responsive Navbar text */
+        .hidden { display: none; }
+        
         @media (max-width: 640px) {
             #welcomeText {
                 display: none;
@@ -253,8 +251,14 @@
                 </p>
                 <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-6 animate-slide-up">
                     <div class="stats-card p-4 rounded-xl backdrop-blur-sm">
-                        <div class="text-2xl font-bold" id="totalTopics">
+                        <div class="text-2xl font-bold" id="totalSubjects">
                              <span class="loading-skeleton w-8 h-8 rounded inline-block"></span>
+                        </div>
+                        <div class="text-sm opacity-80">Subjects Available</div>
+                    </div>
+                    <div class="stats-card p-4 rounded-xl backdrop-blur-sm">
+                        <div class="text-2xl font-bold" id="totalTopics">
+                            <span class="loading-skeleton w-8 h-8 rounded inline-block"></span>
                         </div>
                         <div class="text-sm opacity-80">Topics Available</div>
                     </div>
@@ -264,12 +268,8 @@
                         </div>
                         <div class="text-sm opacity-80">Algorithms</div>
                     </div>
-                    <div class="stats-card p-4 rounded-xl backdrop-blur-sm">
-                        <div class="text-2xl font-bold">Interactive</div>
-                        <div class="text-sm opacity-80">Learning</div>
-                    </div>
                 </div>
-            </div>
+                </div>
         </section>
 
         <section class="py-8 bg-gray-100 dark:bg-gray-800">
@@ -279,8 +279,7 @@
                         class="bg-white dark:bg-gray-700 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-600 animate-fade-in">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm text-gray-600 dark:text-gray-400">Learning Progress</p>
-                                <p class="text-2xl font-bold text-blue-600 dark:text-blue-400" id="learningProgress">
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Overall Progress</p> <p class="text-2xl font-bold text-blue-600 dark:text-blue-400" id="learningProgress">
                                     <span class="loading-skeleton w-12 h-6 rounded inline-block"></span>
                                 </p>
                             </div>
@@ -303,8 +302,7 @@
                         class="bg-white dark:bg-gray-700 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-600 animate-fade-in">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm text-gray-600 dark:text-gray-400">Algorithms Mastered</p>
-                                <p class="text-2xl font-bold text-green-600 dark:text-green-400"
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Algos Completed</p> <p class="text-2xl font-bold text-green-600 dark:text-green-400"
                                     id="algorithmsCompleted">
                                     <span class="loading-skeleton w-8 h-6 rounded inline-block"></span>
                                 </p>
@@ -320,8 +318,7 @@
                         class="bg-white dark:bg-gray-700 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-600 animate-fade-in">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm text-gray-600 dark:text-gray-400">Time Spent Today</p>
-                                <p class="text-2xl font-bold text-purple-600 dark:text-purple-400" id="timeToday">
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Time Today</p> <p class="text-2xl font-bold text-purple-600 dark:text-purple-400" id="timeToday">
                                     <span class="loading-skeleton w-12 h-6 rounded inline-block"></span>
                                 </p>
                             </div>
@@ -336,8 +333,7 @@
                         class="bg-white dark:bg-gray-700 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-600 animate-fade-in">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm text-gray-600 dark:text-gray-400">Current Rank</p>
-                                <p class="text-2xl font-bold text-orange-600 dark:text-orange-400" id="currentRank">
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Your Rank</p> <p class="text-2xl font-bold text-orange-600 dark:text-orange-400" id="currentRank">
                                     <span class="loading-skeleton w-16 h-6 rounded inline-block"></span>
                                 </p>
                             </div>
@@ -348,7 +344,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
+                </div>
         </section>
 
         <section id="subjectsSection" class="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -400,49 +396,11 @@
             </div>
         </section>
 
-
-        <section class="py-16 bg-gray-100 dark:bg-gray-800">
-             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div class="bg-white dark:bg-gray-700 rounded-2xl p-6 sm:p-8 shadow-xl animate-fade-in">
-                        <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
-                            <i class="fas fa-route text-blue-600 mr-3"></i>
-                            Your Learning Path
-                        </h3>
-                        <div class="space-y-4" id="learningPath">
-                            <div class="loading-skeleton h-16 rounded-xl"></div>
-                            <div class="loading-skeleton h-16 rounded-xl"></div>
-                            <div class="loading-skeleton h-16 rounded-xl"></div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white dark:bg-gray-700 rounded-2xl p-6 sm:p-8 shadow-xl animate-fade-in">
-                        <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
-                            <i class="fas fa-trophy text-yellow-600 mr-3"></i>
-                            Recent Achievements
-                        </h3>
-                        <div class="grid grid-cols-2 gap-4" id="recentAchievements">
-                            <div class="loading-skeleton h-24 rounded-xl"></div>
-                            <div class="loading-skeleton h-24 rounded-xl"></div>
-                            <div class="loading-skeleton h-24 rounded-xl"></div>
-                            <div class="loading-skeleton h-24 rounded-xl"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="py-16">
-           <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <section class="py-16 bg-gray-100 dark:bg-gray-800"> <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                 <h3 class="text-3xl font-bold text-gray-800 dark:text-white mb-8 animate-fade-in">
                     Ready to Continue Learning?
                 </h3>
                 <div class="flex flex-col sm:flex-row flex-wrap justify-center gap-4">
-                    <button id="continueCurrentTopic"
-                        class="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-blue-600 text-white px-8 py-4 rounded-xl font-semibold shadow-lg hover:shadow-blue-500/25 hover:scale-105 transition-all duration-300 animate-fade-in">
-                        <i class="fas fa-play mr-2"></i>
-                        Continue Current Topic
-                    </button>
                     <button id="randomChallenge"
                         class="w-full sm:w-auto bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-4 rounded-xl font-semibold shadow-lg hover:shadow-green-500/25 hover:scale-105 transition-all duration-300 animate-fade-in">
                         <i class="fas fa-random mr-2"></i>
@@ -454,7 +412,7 @@
                         View Progress
                     </button>
                 </div>
-            </div>
+                 </div>
         </section>
     </main>
 
@@ -572,19 +530,20 @@
 
         // Show loading skeletons
         function showSkeletonLoaders() {
-            // Stats
+            // Hero Stats
+            document.getElementById('totalSubjects').innerHTML = `<span class="loading-skeleton w-8 h-8 rounded inline-block"></span>`;
+            document.getElementById('totalTopics').innerHTML = `<span class="loading-skeleton w-8 h-8 rounded inline-block"></span>`;
+            document.getElementById('totalAlgorithms').innerHTML = `<span class="loading-skeleton w-8 h-8 rounded inline-block"></span>`;
+            
+            // Personal Stats
             document.getElementById('learningProgress').innerHTML = `<span class="loading-skeleton w-12 h-6 rounded inline-block"></span>`;
             document.getElementById('algorithmsCompleted').innerHTML = `<span class="loading-skeleton w-8 h-6 rounded inline-block"></span>`;
             document.getElementById('timeToday').innerHTML = `<span class="loading-skeleton w-12 h-6 rounded inline-block"></span>`;
             document.getElementById('currentRank').innerHTML = `<span class="loading-skeleton w-16 h-6 rounded inline-block"></span>`;
-            document.getElementById('totalTopics').innerHTML = `<span class="loading-skeleton w-8 h-8 rounded inline-block"></span>`;
-            document.getElementById('totalAlgorithms').innerHTML = `<span class="loading-skeleton w-8 h-8 rounded inline-block"></span>`;
             updateProgressRing(0);
+            
             // Subjects
             showDefaultSubjects();
-            // Learning Path & Achievements
-            showEmptyLearningPath();
-            showEmptyAchievements();
         }
 
         // Update UI with real data
@@ -592,48 +551,45 @@
             const stats = data?.stats || {};
             const user = data?.user || {};
             const rank = stats.rank || {};
-            const achievements = data?.achievements || {};
-            const learningPath = data?.learningPath;
             const subjectsData = data?.subjects || {}; // Use subjects data
 
             document.getElementById('welcomeText').textContent = `Welcome, ${user.username || 'User'}`;
             document.getElementById('userInitial').textContent = (user.username || 'U').charAt(0).toUpperCase();
 
+            // Personal Stats
             document.getElementById('learningProgress').textContent = `${stats.overallProgress ?? 0}%`;
             document.getElementById('algorithmsCompleted').textContent = stats.algorithmsCompleted ?? 0;
             document.getElementById('timeToday').textContent = formatTime(stats.timeToday ?? 0);
             document.getElementById('currentRank').textContent = rank.level ?? 'Bronze';
 
-            // Update total counts based on new subjects structure
+            // Hero Stats
             const totalAlgoCount = stats.totalAlgorithms ?? '?';
             const totalTopicCount = Object.values(subjectsData).reduce((acc, topics) => acc + topics.length, 0) || '?';
-            
-            document.getElementById('totalAlgorithms').textContent = totalAlgoCount;
+            const totalSubjectCount = Object.keys(subjectsData).length > 0 ? Object.keys(subjectsData).length : '?';
+
+            document.getElementById('totalSubjects').textContent = totalSubjectCount;
             document.getElementById('totalTopics').textContent = totalTopicCount;
+            document.getElementById('totalAlgorithms').textContent = totalAlgoCount;
            
             updateProgressRing(stats.overallProgress ?? 0);
             
             // Update subjects grid
             updateSubjectsGrid(subjectsData);
-
-            // Update learning path (pass subjectsData to find topic info)
-            updateLearningPath(learningPath, subjectsData);
-
-            updateRecentAchievements(achievements);
         }
 
         // Show empty/default dashboard
         function showEmptyDashboard() {
+            // Hero
+            document.getElementById('totalSubjects').textContent = '0';
+            document.getElementById('totalTopics').textContent = '0';
+            document.getElementById('totalAlgorithms').textContent = '0';
+            // Personal
             document.getElementById('learningProgress').textContent = '0%';
             document.getElementById('algorithmsCompleted').textContent = '0';
             document.getElementById('timeToday').textContent = '0m';
             document.getElementById('currentRank').textContent = 'Bronze';
-            document.getElementById('totalAlgorithms').textContent = '?';
-            document.getElementById('totalTopics').textContent = '?';
             updateProgressRing(0);
             showDefaultSubjects();
-            showEmptyLearningPath();
-            showEmptyAchievements();
         }
 
         // Format time helper
@@ -659,13 +615,11 @@
 
         // --- LEVEL 1: SUBJECTS ---
 
-        // Show default subject skeletons
         function showDefaultSubjects() {
             const grid = document.getElementById('subjectsGrid');
             grid.innerHTML = `<div class="loading-skeleton rounded-xl h-48"></div>`.repeat(4);
         }
 
-        // Update subjects grid (NEW)
         function updateSubjectsGrid(subjects) {
             const grid = document.getElementById('subjectsGrid');
             grid.innerHTML = '';
@@ -683,10 +637,8 @@
             });
         }
 
-        // Create a subject card (e.g., "DSA Visualizer")
         function createSubjectCard(subjectName, topicsArray) {
             const div = document.createElement('div');
-            
             const representativeTopic = topicsArray.length > 0 ? topicsArray[0] : { icon: 'book', color: 'gray' };
             const topicCount = topicsArray.length;
 
@@ -734,14 +686,12 @@
             return div;
         }
 
-        // Handle subject card click
         function handleSubjectClick(subjectName, topicsArray) {
             console.log("Subject clicked:", subjectName);
-            currentTopicsArray = topicsArray; // Save for the 'back' button
+            currentTopicsArray = topicsArray; 
             showTopicsList(subjectName, topicsArray);
         }
 
-        // Show Subject List View
         function showSubjectsView() {
             document.getElementById('subjectsSection').classList.remove('hidden');
             document.getElementById('topicsSection').classList.add('hidden');
@@ -751,7 +701,6 @@
 
         // --- LEVEL 2: TOPICS ---
 
-        // Show list of topics (e.g., "Sorting", "Searching")
         function showTopicsList(subjectName, topicsArray) {
             const topicsSection = document.getElementById('topicsSection');
             const subjectsSection = document.getElementById('subjectsSection');
@@ -760,13 +709,13 @@
             const topicListTitle = document.getElementById('topicListTitle');
 
             topicListTitle.textContent = `${subjectName} Topics`;
-            topicsGrid.innerHTML = ''; // Clear previous
+            topicsGrid.innerHTML = ''; 
 
             if (!topicsArray || topicsArray.length === 0) {
                 topicsGrid.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 col-span-full">No topics found for this subject.</p>';
             } else {
                 topicsArray.forEach(topic => {
-                    const card = createTopicCard(topic); // Create the topic card
+                    const card = createTopicCard(topic);
                     topicsGrid.appendChild(card);
                 });
             }
@@ -776,7 +725,6 @@
             topicsSection.classList.remove('hidden');
         }
 
-        // Create a topic card (e.g., "Sorting")
         function createTopicCard(topic) {
             const div = document.createElement('div');
             const isLocked = topic.status === 'locked';
@@ -808,7 +756,6 @@
             return div;
         }
         
-        // Handle topic card click
         function handleTopicClick(topic) {
             console.log("Topic clicked:", topic.id, "Status:", topic.status);
             if (topic.status === 'locked') {
@@ -818,7 +765,6 @@
             }
         }
 
-        // Show Topic List View (for back button from algorithms)
         function showTopicsView() {
             document.getElementById('subjectsSection').classList.add('hidden');
             document.getElementById('topicsSection').classList.remove('hidden');
@@ -827,7 +773,6 @@
 
         // --- LEVEL 3: ALGORITHMS ---
 
-        // Show list of algorithms (e.g., "Bubble Sort", "Selection Sort")
         function showAlgorithmList(topic) {
             const topicsSection = document.getElementById('topicsSection');
             const algorithmsSection = document.getElementById('algorithmsSection');
@@ -851,7 +796,6 @@
             algorithmsSection.classList.remove('hidden');
         }
 
-        // Create an algorithm card (e.g., "Bubble Sort")
         function createAlgorithmCard(topicId, algoDef, algoProgress) {
             const div = document.createElement('div');
             const effectiveStatus = algoProgress.effectiveStatus || 'available';
@@ -889,7 +833,6 @@
             return div;
         }
 
-        // Handle algorithm card click (navigates to the page)
         function handleAlgorithmClick(topicId, algorithmId) {
             const filePath = `topics/${algorithmId}/index.html`;
             console.log(`Navigating to: ${filePath}`);
@@ -899,7 +842,6 @@
 
         // --- SHARED HELPER FUNCTIONS ---
 
-        // Get status info (shared by subjects and topics)
         function getStatusInfo(status) {
             switch (status) {
                 case 'available': return { class: 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300', icon: 'fa-check', text: 'Available' };
@@ -909,7 +851,6 @@
             }
         }
 
-        // Get difficulty class (shared by topics and algorithms)
         function getDifficultyClass(difficulty) {
             switch (difficulty) {
                 case 'easy': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
@@ -922,144 +863,8 @@
             }
         }
 
-        // --- LEARNING PATH & ACHIEVEMENTS ---
+        // --- REMOVED LEARNING PATH & ACHIEVEMENT FUNCTIONS ---
 
-        // Update learning path
-        function updateLearningPath(learningPath, subjectsData) {
-            const container = document.getElementById('learningPath');
-            container.innerHTML = '';
-            if (!learningPath || !learningPath.currentTopic || !subjectsData) {
-                showEmptyLearningPath();
-                return;
-            }
-
-            const currentTopicId = learningPath.currentTopic;
-            let currentTopicData = null;
-
-            // Find the current topic data from within the subjects object
-            for (const subjectName in subjectsData) {
-                const foundTopic = subjectsData[subjectName].find(t => t.id === currentTopicId);
-                if (foundTopic) {
-                    currentTopicData = foundTopic;
-                    break;
-                }
-            }
-
-            if (!currentTopicData) {
-                showEmptyLearningPath();
-                console.warn(`Current topic ${currentTopicId} not found in subjectsData.`);
-                return;
-            }
-
-            if (!currentTopicData.algorithms || !currentTopicData.userAlgoProgress) {
-                showEmptyLearningPath();
-                return;
-            }
-
-            const allAlgoDefs = currentTopicData.algorithms;
-            const userAlgoProgressMap = currentTopicData.userAlgoProgress;
-
-            let nextAlgDef = allAlgoDefs.find(def => {
-                const progress = userAlgoProgressMap[def.id];
-                return !progress || progress.completed !== true;
-            });
-
-            if (!nextAlgDef && allAlgoDefs.length > 0) {
-                nextAlgDef = allAlgoDefs[allAlgoDefs.length - 1];
-            }
-
-            if (nextAlgDef) {
-                const algProgress = userAlgoProgressMap[nextAlgDef.id] || { attemptsPractice: 0, accuracyPractice: 0, completed: false };
-                const status = algProgress.completed ? 'completed' : 'in-progress';
-                container.appendChild(createLearningPathItem(currentTopicId, nextAlgDef, algProgress, status));
-            } else {
-                showEmptyLearningPath();
-            }
-        }
-
-        // Create learning path item
-        function createLearningPathItem(topicId, algorithmDef, algProgress, status) {
-            const div = document.createElement('div');
-            let iconHtml, textHtml, statusClass, borderColor;
-            if (status === 'completed') {
-                statusClass = 'bg-green-50 dark:bg-green-900/20';
-                borderColor = 'border-green-500';
-                iconHtml = `<div class="flex-shrink-0 w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white font-bold"><i class="fas fa-check text-sm"></i></div>`;
-                textHtml = `
-                    <h4 class="font-semibold text-gray-800 dark:text-white">${algorithmDef.name}</h4>
-                    <p class="text-sm text-gray-600 dark:text-gray-300">Completed${algProgress.accuracyPractice ? ` with ${algProgress.accuracyPractice.toFixed(0)}% accuracy` : ''}</p>`;
-            } else {
-                statusClass = 'bg-yellow-50 dark:bg-yellow-900/20';
-                borderColor = 'border-yellow-500';
-                iconHtml = `<div class="flex-shrink-0 w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center text-white font-bold"><i class="fas fa-play text-sm"></i></div>`;
-                const attempts = algProgress.attemptsPractice || 0;
-                textHtml = `
-                    <h4 class="font-semibold text-gray-800 dark:text-white">${algorithmDef.name}</h4>
-                    <p class="text-sm text-gray-600 dark:text-gray-300">Next up${attempts > 0 ? ` - ${attempts} attempts` : ''}</p>`;
-            }
-            div.className = `flex items-center p-4 rounded-xl border-l-4 ${statusClass} ${borderColor} cursor-pointer hover:shadow-md transition-shadow`;
-            div.innerHTML = `${iconHtml}<div class="ml-4 flex-1">${textHtml}</div><div class="text-gray-400 hover:text-blue-500"><i class="fas fa-chevron-right"></i></div>`;
-            div.addEventListener('click', () => handleAlgorithmClick(topicId, algorithmDef.id));
-            return div;
-        }
-
-        // Show empty learning path
-        function showEmptyLearningPath() {
-            document.getElementById('learningPath').innerHTML = `
-                <div class="text-center py-8">
-                    <i class="fas fa-route text-4xl text-gray-400 dark:text-gray-600 mb-4"></i>
-                    <p class="text-gray-500 dark:text-gray-400">Start learning to see your progress here!</p>
-                </div>`;
-        }
-
-        // Update recent achievements
-        function updateRecentAchievements(achievements) {
-            const container = document.getElementById('recentAchievements');
-            container.innerHTML = '';
-            if (!achievements || !achievements.recent || achievements.recent.length === 0) {
-                showEmptyAchievements();
-                return;
-            }
-            achievements.recent.slice(0, 4).forEach(ach => container.appendChild(createAchievementCard(ach)));
-        }
-
-        // Create achievement card
-        function createAchievementCard(achievement) {
-            const div = document.createElement('div');
-            div.className = 'text-center p-4 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl';
-            const iconClass = getAchievementIcon(achievement.icon);
-            const colorClass = getAchievementColor(achievement.category);
-            div.innerHTML = `
-                <div class="w-12 h-12 ${colorClass} rounded-full flex items-center justify-center text-white mx-auto mb-2 animate-bounce-gentle">
-                    <i class="fas ${iconClass}"></i>
-                </div>
-                <h4 class="font-bold text-gray-800 dark:text-white text-sm">${achievement.name}</h4>
-                <p class="text-xs text-gray-600 dark:text-gray-400">${(achievement.description || '').substring(0, 40)}...</p>
-            `;
-            return div;
-        }
-
-        // Get achievement icon
-        function getAchievementIcon(icon) {
-            const iconMap = { search: 'fa-search', 'bar-chart': 'fa-chart-bar', layers: 'fa-layer-group', 'arrow-right': 'fa-arrow-right', link: 'fa-link', tree: 'fa-tree', network: 'fa-project-diagram', hash: 'fa-hashtag', compass: 'fa-compass', user: 'fa-user', 'book-open': 'fa-book-open', crown: 'fa-crown', zap: 'fa-bolt', flash: 'fa-bolt-lightning', target: 'fa-bullseye', award: 'fa-award', cpu: 'fa-microchip', 'check-circle': 'fa-check-circle', star: 'fa-star', calendar: 'fa-calendar-alt', flame: 'fa-fire', infinity: 'fa-infinity', clock: 'fa-clock', hourglass: 'fa-hourglass-half', medal: 'fa-medal', trophy: 'fa-trophy', gem: 'fa-gem', diamond: 'fa-diamond', 'dollar-sign': 'fa-dollar-sign', coins: 'fa-coins', moon: 'fa-moon', sunrise: 'fa-sun', weekend: 'fa-calendar-week', refresh: 'fa-sync-alt', 'check-square': 'fa-check-square', 'log-in': 'fa-sign-in-alt', 'user-check': 'fa-user-check' };
-            return iconMap[icon] || 'fa-star';
-        }
-
-        // Get achievement color
-        function getAchievementColor(category) {
-            const colorMap = { 'learning': 'bg-blue-500', 'performance': 'bg-green-500', 'consistency': 'bg-purple-500', 'mastery': 'bg-yellow-500', 'special': 'bg-indigo-500' };
-            return colorMap[category] || 'bg-gray-500';
-        }
-
-        // Show empty achievements
-        function showEmptyAchievements() {
-            document.getElementById('recentAchievements').innerHTML = `
-                <div class="col-span-2 text-center py-8">
-                    <i class="fas fa-trophy text-4xl text-gray-400 dark:text-gray-600 mb-4"></i>
-                    <p class="text-gray-500 dark:text-gray-400">Complete algorithms to earn achievements!</p>
-                </div>`;
-        }
-        
         // Show alert
         function showAlert(message, type = 'info') {
             alert(message); // Simple alert
@@ -1115,36 +920,7 @@
             document.getElementById('backToSubjectsBtn').addEventListener('click', showSubjectsView);
             document.getElementById('backToTopicsBtn').addEventListener('click', () => showTopicsList(document.getElementById('topicListTitle').textContent.replace(' Topics', ''), currentTopicsArray));
 
-
             // Quick action buttons
-            document.getElementById('continueCurrentTopic').addEventListener('click', () => {
-                if (dashboardData?.learningPath?.currentTopic && dashboardData?.subjects) {
-                    const currentTopicId = dashboardData.learningPath.currentTopic;
-                    let currentTopicData = null;
-                    // Find the topic in the subjects data
-                    for (const subjectName in dashboardData.subjects) {
-                        const foundTopic = dashboardData.subjects[subjectName].find(t => t.id === currentTopicId);
-                        if (foundTopic) {
-                            currentTopicData = foundTopic;
-                            break;
-                        }
-                    }
-                    
-                    if (currentTopicData && currentTopicData.algorithms?.length > 0 && currentTopicData.userAlgoProgress) {
-                        const allAlgoDefs = currentTopicData.algorithms;
-                        const userAlgoProgressMap = currentTopicData.userAlgoProgress;
-                        let nextAlgDef = allAlgoDefs.find(def => {
-                            const progress = userAlgoProgressMap[def.id];
-                            return !progress || progress.completed !== true;
-                        });
-                        if (!nextAlgDef && allAlgoDefs.length > 0) { nextAlgDef = allAlgoDefs[0]; }
-                        if (nextAlgDef) {
-                            handleAlgorithmClick(currentTopicId, nextAlgDef.id);
-                        } else { showAlert('Could not determine the next algorithm.', 'info'); }
-                    } else { showAlert('Current topic has no algorithms or data is missing.', 'info'); }
-                } else { showAlert('Learning path not set or data not loaded.', 'warning'); }
-            });
-
             document.getElementById('randomChallenge').addEventListener('click', () => {
                 showAlert('Random challenge feature coming soon!', 'info');
             });
