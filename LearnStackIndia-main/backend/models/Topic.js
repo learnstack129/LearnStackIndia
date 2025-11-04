@@ -1,4 +1,4 @@
-// models/Topic.js - Topic and Algorithm Definitions
+// models/Topic.js - MODIFIED
 const mongoose = require('mongoose');
 
 const algorithmSchema = new mongoose.Schema({
@@ -33,11 +33,10 @@ const algorithmSchema = new mongoose.Schema({
     url: String,
     duration: Number // in minutes
   }],
-  isGloballyLocked: { // <-- ADD THIS
+  isGloballyLocked: {
     type: Boolean,
     default: false
   }
-  
 });
 
 const topicSchema = new mongoose.Schema({
@@ -46,6 +45,14 @@ const topicSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
+  // --- NEW FIELD ---
+  subject: {
+    type: String,
+    required: true,
+    default: 'General', // A default subject
+    index: true
+  },
+  // --- END NEW FIELD ---
   name: {
     type: String,
     required: true
