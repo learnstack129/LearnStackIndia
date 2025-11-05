@@ -564,7 +564,7 @@
 
             // Hero Stats
             const totalAlgoCount = stats.totalAlgorithms ?? '?';
-            const totalTopicCount = Object.values(subjectsData).reduce((acc, topics) => acc + topics.length, 0) || '?';
+            const totalTopicCount = Object.values(subjectsData).reduce((acc, subject) => acc + (subject.topics ? subject.topics.length : 0), 0) || '?';
             const totalSubjectCount = Object.keys(subjectsData).length > 0 ? Object.keys(subjectsData).length : '?';
 
             document.getElementById('totalSubjects').textContent = totalSubjectCount;
@@ -946,4 +946,5 @@
     </script>
 </body>
 </html>
+
 
