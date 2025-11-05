@@ -1,4 +1,4 @@
-// routes/admin.js - Adjusted for User Model Changes
+// routes/admin.js - MODIFIED with Subject Management
 const express = require('express');
 const mongoose = require('mongoose'); // Import mongoose
 const adminAuth = require('../middleware/adminAuth'); // Auth middleware
@@ -99,13 +99,13 @@ router.get('/users/:id', adminAuth, async (req, res) => {
     }
 });
 
-// --- ADJUSTED: Get topic statuses for a specific user ---
+// --- ADJUSTED: Get topic statuses for a specific user, grouped by subject ---
 router.get('/users/:userId/topic-statuses', adminAuth, async (req, res) => {
     try {
         const userId = req.params.userId;
         const [user, topics] = await Promise.all([
             User.findById(userId).select('progress username learningPath').lean(), // Select learningPath for prereq check
-            Topic.find().select('id name order isGloballyLocked prerequisites').sort({ order: 1 }).lean()
+            Topic.find().select('id name subject order isGloballyLocked prerequisites algorithms').sort({ order: 1 }).lean() // Added subject and algorithms
         ]);
 
         if (!user) return res.status(404).json({ message: 'User not found' });
@@ -113,7 +113,10 @@ router.get('/users/:userId/topic-statuses', adminAuth, async (req, res) => {
         const userProgressMap = new Map(Object.entries(user.progress || {}));
         const completedTopicsSet = new Set(user.learningPath?.completedTopics || []);
 
-        const topicStatuses = topics.map(topic => {
+        // This object will hold the grouped statuses
+        const subjectGroupedStatuses = {};
+
+        topics.forEach(topic => {
             const userProgressForTopic = userProgressMap.get(topic.id);
 
             // Check Prerequisites
@@ -134,33 +137,55 @@ router.get('/users/:userId/topic-statuses', adminAuth, async (req, res) => {
             // Determine Final Effective Status
             let finalEffectiveStatus;
             if (topic.isGloballyLocked) {
+                // If globally locked, only a non-'locked' user status (like 'available') overrides it
                 finalEffectiveStatus = (userSpecificStatus !== 'locked') ? userSpecificStatus : 'locked';
+            } else if (!prereqsMet) {
+                 // If not globally locked, but prereqs not met, it's locked (unless user has override)
+                 finalEffectiveStatus = (userSpecificStatus !== 'locked') ? userSpecificStatus : 'locked';
             } else {
-                finalEffectiveStatus = userSpecificStatus; // Already includes prereq check
+                // Not globally locked, prereqs met (or no prereqs)
+                finalEffectiveStatus = userSpecificStatus;
             }
+
 
             // Determine Status Text
             let statusText = finalEffectiveStatus.charAt(0).toUpperCase() + finalEffectiveStatus.slice(1);
             if (finalEffectiveStatus === 'locked') {
-                if (topic.isGloballyLocked && userSpecificStatus !== 'locked') statusText = `Globally Locked (User Override: ${userSpecificStatus})`; // Should not happen if final is locked?
+                if (topic.isGloballyLocked && userSpecificStatus !== 'locked') statusText = `Globally Locked (User Override: ${userSpecificStatus})`;
                 else if (topic.isGloballyLocked) statusText = 'Locked Globally';
-                // else if (!prereqsMet) statusText = 'Locked (Prerequisites)'; // REMOVE THIS LINE
+                else if (!prereqsMet && userSpecificStatus === 'locked') statusText = 'Locked (Prerequisites)';
                 else if (userSpecificStatus === 'locked') statusText = 'Locked for User';
-                else statusText = 'Locked'; // Generic
+                else statusText = 'Locked (Prerequisites)'; // Default lock reason
             } else if (topic.isGloballyLocked) { // Unlocked via override
                 statusText = `Unlocked for User (${statusText})`;
             }
 
 
-            return {
-                _id: topic._id, id: topic.id, name: topic.name,
-                effectiveStatus: finalEffectiveStatus, statusText: statusText,
+            const topicStatusData = {
+                _id: topic._id, // Mongo ID
+                id: topic.id, // Custom ID
+                name: topic.name,
+                effectiveStatus: finalEffectiveStatus,
+                statusText: statusText,
                 isGloballyLocked: topic.isGloballyLocked,
-                isUserLocked: userSpecificStatus === 'locked' // Reflects user *intent* or prerequisite lock
+                isUserLocked: userSpecificStatus === 'locked', // Reflects user *intent* or prerequisite lock
+                algorithms: topic.algorithms || [] // Include algorithm definitions
             };
+            
+            // --- Grouping by Subject ---
+            const subjectName = topic.subject || 'General';
+            if (!subjectGroupedStatuses[subjectName]) {
+                subjectGroupedStatuses[subjectName] = [];
+            }
+            subjectGroupedStatuses[subjectName].push(topicStatusData);
+            // --- End Grouping ---
         });
 
-        res.json({ success: true, username: user.username, topicStatuses });
+        res.json({
+            success: true,
+            username: user.username,
+            subjectGroupedStatuses: subjectGroupedStatuses // Send the grouped object
+        });
 
     } catch (error) {
         console.error(`Error fetching topic statuses for user ${req.params.userId}:`, error);
@@ -168,6 +193,7 @@ router.get('/users/:userId/topic-statuses', adminAuth, async (req, res) => {
         res.status(500).json({ message: 'Error fetching topic statuses' });
     }
 });
+
 
 // Update user (Minor adjustment for $unset)
 router.put('/users/:id', adminAuth, async (req, res) => {
@@ -217,11 +243,201 @@ router.delete('/users/:id', adminAuth, async (req, res) => {
     }
 });
 
-// --- Topic Management (No changes needed here) ---
+// --- Subject Management ---
+
+// NEW: Get all unique subjects
+router.get('/subjects', adminAuth, async (req, res) => {
+    try {
+        // Find all distinct 'subject' fields from the Topic collection
+        const subjects = await Topic.distinct('subject');
+        res.json({ success: true, subjects: subjects.sort() }); // Sort alphabetically
+    } catch (error) {
+        console.error("Error fetching subjects:", error);
+        res.status(500).json({ message: 'Error fetching subjects' });
+    }
+});
+
+// NEW: Lock all topics in a subject (Globally or User-Specific)
+router.post('/subjects/:subjectName/lock', adminAuth, async (req, res) => {
+    try {
+        const { userId, global } = req.body;
+        const subjectName = req.params.subjectName;
+
+        // Find all topics belonging to this subject
+        const topicsToLock = await Topic.find({ subject: subjectName }).select('id name');
+        if (!topicsToLock || topicsToLock.length === 0) {
+            return res.status(404).json({ message: `No topics found for subject '${subjectName}'` });
+        }
+        const topicCustomIds = topicsToLock.map(t => t.id); // Get custom string IDs
+
+        if (global) {
+            // Global Lock
+            const topicMongoIds = topicsToLock.map(t => t._id); // Get Mongo IDs
+            await Topic.updateMany(
+                { _id: { $in: topicMongoIds } },
+                { $set: { isGloballyLocked: true } }
+            );
+            console.log(`Globally locked ${topicsToLock.length} topics for subject ${subjectName}.`);
+
+            // Reset status for users who have these topics in their progress map AND status is not 'locked'
+            const updateFilterBase = { $or: topicCustomIds.map(id => ({ [`progress.${id}.status`]: { $ne: 'locked' } })) };
+            const updateOperationBase = { $set: {} };
+            topicCustomIds.forEach(id => {
+                updateOperationBase.$set[`progress.${id}.status`] = 'locked';
+            });
+            
+            // Need to refine filter to only match users who have *at least one* of these topics not locked
+            const updateResult = await User.updateMany(updateFilterBase, updateOperationBase);
+            console.log(`Set status to 'locked' for ${updateResult.modifiedCount} users across ${topicCustomIds.length} topics.`);
+            
+            return res.json({ success: true, message: `Subject "${subjectName}" (${topicsToLock.length} topics) locked globally.` });
+
+        } else if (userId) {
+            // User-Specific Lock
+            const user = await User.findById(userId);
+            if (!user) return res.status(404).json({ message: 'User not found' });
+
+            let modified = false;
+            for (const topicCustomId of topicCustomIds) {
+                let topicProgress = user.progress.get(topicCustomId);
+                if (!topicProgress) {
+                    topicProgress = { status: 'locked', completion: 0, totalTime: 0, algorithms: new Map() };
+                } else if (topicProgress.status !== 'locked') {
+                    topicProgress.status = 'locked'; // Set status
+                }
+                user.progress.set(topicCustomId, topicProgress); // Update map
+                modified = true;
+            }
+            
+            if (modified) {
+                user.markModified('progress'); // Mark modified
+                await user.save();
+                console.log(`Subject ${subjectName} locked for user ${user.username}.`);
+            }
+            return res.json({ success: true, message: `Subject "${subjectName}" (${topicsToLock.length} topics) locked for user "${user.username}".` });
+        } else {
+            return res.status(400).json({ message: 'Request must specify "userId" or "global: true".' });
+        }
+    } catch (error) {
+        console.error("Error locking subject:", error);
+        res.status(500).json({ message: 'Error locking subject' });
+    }
+});
+
+// NEW: Unlock all topics in a subject (Globally or User-Specific)
+router.post('/subjects/:subjectName/unlock', adminAuth, async (req, res) => {
+     try {
+        const { userId, global } = req.body;
+        const subjectName = req.params.subjectName;
+
+        // Find all topics belonging to this subject
+        const topicsToUnlock = await Topic.find({ subject: subjectName }).select('id name isGloballyLocked prerequisites');
+        if (!topicsToUnlock || topicsToUnlock.length === 0) {
+            return res.status(404).json({ message: `No topics found for subject '${subjectName}'` });
+        }
+        
+        if (global) {
+            // Global Unlock
+            const topicMongoIds = topicsToUnlock.map(t => t._id);
+            await Topic.updateMany(
+                { _id: { $in: topicMongoIds } },
+                { $set: { isGloballyLocked: false } }
+            );
+            console.log(`Globally unlocked ${topicsToUnlock.length} topics for subject ${subjectName}.`);
+            // Note: Does not change user-specific locks.
+            return res.json({ success: true, message: `Subject "${subjectName}" (${topicsToUnlock.length} topics) unlocked globally.` });
+
+        } else if (userId) {
+            // User-Specific Unlock
+            const user = await User.findById(userId).select('progress learningPath');
+            if (!user) return res.status(404).json({ message: 'User not found' });
+            
+            const completedTopicsSet = new Set(user.learningPath?.completedTopics || []);
+            let modified = false;
+
+            for (const topic of topicsToUnlock) {
+                const topicCustomId = topic.id;
+                const userProgressForTopic = user.progress.get(topicCustomId);
+
+                // Only unlock if the user's status is *currently* 'locked'
+                if (userProgressForTopic && userProgressForTopic.status === 'locked') {
+                    // Admin override: set to 'available' regardless of prereqs
+                     const newStatus = 'available';
+                     userProgressForTopic.status = newStatus;
+                     user.progress.set(topicCustomId, userProgressForTopic);
+                     modified = true;
+                     console.log(`Admin override: Unlocked topic ${topicCustomId} for user ${userId}.`);
+                } else if (!userProgressForTopic) {
+                    // If no progress exists, create it as 'available' (admin unlock)
+                     user.progress.set(topicCustomId, { status: 'available', completion: 0, totalTime: 0, algorithms: new Map() });
+                     modified = true;
+                     console.log(`Admin override: Initialized and unlocked topic ${topicCustomId} for user ${userId}.`);
+                }
+            }
+
+            if (modified) {
+                user.markModified('progress');
+                await user.save();
+            }
+            return res.json({ success: true, message: `Subject "${subjectName}" (${topicsToUnlock.length} topics) unlocked for user "${user.username}".` });
+        } else {
+            return res.status(400).json({ message: 'Request must specify "userId" or "global: true".' });
+        }
+    } catch (error) {
+        console.error("Error unlocking subject:", error);
+        res.status(500).json({ message: 'Error unlocking subject' });
+    }
+});
+
+
+// --- Topic Management (No changes needed here, but routes moved down) ---
 router.get('/topics', adminAuth, async (req, res) => { /* Keep existing */ try { const topics = await Topic.find().sort({ order: 1 }).lean(); res.json({ success: true, topics }); } catch (error) { console.error("Error fetching topics for admin:", error); res.status(500).json({ message: 'Error fetching topics' }); } });
 router.get('/topics/:id', adminAuth, async (req, res) => { /* Keep existing */ try { const topic = await Topic.findById(req.params.id).lean(); if (!topic) return res.status(404).json({ message: 'Topic not found' }); res.json({ success: true, topic }); } catch (error) { console.error("Error fetching single topic:", error); if (error.kind === 'ObjectId') return res.status(400).json({ message: 'Invalid topic ID format' }); res.status(500).json({ message: 'Error fetching topic' }); } });
-router.post('/topics', adminAuth, async (req, res) => { /* Keep existing */ try { const { id, name, description, icon, color, order, estimatedTime, difficulty, isActive, algorithms } = req.body; if (!id || !name || order === undefined || estimatedTime === undefined || !difficulty) return res.status(400).json({ message: 'Missing required topic fields (id, name, order, estimatedTime, difficulty)' }); if (algorithms && (!Array.isArray(algorithms) || algorithms.some(algo => !algo.id || !algo.name || !algo.difficulty || algo.points === undefined))) return res.status(400).json({ message: 'Invalid algorithm structure: Each must have id, name, difficulty, points.' }); const newTopic = new Topic({ id, name, description, icon, color, order, estimatedTime, difficulty, isActive, algorithms: algorithms || [] }); await newTopic.save(); res.status(201).json({ success: true, message: 'Topic created', topic: newTopic }); } catch (error) { console.error("Error creating topic:", error); if (error.code === 11000) return res.status(400).json({ message: `Topic ID '${req.body.id}' already exists.` }); if (error.name === 'ValidationError') return res.status(400).json({ message: `Validation Error: ${error.message}` }); res.status(500).json({ message: 'Error creating topic' }); } });
-router.put('/topics/:id', adminAuth, async (req, res) => { /* Keep existing */ try { const { name, description, icon, color, order, estimatedTime, difficulty, isActive, algorithms } = req.body; const updateData = { name, description, icon, color, order, estimatedTime, difficulty, isActive }; if (algorithms !== undefined) { if (!Array.isArray(algorithms) || algorithms.some(algo => !algo.id || !algo.name || !algo.difficulty || algo.points === undefined)) return res.status(400).json({ message: 'Invalid algorithm structure.' }); updateData.algorithms = algorithms; } Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]); const updatedTopic = await Topic.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true }).lean(); if (!updatedTopic) return res.status(404).json({ message: 'Topic not found' }); res.json({ success: true, message: 'Topic updated', topic: updatedTopic }); } catch (error) { console.error("Error updating topic:", error); if (error.kind === 'ObjectId') return res.status(400).json({ message: 'Invalid topic ID format' }); if (error.name === 'ValidationError') return res.status(400).json({ message: `Validation Error: ${error.message}` }); res.status(500).json({ message: 'Error updating topic' }); } });
+// MODIFIED POST /topics to include 'subject'
+router.post('/topics', adminAuth, async (req, res) => { 
+    try { 
+        const { id, name, subject, description, icon, color, order, estimatedTime, difficulty, isActive, algorithms } = req.body; 
+        // Add 'subject' to validation
+        if (!id || !name || !subject || order === undefined || estimatedTime === undefined || !difficulty) {
+            return res.status(400).json({ message: 'Missing required topic fields (id, name, subject, order, estimatedTime, difficulty)' }); 
+        }
+        if (algorithms && (!Array.isArray(algorithms) || algorithms.some(algo => !algo.id || !algo.name || !algo.difficulty || algo.points === undefined))) {
+             return res.status(400).json({ message: 'Invalid algorithm structure: Each must have id, name, difficulty, points.' }); 
+        }
+        // Add 'subject' to new Topic
+        const newTopic = new Topic({ id, name, subject, description, icon, color, order, estimatedTime, difficulty, isActive, algorithms: algorithms || [] }); 
+        await newTopic.save(); 
+        res.status(201).json({ success: true, message: 'Topic created', topic: newTopic }); 
+    } catch (error) { 
+        console.error("Error creating topic:", error); 
+        if (error.code === 11000) return res.status(400).json({ message: `Topic ID '${req.body.id}' already exists.` }); 
+        if (error.name === 'ValidationError') return res.status(400).json({ message: `Validation Error: ${error.message}` }); 
+        res.status(500).json({ message: 'Error creating topic' }); 
+    } 
+});
+// MODIFIED PUT /topics/:id to include 'subject'
+router.put('/topics/:id', adminAuth, async (req, res) => { 
+    try { 
+        const { name, subject, description, icon, color, order, estimatedTime, difficulty, isActive, algorithms } = req.body; 
+        // Add 'subject' to updateData
+        const updateData = { name, subject, description, icon, color, order, estimatedTime, difficulty, isActive }; 
+        if (algorithms !== undefined) { 
+            if (!Array.isArray(algorithms) || algorithms.some(algo => !algo.id || !algo.name || !algo.difficulty || algo.points === undefined)) {
+                 return res.status(400).json({ message: 'Invalid algorithm structure.' }); 
+            }
+            updateData.algorithms = algorithms; 
+        } 
+        Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]); 
+        const updatedTopic = await Topic.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true }).lean(); 
+        if (!updatedTopic) return res.status(404).json({ message: 'Topic not found' }); 
+        res.json({ success: true, message: 'Topic updated', topic: updatedTopic }); 
+    } catch (error) { 
+        console.error("Error updating topic:", error); 
+        if (error.kind === 'ObjectId') return res.status(400).json({ message: 'Invalid topic ID format' }); 
+        if (error.name === 'ValidationError') return res.status(400).json({ message: `Validation Error: ${error.message}` }); 
+        res.status(500).json({ message: 'Error updating topic' }); 
+    } 
+});
 router.delete('/topics/:id', adminAuth, async (req, res) => { /* Keep existing */ try { const deletedTopic = await Topic.findByIdAndDelete(req.params.id); if (!deletedTopic) return res.status(404).json({ message: 'Topic not found' }); res.json({ success: true, message: 'Topic deleted' }); } catch (error) { console.error("Error deleting topic:", error); if (error.kind === 'ObjectId') return res.status(400).json({ message: 'Invalid topic ID format' }); res.status(500).json({ message: 'Error deleting topic' }); } });
 
 
@@ -381,7 +597,7 @@ router.post('/topics/:topicMongoId/unlock', adminAuth, async (req, res) => {
                 await user.save();
                 const message = newStatus === 'available'
                     ? `Topic "${topicToUnlock.name}" unlocked for user "${user.username}".`
-                    : `Topic "${topicToUnlock.name}" remains locked for user "${user.username}" (Prerequisites not met).`;
+                    : `Topic "${topicToUnlock.name}" remains locked for user "${user.username}" (Prerequisites not met).`; // This part is now less likely
                 console.log(`[Unlock Result] ${message}`);
                 return res.json({ success: true, message: message });
             } else {
@@ -396,7 +612,9 @@ router.post('/topics/:topicMongoId/unlock', adminAuth, async (req, res) => {
         if (error.kind === 'ObjectId') return res.status(400).json({ message: 'Invalid ID format' });
         res.status(500).json({ message: 'Server error during topic unlock' });
     }
-});router.post('/topics/:topicMongoId/algorithms/:algoId/lock', adminAuth, async (req, res) => {
+});
+// --- NEW: Lock an Algorithm (Globally or User-Specific) ---
+router.post('/topics/:topicMongoId/algorithms/:algoId/lock', adminAuth, async (req, res) => {
     try {
         const { userId, global } = req.body;
         const { topicMongoId, algoId } = req.params; // algoId is the string ID like 'bubbleSort'
@@ -425,18 +643,24 @@ router.post('/topics/:topicMongoId/unlock', adminAuth, async (req, res) => {
 
             const topicProgress = user.progress.get(topic.id);
             if (!topicProgress) {
-                 return res.status(400).json({ message: `User has no progress data for topic '${topic.name}'. Cannot lock algorithm.` });
-            }
-
-            let algoProgress = topicProgress.algorithms.get(algoId);
-            if (!algoProgress) { // Initialize if doesn't exist
-                 algoProgress = { status: 'locked', completed: false }; // Set locked status
-                 console.log(`Initialized and locked algo progress for ${topic.id}.${algoId} for user ${userId}`);
+                 // If user has no progress for the topic, create it and the algo entry
+                 const algoMap = new Map();
+                 algoMap.set(algoId, { status: 'locked', completed: false });
+                 user.progress.set(topic.id, { status: 'available', completion: 0, totalTime: 0, algorithms: algoMap });
+                 console.log(`Initialized topic ${topic.id} and locked algo ${algoId} for user ${userId}`);
             } else {
-                 algoProgress.status = 'locked'; // Set status to locked
-                 console.log(`Set algo progress status to locked for ${topic.id}.${algoId} for user ${userId}`);
+                // Topic progress exists, check/update algorithm
+                let algoProgress = topicProgress.algorithms.get(algoId);
+                if (!algoProgress) { // Initialize if doesn't exist
+                     algoProgress = { status: 'locked', completed: false }; // Set locked status
+                     console.log(`Initialized and locked algo progress for ${topic.id}.${algoId} for user ${userId}`);
+                } else {
+                     algoProgress.status = 'locked'; // Set status to locked
+                     console.log(`Set algo progress status to locked for ${topic.id}.${algoId} for user ${userId}`);
+                }
+                topicProgress.algorithms.set(algoId, algoProgress); // Update map
             }
-            topicProgress.algorithms.set(algoId, algoProgress); // Update map
+            
             user.markModified('progress'); // Mark modified
             await user.save();
             return res.json({ success: true, message: `Algorithm "${algorithm.name}" locked for user "${user.username}".` });
@@ -481,9 +705,14 @@ router.post('/topics/:topicMongoId/algorithms/:algoId/unlock', adminAuth, async 
 
             const topicProgress = user.progress.get(topic.id);
              if (!topicProgress) {
-                 // If no topic progress, we can assume the algo isn't locked *specifically* for the user yet.
-                 console.log(`User ${userId} has no progress for topic ${topic.id}. Algorithm ${algoId} considered available.`);
-                 return res.json({ success: true, message: `Algorithm "${algorithm.name}" is effectively available (no user-specific lock found).` });
+                 // If no topic progress, create it and the algo entry as available
+                 const algoMap = new Map();
+                 algoMap.set(algoId, { status: 'available', completed: false });
+                 user.progress.set(topic.id, { status: 'available', completion: 0, totalTime: 0, algorithms: algoMap });
+                 console.log(`Initialized topic ${topic.id} and unlocked algo ${algoId} for user ${userId}`);
+                 user.markModified('progress');
+                 await user.save();
+                 return res.json({ success: true, message: `Algorithm "${algorithm.name}" unlocked for user "${user.username}".` });
              }
 
             let algoProgress = topicProgress.algorithms.get(algoId);
@@ -495,6 +724,14 @@ router.post('/topics/:topicMongoId/algorithms/:algoId/unlock', adminAuth, async 
                  user.markModified('progress'); // Mark modified
                  await user.save();
                  console.log(`Algorithm ${algoId} unlocked for user ${userId} in topic ${topic.id}.`);
+                 return res.json({ success: true, message: `Algorithm "${algorithm.name}" unlocked for user "${user.username}".` });
+            } else if (!algoProgress) {
+                 // Algorithm entry doesn't exist, create it as available
+                 algoProgress = { status: 'available', completed: false };
+                 topicProgress.algorithms.set(algoId, algoProgress);
+                 user.markModified('progress');
+                 await user.save();
+                 console.log(`Initialized and unlocked algo ${algoId} for user ${userId} in topic ${topic.id}.`);
                  return res.json({ success: true, message: `Algorithm "${algorithm.name}" unlocked for user "${user.username}".` });
             } else {
                  // Algorithm wasn't specifically locked for the user
@@ -510,8 +747,6 @@ router.post('/topics/:topicMongoId/algorithms/:algoId/unlock', adminAuth, async 
         res.status(500).json({ message: 'Error unlocking algorithm' });
     }
 });
-
-
 
 
 module.exports = router;
