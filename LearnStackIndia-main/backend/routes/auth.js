@@ -527,7 +527,7 @@ router.get('/dashboard', auth, async (req, res) => {
 
         // Sort topics within each subject by 'order'
         for (const subjectName in subjects) {
-            subjects[subjectName].sort((a, b) => (a.order || 0) - (b.order || 0));
+            subjects[subjectName].topics.sort((a, b) => (a.order || 0) - (b.order || 0));
         }
         // --- MODIFICATION END ---
 
@@ -919,6 +919,7 @@ router.get('/me', auth, async (req, res) => { //
 
 
 module.exports = router;
+
 
 
 
