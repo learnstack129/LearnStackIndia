@@ -161,6 +161,34 @@ router.get('/users/:userId/topic-statuses', adminAuth, async (req, res) => {
                 statusText = `Unlocked for User (${statusText})`;
             }
 
+            // --- Start of new block ---
+            // Get user's progress for each algorithm in this topic
+            const userAlgoProgressMap = userProgressForTopic?.algorithms || new Map();
+            const algorithmsWithUserProgress = topic.algorithms.map(algoDef => {
+                const userProgress = userAlgoProgressMap.get(algoDef.id); // Get user progress for this algo
+                
+                // Determine effective status (combining global and user locks)
+                const algoUserSpecificStatus = userProgress?.status || 'available';
+                const algoIsGloballyLocked = algoDef.isGloballyLocked === true;
+                let effectiveAlgoStatus = 'available';
+    
+                if (algoIsGloballyLocked) {
+                     effectiveAlgoStatus = (algoUserSpecificStatus === 'available') ? 'available' : 'locked';
+                } else {
+                     effectiveAlgoStatus = algoUserSpecificStatus;
+                }
+                // If the whole topic is locked, the algo is locked
+                if (finalEffectiveStatus === 'locked') { 
+                    effectiveAlgoStatus = 'locked';
+                }
+    
+                return {
+                    ...algoDef, // ...algoDef (id, name, difficulty, etc.)
+                    userProgress: userProgress ? userProgress.toObject() : { status: 'available', completed: false }, // Send user data
+                    effectiveAlgoStatus: effectiveAlgoStatus // Send final calculated status
+                };
+            });
+            // --- End of new block ---
 
             const topicStatusData = {
                 _id: topic._id, // Mongo ID
@@ -789,5 +817,6 @@ router.post('/topics/:topicMongoId/algorithms/:algoId/unlock', adminAuth, async 
 
 
 module.exports = router;
+
 
 
