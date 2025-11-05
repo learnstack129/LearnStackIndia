@@ -398,18 +398,21 @@ router.get('/dashboard', auth, async (req, res) => {
     try {
         const userId = req.user.id;
         // Fetch all data as before
-        const [user, topics, achievementTemplates, leaderboard] = await Promise.all([
+        const [user, topics, achievementTemplates, leaderboard, subjectMetaDocs] = await Promise.all([
             User.findById(userId).select('-password -emailVerificationToken -passwordResetToken -dailyActivity._id -dailyActivity.sessions._id'),
-            // Fetch topics and include the new 'subject' field
             Topic.find({ isActive: true }).select('id name subject description icon color order estimatedTime difficulty prerequisites algorithms isActive isGloballyLocked').sort({ order: 1 }).lean(),
             AchievementTemplate.find({ isActive: true }).select('id name category').lean(),
-            Leaderboard.findOne({ type: 'all-time' }).sort({ 'period.start': -1 }).limit(10).populate('rankings.user', 'username profile.avatar stats.rank.level').lean()
+            Leaderboard.findOne({ type: 'all-time' }).sort({ 'period.start': -1 }).limit(10).populate('rankings.user', 'username profile.avatar stats.rank.level').lean(),
+            SubjectMeta.find().lean() // <-- ADDED THIS
         ]);
 
         if (!user) {
             console.error(`[Dashboard Error] User not found for ID: ${userId}`);
             return res.status(404).json({ message: 'User not found' });
         }
+
+        // --- 3. CREATE A MAP FROM THE METADATA ---
+        const subjectMetaMap = new Map(subjectMetaDocs.map(meta => [meta.name, { icon: meta.icon, color: meta.color }]));
 
         // --- User Position Logic (remains the same) ---
         let userPosition = null;
@@ -496,23 +499,29 @@ router.get('/dashboard', auth, async (req, res) => {
 
             // --- Create the combined topic object ---
             const combinedTopicData = {
-                // Topic config data
+                // ... (all topic config data: id, name, etc.) ...
                 id: topic.id, name: topic.name, subject: topic.subject, description: topic.description, icon: topic.icon,
                 color: topic.color, order: topic.order, estimatedTime: topic.estimatedTime,
                 difficulty: topic.difficulty,
-                algorithms: algorithmDefinitions, 
+                algorithms: topic.algorithms || [], 
                 // User progress data:
                 status: topicEffectiveStatus,
                 completion: userProgressForTopic?.completion ?? 0,
-                userAlgoProgress: algorithmsProgressObject 
+                userAlgoProgress: algorithmsProgressObject
             };
 
             // --- Group into subjects object ---
             const subjectName = topic.subject || 'General';
             if (!subjects[subjectName]) {
-                subjects[subjectName] = [];
+                // First time seeing this subject. Get its metadata.
+                const meta = subjectMetaMap.get(subjectName) || { icon: 'book', color: 'gray' }; // Default icon/color
+                subjects[subjectName] = {
+                    icon: meta.icon,  // <-- ADDED
+                    color: meta.color, // <-- ADDED
+                    topics: []         // <-- Initialize topics array
+                };
             }
-            subjects[subjectName].push(combinedTopicData);
+            subjects[subjectName].topics.push(combinedTopicData); // Add the topic to its subject's array
         });
 
         // Sort topics within each subject by 'order'
@@ -549,6 +558,7 @@ router.get('/dashboard', auth, async (req, res) => {
             subjects: subjects, // <-- SEND SUBJECTS, NOT TOPICS
             achievements: { recent: recentAchievements, total: totalUserAchievements, available: achievementTemplates.length },
             learningPath: user.learningPath?.toObject(),
+            subjects: subjects,
             leaderboard: leaderboard ? {
                 topUsers: leaderboard.rankings.slice(0, 10).map(rank => ({
                     position: rank.position, username: rank.user?.username ?? '?', avatar: rank.user?.profile?.avatar, rank: rank.user?.stats?.rank?.level ?? '?', score: rank.score
@@ -908,4 +918,5 @@ router.get('/me', auth, async (req, res) => { //
 
 
 module.exports = router;
+
 
