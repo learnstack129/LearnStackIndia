@@ -1423,83 +1423,90 @@
         });
     }
 
-    // Modified to accept topicCustomId for progress lookup
-    async function renderUserAlgorithmsList(userId, topicMongoId, topicCustomId, algorithms, containerId) {
-        const algoListContainer = document.getElementById(containerId);
-        if (!algoListContainer) return;
+// Modified to accept algorithms with pre-fetched user progress
+function renderUserAlgorithmsList(userId, topicMongoId, topicCustomId, algorithmsWithProgress, containerId) {
+    const algoListContainer = document.getElementById(containerId);
+    if (!algoListContainer) return;
 
-        let userProgress = null;
-        try {
-            // This is still inefficient, but necessary if statusData doesn't include user progress
-             const userData = await makeAdminAPICall(`/users/${userId}`); 
-             if(userData?.success && userData.user?.progress) {
-                 userProgress = userData.user.progress[topicCustomId]; // Access progress using custom ID
-             }
-        } catch(e) { console.error("Could not fetch user progress for algorithm status", e); }
-
-
-        if (!algorithms || algorithms.length === 0) {
-            algoListContainer.innerHTML = '<p class="text-xs text-gray-500 dark:text-gray-400 italic">No algorithms in this topic.</p>';
-            return;
-        }
-
-        algoListContainer.innerHTML = ''; // Clear placeholder
-
-        algorithms.forEach(algo => {
-            const algoId = algo.id; // String ID like 'bubbleSort'
-            const isGloballyLockedAlgo = algo.isGloballyLocked === true;
-
-            let userAlgoStatus = 'available';
-             if (userProgress?.algorithms && userProgress.algorithms[algoId]) {
-                 userAlgoStatus = userProgress.algorithms[algoId].status || 'available';
-             }
-
-             let effectiveAlgoStatus = 'available';
-             if (isGloballyLockedAlgo) {
-                 effectiveAlgoStatus = (userAlgoStatus === 'available') ? 'available' : 'locked';
-             } else {
-                 effectiveAlgoStatus = userAlgoStatus;
-             }
-
-            let statusColorClassAlgo, statusIconAlgo;
-            if (effectiveAlgoStatus === 'locked') {
-                statusColorClassAlgo = 'text-red-500 dark:text-red-400';
-                statusIconAlgo = 'fa-lock';
-            } else {
-                statusColorClassAlgo = 'text-green-500 dark:text-green-400';
-                statusIconAlgo = 'fa-unlock-alt';
-            }
-            
-            // Check completion status from progress
-            const isCompleted = userProgress?.algorithms?.[algoId]?.completed === true;
-            if (isCompleted) {
-                statusIconAlgo = 'fa-check-circle'; // Override icon for completed
-                statusColorClassAlgo = 'text-blue-500 dark:text-blue-400'; // Use blue for completed
-            }
-
-
-            const showUnlockButtonAlgo = userAlgoStatus === 'locked'; // Button action depends on user's direct status
-            const algoButtonHtml = showUnlockButtonAlgo
-                ? `<button onclick="toggleUserAlgorithmLock('${userId}', '${topicMongoId}', '${algoId}', '${algo.name}', false)" class="px-2 py-0.5 rounded text-white text-xs font-semibold bg-green-500 hover:bg-green-600 focus:outline-none focus:ring-1 focus:ring-green-300 disabled:opacity-50" title="Unlock algorithm ONLY for this user"><i class="fas fa-unlock-alt text-xs"></i></button>`
-                : `<button onclick="toggleUserAlgorithmLock('${userId}', '${topicMongoId}', '${algoId}', '${algo.name}', true)" class="px-2 py-0.5 rounded text-white text-xs font-semibold bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-1 focus:ring-red-300 disabled:opacity-50" title="Lock algorithm ONLY for this user"><i class="fas fa-lock text-xs"></i></button>`;
-
-
-            const algoDiv = document.createElement('div');
-            algoDiv.className = 'flex justify-between items-center text-sm';
-            algoDiv.innerHTML = `
-                <span class="text-gray-700 dark:text-gray-300">
-                    <i class="fas ${statusIconAlgo} ${statusColorClassAlgo} mr-2 w-4 text-center" title="Effective Status: ${effectiveAlgoStatus}${isCompleted ? ' (Completed)' : ''}"></i>
-                    ${algo.name}
-                    ${isGloballyLockedAlgo ? '<i class="fas fa-globe-americas text-gray-400 dark:text-gray-500 ml-1 text-xs" title="Globally Locked"></i>' : ''}
-                </span>
-                <div id="algo-actions-${topicMongoId}-${algoId}" class="space-x-1">
-                    ${algoButtonHtml}
-                </div>
-            `;
-            algoListContainer.appendChild(algoDiv);
-        });
+    if (!algorithmsWithProgress || algorithmsWithProgress.length === 0) {
+        algoListContainer.innerHTML = '<p class="text-xs text-gray-500 dark:text-gray-400 italic">No algorithms in this topic.</p>';
+        return;
     }
 
+    algoListContainer.innerHTML = ''; // Clear placeholder
+
+    algorithmsWithProgress.forEach(algo => {
+        const algoId = algo.id; // String ID like 'bubbleSort'
+        const isGloballyLockedAlgo = algo.isGloballyLocked === true;
+
+        // Get data directly from the object
+        const userAlgoStatus = algo.userProgress?.status || 'available';
+        const effectiveAlgoStatus = algo.effectiveAlgoStatus || 'available';
+        const isCompleted = algo.userProgress?.completed === true;
+
+        let statusColorClassAlgo, statusIconAlgo;
+        if (effectiveAlgoStatus === 'locked') {
+            statusColorClassAlgo = 'text-red-500 dark:text-red-400';
+            statusIconAlgo = 'fa-lock';
+        } else {
+            statusColorClassAlgo = 'text-green-500 dark:text-green-400';
+            statusIconAlgo = 'fa-unlock-alt';
+        }
+
+        if (isCompleted) {
+            statusIconAlgo = 'fa-check-circle'; // Override icon
+            statusColorClassAlgo = 'text-blue-500 dark:text-blue-400'; 
+        }
+
+        const showUnlockButtonAlgo = userAlgoStatus === 'locked'; // Button action depends on user's direct status
+        const algoButtonHtml = showUnlockButtonAlgo
+            ? `<button onclick="toggleUserAlgorithmLock('${userId}', '${topicMongoId}', '${algoId}', '${algo.name}', false)" class="px-2 py-0.5 rounded text-white text-xs font-semibold bg-green-500 hover:bg-green-600 focus:outline-none focus:ring-1 focus:ring-green-300 disabled:opacity-50" title="Unlock algorithm ONLY for this user"><i class="fas fa-unlock-alt text-xs"></i></button>`
+            : `<button onclick="toggleUserAlgorithmLock('${userId}', '${topicMongoId}', '${algoId}', '${algo.name}', true)" class="px-2 py-0.5 rounded text-white text-xs font-semibold bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-1 focus:ring-red-300 disabled:opacity-50" title="Lock algorithm ONLY for this user"><i class="fas fa-lock text-xs"></i></button>`;
+
+
+        const algoDiv = document.createElement('div');
+        algoDiv.className = 'flex justify-between items-center text-sm';
+        algoDiv.innerHTML = `
+            <span class="text-gray-700 dark:text-gray-300">
+                <i class="fas ${statusIconAlgo} ${statusColorClassAlgo} mr-2 w-4 text-center" title="Effective Status: ${effectiveAlgoStatus}${isCompleted ? ' (Completed)' : ''}"></i>
+                ${algo.name}
+                ${isGloballyLockedAlgo ? '<i class="fas fa-globe-americas text-gray-400 dark:text-gray-500 ml-1 text-xs" title="Globally Locked"></i>' : ''}
+            </span>
+            <div id="algo-actions-${topicMongoId}-${algoId}" class="space-x-1">
+                ${algoButtonHtml}
+            </div>
+        `;
+        algoListContainer.appendChild(algoDiv);
+    });
+}
+async function toggleTopicLock(topicMongoId, topicName, lock) { 
+    const action = lock ? 'lock' : 'unlock';
+    const actionVerb = lock ? 'Locking' : 'Unlocking';
+
+    if (!confirm(`${lock ? 'Globally lock' : 'Globally unlock'} topic "${topicName}"? This affects ALL users.`)) {
+        return;
+    }
+
+    showGlobalAlert(`${actionVerb} "${topicName}" globally...`, 'info');
+    const endpoint = `/topics/${topicMongoId}/${action}`; 
+
+    // Pass global: true in the body
+    const result = await makeAdminAPICall(endpoint, { 
+        method: 'POST', 
+        body: JSON.stringify({ global: true }) 
+    });
+
+    hideGlobalAlert();
+
+    if (result?.success) {
+        showGlobalAlert(result.message, 'success');
+    } else {
+        showGlobalAlert(result?.message || `Failed to ${action} topic globally.`, 'error');
+    }
+
+    // Always refresh the topics list to show the new status
+    loadTopics(); 
+}
     async function toggleUserAlgorithmLock(userId, topicMongoId, algoId, algoName, lock) {
         const action = lock ? 'lock' : 'unlock';
         const actionVerb = lock ? 'Locking' : 'Unlocking';
@@ -2285,4 +2292,5 @@ async function loadSubjects() {
 
 
 </html>
+
 
