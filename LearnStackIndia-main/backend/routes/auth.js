@@ -559,7 +559,6 @@ router.get('/dashboard', auth, async (req, res) => {
             subjects: subjects, // <-- SEND SUBJECTS, NOT TOPICS
             achievements: { recent: recentAchievements, total: totalUserAchievements, available: achievementTemplates.length },
             learningPath: user.learningPath?.toObject(),
-            subjects: subjects,
             leaderboard: leaderboard ? {
                 topUsers: leaderboard.rankings.slice(0, 10).map(rank => ({
                     position: rank.position, username: rank.user?.username ?? '?', avatar: rank.user?.profile?.avatar, rank: rank.user?.stats?.rank?.level ?? '?', score: rank.score
@@ -919,6 +918,7 @@ router.get('/me', auth, async (req, res) => { //
 
 
 module.exports = router;
+
 
 
 
