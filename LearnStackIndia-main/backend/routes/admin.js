@@ -245,17 +245,55 @@ router.delete('/users/:id', adminAuth, async (req, res) => {
 
 // --- Subject Management ---
 
-// NEW: Get all unique subjects
+// MODIFIED: Get all unique subjects (from Topics)
 router.get('/subjects', adminAuth, async (req, res) => {
     try {
-        // Find all distinct 'subject' fields from the Topic collection
         const subjects = await Topic.distinct('subject');
-        res.json({ success: true, subjects: subjects.sort() }); // Sort alphabetically
+        res.json({ success: true, subjects: subjects.sort() });
     } catch (error) {
         console.error("Error fetching subjects:", error);
         res.status(500).json({ message: 'Error fetching subjects' });
     }
 });
+
+// --- 2. ADD NEW ROUTES FOR SUBJECT METADATA ---
+
+// GET all subject metadata
+router.get('/subject-meta', adminAuth, async (req, res) => {
+    try {
+        const meta = await SubjectMeta.find().lean();
+        res.json({ success: true, meta });
+    } catch (error) {
+        console.error("Error fetching subject meta:", error);
+        res.status(500).json({ message: 'Error fetching subject metadata' });
+    }
+});
+
+// CREATE/UPDATE subject metadata (Icon/Color)
+router.post('/subject-meta', adminAuth, async (req, res) => {
+    try {
+        const { name, icon, color } = req.body;
+        if (!name || !icon || !color) {
+            return res.status(400).json({ message: 'Name, icon, and color are required.' });
+        }
+
+        const updatedMeta = await SubjectMeta.findOneAndUpdate(
+            { name: name }, // Find by name
+            { name, icon, color }, // Update or create with this data
+            { upsert: true, new: true, runValidators: true } // Upsert = create if not found
+        );
+
+        res.json({ success: true, message: 'Subject metadata updated', meta: updatedMeta });
+    } catch (error) {
+        console.error("Error updating subject meta:", error);
+        if (error.name === 'ValidationError') {
+            return res.status(400).json({ message: `Validation Error: ${error.message}` });
+        }
+        res.status(500).json({ message: 'Error updating subject metadata' });
+    }
+});
+
+// --- END 2. ---
 
 // NEW: Lock all topics in a subject (Globally or User-Specific)
 router.post('/subjects/:subjectName/lock', adminAuth, async (req, res) => {
@@ -750,3 +788,4 @@ router.post('/topics/:topicMongoId/algorithms/:algoId/unlock', adminAuth, async 
 
 
 module.exports = router;
+
