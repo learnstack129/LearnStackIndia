@@ -100,126 +100,124 @@ router.get('/users/:id', adminAuth, async (req, res) => {
     }
 });
 
+// backend/routes/admin.js
+
 // --- ADJUSTED: Get topic statuses for a specific user, grouped by subject ---
 router.get('/users/:userId/topic-statuses', adminAuth, async (req, res) => {
     try {
         const userId = req.params.userId;
         const [user, topics] = await Promise.all([
-            User.findById(userId).select('progress username learningPath').lean(), // Select learningPath for prereq check
-            Topic.find().select('id name subject order isGloballyLocked prerequisites algorithms').sort({ order: 1 }).lean() // Added subject and algorithms
+            User.findById(userId).select('progress username learningPath').lean(),
+            Topic.find().select('id name subject order isGloballyLocked prerequisites algorithms').sort({ order: 1 }).lean()
         ]);
 
         if (!user) return res.status(404).json({ message: 'User not found' });
 
+        // This part is correct: user.progress is an object, this converts it to a Map
         const userProgressMap = new Map(Object.entries(user.progress || {}));
         const completedTopicsSet = new Set(user.learningPath?.completedTopics || []);
 
-        // This object will hold the grouped statuses
         const subjectGroupedStatuses = {};
 
         topics.forEach(topic => {
             const userProgressForTopic = userProgressMap.get(topic.id);
 
-            // Check Prerequisites
+            // --- Prerequisite Check (Correct) ---
             let prereqsMet = true;
             if (topic.prerequisites && topic.prerequisites.length > 0) {
                 prereqsMet = topic.prerequisites.every(prereqId => completedTopicsSet.has(prereqId));
             }
 
-            // Determine User Specific Status
+            // --- Determine User Specific Status (Correct) ---
             let userSpecificStatus;
-            if (userProgressForTopic?.status) { // If user has a specific status saved
+            if (userProgressForTopic?.status) {
                 userSpecificStatus = userProgressForTopic.status;
-            } else { // Otherwise, default based only on the global lock
+            } else {
                 userSpecificStatus = topic.isGloballyLocked ? 'locked' : 'available';
             }
 
-
-            // Determine Final Effective Status
+            // --- Determine Final Effective Status (Correct) ---
             let finalEffectiveStatus;
             if (topic.isGloballyLocked) {
-                // If globally locked, only a non-'locked' user status (like 'available') overrides it
                 finalEffectiveStatus = (userSpecificStatus !== 'locked') ? userSpecificStatus : 'locked';
             } else if (!prereqsMet) {
-                 // If not globally locked, but prereqs not met, it's locked (unless user has override)
                  finalEffectiveStatus = (userSpecificStatus !== 'locked') ? userSpecificStatus : 'locked';
             } else {
-                // Not globally locked, prereqs met (or no prereqs)
                 finalEffectiveStatus = userSpecificStatus;
             }
 
-
-            // Determine Status Text
+            // --- Status Text (Correct) ---
             let statusText = finalEffectiveStatus.charAt(0).toUpperCase() + finalEffectiveStatus.slice(1);
-            if (finalEffectiveStatus === 'locked') {
+             if (finalEffectiveStatus === 'locked') {
                 if (topic.isGloballyLocked && userSpecificStatus !== 'locked') statusText = `Globally Locked (User Override: ${userSpecificStatus})`;
                 else if (topic.isGloballyLocked) statusText = 'Locked Globally';
                 else if (!prereqsMet && userSpecificStatus === 'locked') statusText = 'Locked (Prerequisites)';
                 else if (userSpecificStatus === 'locked') statusText = 'Locked for User';
-                else statusText = 'Locked (Prerequisites)'; // Default lock reason
-            } else if (topic.isGloballyLocked) { // Unlocked via override
+                else statusText = 'Locked (Prerequisites)';
+            } else if (topic.isGloballyLocked) {
                 statusText = `Unlocked for User (${statusText})`;
             }
 
-            // --- Start of new block ---
-            // Get user's progress for each algorithm in this topic
-            const userAlgoProgressMap = userProgressForTopic?.algorithms || new Map();
-            const algorithmsWithUserProgress = topic.algorithms.map(algoDef => {
-                const userProgress = userAlgoProgressMap.get(algoDef.id); // Get user progress for this algo
+            // --- START: CORRECTED BLOCK FOR ALGORITHMS ---
+            // userProgressForTopic.algorithms is an OBJECT, not a Map, due to .lean()
+            const userAlgoProgressObject = userProgressForTopic?.algorithms || {}; 
+
+            const algorithmsWithUserProgress = (topic.algorithms || []).map(algoDef => {
+                // Access as an object property
+                const userProgress = userAlgoProgressObject[algoDef.id]; 
                 
-                // Determine effective status (combining global and user locks)
                 const algoUserSpecificStatus = userProgress?.status || 'available';
                 const algoIsGloballyLocked = algoDef.isGloballyLocked === true;
                 let effectiveAlgoStatus = 'available';
-    
+
                 if (algoIsGloballyLocked) {
                      effectiveAlgoStatus = (algoUserSpecificStatus === 'available') ? 'available' : 'locked';
                 } else {
                      effectiveAlgoStatus = algoUserSpecificStatus;
                 }
-                // If the whole topic is locked, the algo is locked
+                
                 if (finalEffectiveStatus === 'locked') { 
                     effectiveAlgoStatus = 'locked';
                 }
-    
+
                 return {
-                    ...algoDef, // ...algoDef (id, name, difficulty, etc.)
-                    userProgress: userProgress ? userProgress.toObject() : { status: 'available', completed: false }, // Send user data
-                    effectiveAlgoStatus: effectiveAlgoStatus // Send final calculated status
+                    ...algoDef, 
+                    // userProgress is already a plain object from .lean()
+                    userProgress: userProgress || { status: 'available', completed: false }, 
+                    effectiveAlgoStatus: effectiveAlgoStatus 
                 };
             });
-            // --- End of new block ---
+            // --- END: CORRECTED BLOCK FOR ALGORITHMS ---
 
             const topicStatusData = {
-                _id: topic._id, // Mongo ID
-                id: topic.id, // Custom ID
+                _id: topic._id,
+                id: topic.id,
                 name: topic.name,
                 effectiveStatus: finalEffectiveStatus,
                 statusText: statusText,
                 isGloballyLocked: topic.isGloballyLocked,
-                isUserLocked: userSpecificStatus === 'locked', // Reflects user *intent* or prerequisite lock
-                algorithms: topic.algorithms || [] // Include algorithm definitions
+                isUserLocked: userSpecificStatus === 'locked',
+                algorithms: algorithmsWithUserProgress // Send the combined data
             };
             
-            // --- Grouping by Subject ---
+            // --- Grouping (Correct) ---
             const subjectName = topic.subject || 'General';
             if (!subjectGroupedStatuses[subjectName]) {
                 subjectGroupedStatuses[subjectName] = [];
             }
             subjectGroupedStatuses[subjectName].push(topicStatusData);
-            // --- End Grouping ---
         });
 
         res.json({
             success: true,
             username: user.username,
-            subjectGroupedStatuses: subjectGroupedStatuses // Send the grouped object
+            subjectGroupedStatuses: subjectGroupedStatuses
         });
 
     } catch (error) {
         console.error(`Error fetching topic statuses for user ${req.params.userId}:`, error);
-        if (error.kind === 'ObjectId') return res.status(400).json({ message: 'Invalid user ID format' });
-        res.status(500).json({ message: 'Error fetching topic statuses' });
+        // This is what's sending the 500 error
+        res.status(500).json({ message: 'Error fetching topic statuses', error: error.message }); 
     }
 });
 
@@ -817,6 +815,7 @@ router.post('/topics/:topicMongoId/algorithms/:algoId/unlock', adminAuth, async 
 
 
 module.exports = router;
+
 
 
 
