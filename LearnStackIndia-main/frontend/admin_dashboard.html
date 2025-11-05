@@ -137,6 +137,11 @@
         .actions-cell {
             width: 100px;
         }
+        
+        /* Wider actions cell for topic table */
+        .topic-actions-cell {
+            width: 140px; 
+        }
 
         /* Fixed width for actions */
         /* Global Alert Styling */
@@ -163,11 +168,16 @@
                 display: block;
                 margin-bottom: 1rem;
                 border: 1px solid #e5e7eb;
-                dark: border-gray-700;
+                /* dark: border-gray-700 */
                 border-radius: 0.5rem;
                 padding: 0.5rem;
                 background-color: #fff;
-                dark: bg-gray-800;
+                /* dark: bg-gray-800 */
+            }
+            
+            .dark tbody tr {
+                border-color: #374151; /* dark:border-gray-700 */
+                background-color: #1f2937; /* dark:bg-gray-800 */
             }
 
             tbody td {
@@ -198,12 +208,13 @@
                 /* dark:text-gray-400 */
             }
 
-            .actions-cell {
+            .actions-cell, .topic-actions-cell {
                 text-align: center !important;
                 padding-left: 0 !important;
+                width: 100%;
             }
 
-            .actions-cell::before {
+            .actions-cell::before, .topic-actions-cell::before {
                 display: none;
             }
 
@@ -246,6 +257,57 @@
         .dark .input-field[readonly] {
             background-color: #4b5563;
         }
+
+        /* Styling for subject groups in user topic modal */
+        .subject-group {
+            border: 1px solid #d1d5db; /* dark:border-gray-600 */
+            border-radius: 0.5rem; /* rounded-lg */
+            margin-bottom: 1rem; /* mb-4 */
+            background-color: #ffffff; /* bg-white */
+        }
+        .dark .subject-group {
+            border-color: #4b5563; /* dark:border-gray-600 */
+            background-color: #1f2937; /* dark:bg-gray-800 */
+        }
+        .subject-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem; /* p-3 */
+            background-color: #f9fafb; /* bg-gray-50 */
+            border-bottom: 1px solid #d1d5db; /* dark:border-gray-600 */
+        }
+        .dark .subject-header {
+            background-color: #374151; /* dark:bg-gray-700 */
+            border-bottom-color: #4b5563; /* dark:border-gray-600 */
+        }
+        .subject-topic-list {
+             padding: 1rem; /* p-4 */
+             space-y: 0.75rem; /* space-y-3 */
+        }
+        .subject-topic-list > div {
+             margin-bottom: 0.75rem; /* space-y-3 behavior */
+        }
+         .subject-topic-list > div:last-child {
+             margin-bottom: 0;
+         }
+        
+        .algo-list {
+            padding-left: 1rem; /* pl-4 */
+            border-left: 2px solid #d1d5db; /* border-l-2 border-gray-300 */
+            margin-left: 0.5rem; /* ml-2 */
+            margin-top: 0.75rem; /* mt-3 */
+            space-y: 0.5rem; /* space-y-2 */
+        }
+        .dark .algo-list {
+            border-color: #4b5563; /* dark:border-gray-500 */
+        }
+         .algo-list > div {
+             margin-bottom: 0.5rem; /* space-y-2 behavior */
+         }
+         .algo-list > div:last-child {
+             margin-bottom: 0;
+         }
     </style>
 </head>
 
@@ -264,6 +326,9 @@
                     <li class="mb-2"><a href="#users"
                             class="nav-link block p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700"><i
                                 class="fas fa-users mr-2 w-4 inline-block text-center"></i>Users</a></li>
+                    <li class="mb-2"><a href="#subjects"
+                            class="nav-link block p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700"><i
+                                class="fas fa-layer-group mr-2 w-4 inline-block text-center"></i>Subjects</a></li>
                     <li class="mb-2"><a href="#topics"
                             class="nav-link block p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700"><i
                                 class="fas fa-book mr-2 w-4 inline-block text-center"></i>Topics</a></li>
@@ -349,7 +414,7 @@
                             <tbody id="usersTableBody"
                                 class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                 <tr>
-                                    <td colspan="6" class="p-4" data-label="Loading">
+                                    <td colspan="8" class="p-4" data-label="Loading">
                                         <div class="loading-skeleton h-8 w-full"></div>
                                     </td>
                                 </tr>
@@ -363,7 +428,38 @@
                     </div>
                 </div>
             </section>
-
+            
+            <section id="subjects" class="mb-8 admin-section hidden">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700 dark:text-gray-300">Subject Management</h2>
+                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Subjects are defined by the 'subject' field in your topics. They cannot be added or deleted here, but you can manage their access state for all associated topics.</p>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+                    <div class="overflow-x-auto p-4">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-700">
+                                <tr>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-5/12">
+                                        Subject Name</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-3/12">
+                                        Topic Count</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-4/12 topic-actions-cell">
+                                        Actions (Affects All Topics in Subject)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="subjectsTableBody"
+                                class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                <tr>
+                                    <td colspan="3" class="p-4" data-label="Loading">
+                                        <div class="loading-skeleton h-8 w-full"></div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
             <section id="topics" class="mb-8 admin-section hidden">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl font-semibold text-gray-700 dark:text-gray-300">Topic Management</h2>
@@ -388,12 +484,12 @@
                                         Name</th>
                                     <th
                                         class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-2/12">
-                                        Difficulty</th>
+                                        Subject</th>
                                     <th
                                         class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/12">
                                         Active</th>
                                     <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider actions-cell w-2/12">
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider topic-actions-cell w-3/12">
                                         Actions</th>
                                 </tr>
                             </thead>
@@ -563,6 +659,13 @@
                             <label for="editTopicName"
                                 class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name*</label>
                             <input type="text" id="editTopicName" required class="input-field">
+                        </div>
+                        
+                        <div>
+                            <label for="editTopicSubject"
+                                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subject*</label>
+                            <input type="text" id="editTopicSubject" required class="input-field" placeholder="e.g., DSA Visualizer or C Programming">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Case-sensitive, e.g., "DSA Visualizer"</p>
                         </div>
                         <div>
                             <label for="editTopicOrder"
@@ -829,10 +932,11 @@
             </div>
         </div>
     </div>
+    
     <div id="manageUserTopicsModal"
         class="modal fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full items-center justify-center z-50">
         <div
-            class="relative mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white dark:bg-gray-800 modal-content-anim">
+            class="relative mx-auto p-5 border w-full max-w-3xl shadow-lg rounded-md bg-white dark:bg-gray-800 modal-content-anim">
             <div class="mt-3">
                 <div class="flex justify-between items-center mb-4 pb-3 border-b dark:border-gray-600">
                     <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white" id="userTopicsModalTitle">
@@ -843,10 +947,24 @@
                     </button>
                 </div>
                 <input type="hidden" id="manageTopicsUserId">
-                <div id="userTopicsListContainer" class="px-7 py-3 max-h-[60vh] overflow-y-auto space-y-3">
-                    <div class="loading-skeleton h-10 w-full rounded"></div>
-                    <div class="loading-skeleton h-10 w-full rounded"></div>
-                    <div class="loading-skeleton h-10 w-full rounded"></div>
+                <div id="userTopicsListContainer" class="px-4 py-3 max-h-[70vh] overflow-y-auto space-y-3 bg-gray-100 dark:bg-gray-900 rounded-md">
+                    <div class="subject-group">
+                        <div class="subject-header">
+                           <div class="loading-skeleton h-6 w-1/3 rounded"></div>
+                        </div>
+                        <div class="subject-topic-list">
+                            <div class="loading-skeleton h-8 w-full rounded"></div>
+                            <div class="loading-skeleton h-8 w-full rounded"></div>
+                        </div>
+                    </div>
+                     <div class="subject-group">
+                        <div class="subject-header">
+                           <div class="loading-skeleton h-6 w-1/2 rounded"></div>
+                        </div>
+                        <div class="subject-topic-list">
+                            <div class="loading-skeleton h-8 w-full rounded"></div>
+                        </div>
+                    </div>
                 </div>
                 <p id="manageUserTopicsError" class="text-red-500 text-sm mt-2 px-7 h-4"></p>
                 <div class="items-center px-4 py-3 border-t border-gray-200 dark:border-gray-700 mt-4 flex justify-end">
@@ -867,164 +985,369 @@
 
 
     <script>
-        const API_BASE_URL = '/api';
-        let currentUserPage = 1;
-        let userSearchTerm = '';
+    const API_BASE_URL = '/api';
+    let currentUserPage = 1;
+    let userSearchTerm = '';
 
-        // --- Add state variables for sorting ---
-        let currentUserSortBy = 'createdAt'; // Default sort field
-        let currentUserSortOrder = 'asc';    // Default sort order
+    // --- Add state variables for sorting ---
+    let currentUserSortBy = 'createdAt'; // Default sort field
+    let currentUserSortOrder = 'desc';    // Default sort order
 
-        // --- UTILITIES ---
-        function getAuthToken() { return localStorage.getItem('authToken'); }
+    // --- State for topic modal ---
+    let currentTopicAlgorithms = []; // Temporary storage for algorithms while editing a topic
 
-        function checkAdminAuth() {
-            const token = getAuthToken();
-            const userStr = localStorage.getItem('currentUser');
-            let userRole = null;
-            if (userStr) { try { userRole = JSON.parse(userStr).role; } catch (e) { } }
-            if (!token || userRole !== 'admin') {
-                console.warn("Not authenticated as admin, redirecting...");
-                localStorage.clear();
-                window.location.href = 'auth.html';
-                return false;
-            }
-            return true;
+    // --- UTILITIES ---
+    function getAuthToken() { return localStorage.getItem('authToken'); }
+
+    function checkAdminAuth() {
+        const token = getAuthToken();
+        const userStr = localStorage.getItem('currentUser');
+        let userRole = null;
+        if (userStr) { try { userRole = JSON.parse(userStr).role; } catch (e) { } }
+        if (!token || userRole !== 'admin') {
+            console.warn("Not authenticated as admin, redirecting...");
+            localStorage.clear();
+            window.location.href = 'auth.html';
+            return false;
         }
+        return true;
+    }
 
-        async function makeAdminAPICall(endpoint, options = {}) {
-            const token = getAuthToken();
-            if (!checkAdminAuth()) return null;
+    async function makeAdminAPICall(endpoint, options = {}) {
+        const token = getAuthToken();
+        if (!checkAdminAuth()) return null;
 
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+            const response = await fetch(`${API_BASE_URL}/admin${endpoint}`, {
+                signal: controller.signal,
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`, ...options.headers },
+                ...options
+            });
+            clearTimeout(timeoutId);
+            let data;
             try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 15000);
-                const response = await fetch(`${API_BASE_URL}/admin${endpoint}`, {
-                    signal: controller.signal,
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`, ...options.headers },
-                    ...options
-                });
-                clearTimeout(timeoutId);
-                let data;
-                try {
-                    const text = await response.text();
-                    data = text ? JSON.parse(text) : { success: response.ok };
-                } catch (e) {
-                    if (!response.ok) throw new Error(`HTTP Error ${response.status}: ${response.statusText}. Response not JSON.`);
-                    return { success: true };
-                }
-                if (response.status === 401 || response.status === 403) {
-                    checkAdminAuth(); return null;
-                }
-                if (!response.ok) throw new Error(data.message || `HTTP Error ${response.status}`);
-                return data;
-            } catch (error) {
-                const message = error.name === 'AbortError' ? 'Request timed out.' : error.message;
-                console.error(`API Error (${endpoint}):`, message, error);
-                showGlobalAlert(`Error: ${message}`, 'error');
+                const text = await response.text();
+                data = text ? JSON.parse(text) : { success: response.ok };
+            } catch (e) {
+                if (!response.ok) throw new Error(`HTTP Error ${response.status}: ${response.statusText}. Response not JSON.`);
+                return { success: true };
+            }
+            if (response.status === 401 || response.status === 403) {
+                checkAdminAuth(); // This will trigger redirect
                 return null;
             }
+            if (!response.ok) throw new Error(data.message || `HTTP Error ${response.status}`);
+            return data;
+        } catch (error) {
+            const message = error.name === 'AbortError' ? 'Request timed out.' : error.message;
+            console.error(`API Error (${endpoint}):`, message, error);
+            showGlobalAlert(`Error: ${message}`, 'error');
+            return null;
         }
+    }
 
-        function showGlobalAlert(message, type = 'info') {
-            const alertDiv = document.getElementById('globalAlert');
-            const messageP = document.getElementById('globalAlertMessage');
-            alertDiv.className = 'fixed bottom-5 right-5 z-50 max-w-sm rounded-md p-4 shadow-lg flex items-center justify-between transition-opacity duration-300 opacity-0'; // Reset classes
-            messageP.textContent = message;
-            const colors = { success: 'bg-green-500', error: 'bg-red-500', warning: 'bg-yellow-500', info: 'bg-blue-500' };
-            alertDiv.classList.add(colors[type] || colors.info, 'text-white');
-            alertDiv.classList.remove('hidden');
-            void alertDiv.offsetWidth; // Force reflow
-            alertDiv.classList.remove('opacity-0');
-            if (alertDiv.alertTimeout) clearTimeout(alertDiv.alertTimeout);
-            alertDiv.alertTimeout = setTimeout(hideGlobalAlert, 5000);
+    function showGlobalAlert(message, type = 'info') {
+        const alertDiv = document.getElementById('globalAlert');
+        const messageP = document.getElementById('globalAlertMessage');
+        if (!alertDiv || !messageP) return;
+        alertDiv.className = 'fixed bottom-5 right-5 z-50 max-w-sm rounded-md p-4 shadow-lg flex items-center justify-between transition-opacity duration-300 opacity-0'; // Reset classes
+        messageP.textContent = message;
+        const colors = { success: 'bg-green-500', error: 'bg-red-500', warning: 'bg-yellow-500', info: 'bg-blue-500' };
+        alertDiv.classList.add(colors[type] || colors.info, 'text-white');
+        alertDiv.classList.remove('hidden');
+        void alertDiv.offsetWidth; // Force reflow
+        alertDiv.classList.remove('opacity-0');
+        if (alertDiv.alertTimeout) clearTimeout(alertDiv.alertTimeout);
+        alertDiv.alertTimeout = setTimeout(hideGlobalAlert, 5000);
+    }
+    function hideGlobalAlert() {
+        const alertDiv = document.getElementById('globalAlert');
+        if (!alertDiv) return;
+        alertDiv.classList.add('opacity-0');
+        setTimeout(() => {
+            alertDiv.classList.add('hidden');
+            if (alertDiv.alertTimeout) { clearTimeout(alertDiv.alertTimeout); alertDiv.alertTimeout = null; }
+        }, 300); // Match CSS transition duration
+    }
+
+    // --- CORE FUNCTIONS ---
+
+    async function loadStats() {
+        const container = document.getElementById('statsContainer');
+        container.innerHTML = `<div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow loading-skeleton h-24"></div>`.repeat(4);
+        const data = await makeAdminAPICall('/stats');
+        if (data?.success && data.stats) {
+            container.innerHTML = `
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow transition hover:shadow-lg hover:-translate-y-1">
+                    <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Users</h3>
+                    <p class="mt-1 text-3xl font-semibold text-gray-900 dark:text-white">${data.stats.totalUsers}</p>
+                </div>
+                 <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow transition hover:shadow-lg hover:-translate-y-1">
+                    <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Active Topics</h3>
+                    <p class="mt-1 text-3xl font-semibold text-gray-900 dark:text-white">${data.stats.activeTopics}</p>
+                </div>
+                 <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow transition hover:shadow-lg hover:-translate-y-1">
+                    <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Achievements</h3>
+                    <p class="mt-1 text-3xl font-semibold text-gray-900 dark:text-white">${data.stats.totalAchievements}</p>
+                </div>
+                 <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow transition hover:shadow-lg hover:-translate-y-1">
+                    <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Leaderboard Entries</h3>
+                    <p class="mt-1 text-3xl font-semibold text-gray-900 dark:text-white">${data.stats.leaderboardUsers}</p>
+                </div>`;
+        } else {
+            container.innerHTML = '<p class="text-red-500 dark:text-red-400 col-span-full">Failed to load stats.</p>';
         }
-        function hideGlobalAlert() {
-            const alertDiv = document.getElementById('globalAlert');
-            alertDiv.classList.add('opacity-0');
-            setTimeout(() => {
-                alertDiv.classList.add('hidden');
-                if (alertDiv.alertTimeout) { clearTimeout(alertDiv.alertTimeout); alertDiv.alertTimeout = null; }
-            }, 300); // Match CSS transition duration
-        }
+    }
 
-        // --- CORE FUNCTIONS ---
+    // --- User Management ---
+    async function loadUsers(page = 1, search = '', sortBy = currentUserSortBy, sortOrder = currentUserSortOrder) {
+        currentUserPage = page;
+        userSearchTerm = search;
+        currentUserSortBy = sortBy; // Update global sort state
+        currentUserSortOrder = sortOrder;
 
+        const tbody = document.getElementById('usersTableBody');
+        tbody.innerHTML = '<tr><td colspan="8" class="p-4" data-label="Loading"><div class="loading-skeleton h-8 w-full"></div></td></tr>'.repeat(5);
+        renderUserPagination(0, 0, 0, true); // Pass loading state
 
-        // --- User Topic Access Management ---
+        const endpoint = `/users?page=${page}&limit=10&search=${encodeURIComponent(search)}&sortBy=${sortBy}&sortOrder=${sortOrder}`;
+        const data = await makeAdminAPICall(endpoint);
 
-        async function openManageUserTopicsModal(userId, username) {
-            const modal = document.getElementById('manageUserTopicsModal');
-            const title = document.getElementById('userTopicsModalTitle');
-            const listContainer = document.getElementById('userTopicsListContainer');
-            const errorP = document.getElementById('manageUserTopicsError');
+        tbody.innerHTML = ''; // Clear loading skeletons
+        updateSortIcons();
 
-            title.textContent = `Manage Access for: ${username}`;
-            document.getElementById('manageTopicsUserId').value = userId;
-            errorP.textContent = '';
-            listContainer.innerHTML = `
-                <div class="loading-skeleton h-10 w-full rounded mb-2"></div>
-                <div class="loading-skeleton h-8 w-full rounded ml-4 mb-1"></div>
-                <div class="loading-skeleton h-8 w-full rounded ml-4 mb-2"></div>
-                <div class="loading-skeleton h-10 w-full rounded mb-2"></div>
-                <div class="loading-skeleton h-8 w-full rounded ml-4 mb-1"></div>`; // Updated skeleton
-            modal.classList.add('show');
-
-            // Fetch BOTH topic statuses for the user AND general topic definitions
-            try {
-                const [statusData, topicsData] = await Promise.all([
-                    makeAdminAPICall(`/users/${userId}/topic-statuses`), // Existing call
-                    makeAdminAPICall('/topics') // Fetch all topic definitions including algorithms
-                ]);
-
-                if (statusData?.success && statusData.topicStatuses && topicsData?.success && topicsData.topics) {
-                    // Combine the data: add algorithm definitions to the status data
-                    const enrichedStatuses = statusData.topicStatuses.map(status => {
-                        const definition = topicsData.topics.find(t => t._id === status._id);
-                        return {
-                            ...status,
-                            algorithms: definition?.algorithms || [] // Add algorithms array
-                        };
-                    });
-                    renderUserTopicsAndAlgorithmsList(enrichedStatuses); // Call the new rendering function
-                } else {
-                    throw new Error('Failed to load topic statuses or definitions.');
-                }
-            } catch (error) {
-                console.error("Error loading user topic/algorithm access:", error);
-                errorP.textContent = error.message || 'Failed to load access details for this user.';
-                listContainer.innerHTML = '<p class="text-center text-red-500 dark:text-red-400">Error loading data.</p>';
-            }
-        }
-
-        function closeManageUserTopicsModal() {
-            document.getElementById('manageUserTopicsModal').classList.remove('show');
-        }
-
-        // admin_dashboard.html
-
-        // ... (other JS functions)
-
-        function renderUserTopicsAndAlgorithmsList(enrichedTopicStatuses) {
-            const listContainer = document.getElementById('userTopicsListContainer');
-            const userId = document.getElementById('manageTopicsUserId').value;
-            listContainer.innerHTML = ''; // Clear loading state
-
-            if (!enrichedTopicStatuses || enrichedTopicStatuses.length === 0) {
-                listContainer.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400">No topics found.</p>';
+        if (data?.success && data.users) {
+            if (data.users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-500 dark:text-gray-400" data-label="Result">No users found.</td></tr>';
+                renderUserPagination(0, 0, 0); // Render empty state pagination
                 return;
             }
+            data.users.forEach(user => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors";
+                const rankLevel = user.stats?.rank?.level ?? 'N/A';
+                const rankPoints = user.stats?.rank?.points ?? 0;
 
-            enrichedTopicStatuses.forEach(topic => {
+                tr.innerHTML = `
+            <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white" data-label="Username">${user.username}</td>
+            <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300" data-label="Email">${user.email}</td>
+            <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300" data-label="Rank">${rankLevel}</td>
+            <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300 text-right" data-label="Points">${rankPoints}</td> 
+            <td class="px-6 py-4 text-sm" data-label="Role"><span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${user.role === 'admin' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300' : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'}">${user.role}</span></td>
+            <td class="px-6 py-4 text-sm" data-label="Verified"><span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${user.isEmailVerified ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'}">${user.isEmailVerified ? 'Yes' : 'No'}</span></td>
+            <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300" data-label="Joined">${new Date(user.createdAt).toLocaleDateString()}</td>
+            <td class="px-6 py-4 text-sm font-medium actions-cell" data-label="Actions">
+                <button onclick="openManageUserTopicsModal('${user._id}', '${user.username}')" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3 focus:outline-none focus:ring-2 focus:ring-blue-300 rounded" title="Manage User Topic Access"><i class="fas fa-list-check"></i></button>
+                <button onclick="openEditUserModal('${user._id}')" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-3 focus:outline-none focus:ring-2 focus:ring-indigo-300 rounded" title="Edit User"><i class="fas fa-edit"></i></button>
+                <button onclick="deleteUser('${user._id}', '${user.username}')" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 focus:outline-none focus:ring-2 focus:ring-red-300 rounded" title="Delete User"><i class="fas fa-trash"></i></button>
+            </td>`;
+                tbody.appendChild(tr);
+            });
+            renderUserPagination(data.totalUsers, data.currentPage, data.totalPages);
+        } else {
+            tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-red-500 dark:text-red-400" data-label="Error">Failed to load users.</td></tr>';
+            renderUserPagination(0, 0, 0); // Render empty state
+        }
+    }
+    function renderUserPagination(totalUsers, currentPage, totalPages, isLoading = false) {
+        const paginationDiv = document.getElementById('userPagination');
+        const totalInfoSpan = paginationDiv.querySelector('span');
+        const buttonsContainer = paginationDiv.querySelector('div');
+        buttonsContainer.innerHTML = '';
+        if (isLoading) { totalInfoSpan.textContent = 'Loading users...'; return; }
+        totalInfoSpan.textContent = totalPages > 0 ? `Page ${currentPage} of ${totalPages} (Total: ${totalUsers} users)` : `Total Users: ${totalUsers}`;
+        if (totalPages <= 1) return;
+        let buttonsHtml = '';
+        const createButton = (page, text, disabled = false) => `<button onclick="loadUsers(${page}, userSearchTerm, currentUserSortBy, currentUserSortOrder)" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded text-sm mx-1 hover:bg-blue-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed" ${disabled ? 'disabled' : ''}>${text}</button>`;
+        const createCurrentButton = (page) => `<button class="bg-blue-500 text-white px-3 py-1 rounded text-sm mx-1 focus:outline-none focus:ring-2 focus:ring-blue-300" disabled aria-current="page">${page}</button>`;
+        const createEllipsis = () => `<span class="px-2 py-1 text-gray-500 dark:text-gray-400">...</span>`;
+        buttonsHtml += createButton(currentPage - 1, '&laquo; Prev', currentPage === 1);
+        const maxVisibleButtons = 5, sideButtons = Math.floor((maxVisibleButtons - 3) / 2);
+        if (totalPages <= maxVisibleButtons) { for (let i = 1; i <= totalPages; i++) buttonsHtml += (i === currentPage) ? createCurrentButton(i) : createButton(i, i); }
+        else {
+            buttonsHtml += (1 === currentPage) ? createCurrentButton(1) : createButton(1, 1);
+            if (currentPage > sideButtons + 2) buttonsHtml += createEllipsis();
+            let startPage = Math.max(2, currentPage - sideButtons), endPage = Math.min(totalPages - 1, currentPage + sideButtons);
+            if (currentPage + sideButtons >= totalPages - 1) startPage = Math.max(2, totalPages - maxVisibleButtons + 2);
+            if (currentPage - sideButtons <= 2) endPage = Math.min(totalPages - 1, maxVisibleButtons - 1);
+            for (let i = startPage; i <= endPage; i++) buttonsHtml += (i === currentPage) ? createCurrentButton(i) : createButton(i, i);
+            if (currentPage < totalPages - sideButtons - 1) buttonsHtml += createEllipsis();
+            buttonsHtml += (totalPages === currentPage) ? createCurrentButton(totalPages) : createButton(totalPages, totalPages);
+        }
+        buttonsHtml += createButton(currentPage + 1, 'Next &raquo;', currentPage === totalPages);
+        buttonsContainer.innerHTML = buttonsHtml;
+    }
+
+    function handleSortClick(event) {
+        const header = event.target.closest('th[data-sort]');
+        if (!header) return;
+        const sortBy = header.dataset.sort;
+        let newSortOrder = 'asc';
+        if (sortBy === currentUserSortBy) {
+            newSortOrder = currentUserSortOrder === 'asc' ? 'desc' : 'asc';
+        }
+        loadUsers(1, userSearchTerm, sortBy, newSortOrder);
+    }
+
+    function updateSortIcons() {
+        document.querySelectorAll('#users thead th[data-sort]').forEach(th => {
+            const sortKey = th.dataset.sort;
+            const icon = th.querySelector('i.fas');
+            if (icon) {
+                if (sortKey === currentUserSortBy) {
+                    icon.classList.remove('fa-sort', 'fa-sort-up', 'fa-sort-down', 'opacity-50');
+                    icon.classList.add(currentUserSortOrder === 'asc' ? 'fa-sort-up' : 'fa-sort-down');
+                    icon.classList.remove('opacity-50');
+                } else {
+                    icon.classList.remove('fa-sort-up', 'fa-sort-down');
+                    icon.classList.add('fa-sort', 'opacity-50');
+                }
+            }
+        });
+    }
+
+    async function openEditUserModal(userId) {
+        const modal = document.getElementById('editUserModal');
+        const form = document.getElementById('editUserForm');
+        form.reset(); document.getElementById('editUserError').textContent = ''; document.getElementById('saveUserChangesBtn').disabled = true;
+        showGlobalAlert('Loading user data...', 'info');
+        const data = await makeAdminAPICall(`/users/${userId}`);
+        hideGlobalAlert();
+        if (data?.success && data.user) {
+            const user = data.user;
+            document.getElementById('modalTitle').textContent = `Edit User: ${user.username}`; document.getElementById('editUserId').value = user._id;
+            document.getElementById('editUserRole').value = user.role; document.querySelector(`input[name="isEmailVerified"][value="${user.isEmailVerified}"]`).checked = true;
+            document.getElementById('saveUserChangesBtn').disabled = false; modal.classList.add('show');
+        }
+    }
+    function closeEditUserModal() { document.getElementById('editUserModal').classList.remove('show'); }
+    
+    async function saveUserChanges() {
+        const userId = document.getElementById('editUserId').value, role = document.getElementById('editUserRole').value, isEmailVerified = document.querySelector('input[name="isEmailVerified"]:checked').value === 'true';
+        const errorP = document.getElementById('editUserError'), saveButton = document.getElementById('saveUserChangesBtn');
+        errorP.textContent = ''; saveButton.disabled = true; saveButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+        const result = await makeAdminAPICall(`/users/${userId}`, { method: 'PUT', body: JSON.stringify({ role, isEmailVerified }) });
+        saveButton.disabled = false; saveButton.innerHTML = 'Save Changes';
+        if (result?.success) {
+            showGlobalAlert('User updated!', 'success');
+            closeEditUserModal();
+            loadUsers(currentUserPage, userSearchTerm, currentUserSortBy, currentUserSortOrder);
+        }
+        else { errorP.textContent = result?.message || 'Update failed.'; }
+    }
+    
+    async function deleteUser(userId, username) {
+        if (confirm(`DELETE user "${username}"?\nThis CANNOT be undone.`)) {
+            showGlobalAlert('Deleting user...', 'info');
+            const result = await makeAdminAPICall(`/users/${userId}`, { method: 'DELETE' });
+            if (result?.success) {
+                showGlobalAlert(`User "${username}" deleted!`, 'success');
+                const tbody = document.getElementById('usersTableBody');
+                const isLastOnPage = tbody.childElementCount === 1;
+                const pageToLoad = isLastOnPage && currentUserPage > 1 ? currentUserPage - 1 : currentUserPage;
+                loadUsers(pageToLoad, userSearchTerm, currentUserSortBy, currentUserSortOrder);
+            }
+        }
+    }
+
+    // --- User Topic Access Management ---
+
+    async function openManageUserTopicsModal(userId, username) {
+        const modal = document.getElementById('manageUserTopicsModal');
+        const title = document.getElementById('userTopicsModalTitle');
+        const listContainer = document.getElementById('userTopicsListContainer');
+        const errorP = document.getElementById('manageUserTopicsError');
+
+        title.textContent = `Manage Access for: ${username}`;
+        document.getElementById('manageTopicsUserId').value = userId;
+        errorP.textContent = '';
+        listContainer.innerHTML = `
+            <div class="subject-group">
+                <div class="subject-header"><div class="loading-skeleton h-6 w-1/3 rounded"></div></div>
+                <div class="subject-topic-list">
+                    <div class="loading-skeleton h-8 w-full rounded"></div>
+                    <div class="loading-skeleton h-8 w-full rounded"></div>
+                </div>
+            </div>
+            <div class="subject-group">
+                <div class="subject-header"><div class="loading-skeleton h-6 w-1/2 rounded"></div></div>
+                <div class="subject-topic-list"><div class="loading-skeleton h-8 w-full rounded"></div></div>
+            </div>`;
+        modal.classList.add('show');
+
+        // Fetch topic statuses (which now includes algorithm definitions)
+        try {
+            const statusData = await makeAdminAPICall(`/users/${userId}/topic-statuses`);
+
+            if (statusData?.success && statusData.subjectGroupedStatuses) {
+                renderUserTopicsAndAlgorithmsList(statusData.subjectGroupedStatuses);
+            } else {
+                throw new Error(statusData?.message || 'Failed to load topic statuses.');
+            }
+        } catch (error) {
+            console.error("Error loading user topic/algorithm access:", error);
+            errorP.textContent = error.message || 'Failed to load access details for this user.';
+            listContainer.innerHTML = '<p class="text-center text-red-500 dark:text-red-400">Error loading data.</p>';
+        }
+    }
+
+    function closeManageUserTopicsModal() {
+        document.getElementById('manageUserTopicsModal').classList.remove('show');
+    }
+
+    function renderUserTopicsAndAlgorithmsList(subjectGroupedStatuses) {
+        const listContainer = document.getElementById('userTopicsListContainer');
+        const userId = document.getElementById('manageTopicsUserId').value;
+        listContainer.innerHTML = ''; // Clear loading state
+        
+        const subjectNames = Object.keys(subjectGroupedStatuses).sort();
+
+        if (subjectNames.length === 0) {
+            listContainer.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400">No subjects or topics found.</p>';
+            return;
+        }
+
+        subjectNames.forEach(subjectName => {
+            const topics = subjectGroupedStatuses[subjectName];
+            
+            const subjectGroupDiv = document.createElement('div');
+            subjectGroupDiv.className = 'subject-group';
+            
+            // --- Subject Header ---
+            const subjectHeaderDiv = document.createElement('div');
+            subjectHeaderDiv.className = 'subject-header';
+            subjectHeaderDiv.innerHTML = `
+                <span class="text-lg font-semibold text-gray-800 dark:text-gray-200">${subjectName}</span>
+                <div class_id="subject-actions-${subjectName.replace(/\s+/g, '-')}" class="space-x-2">
+                    <button onclick="toggleSubjectLock('${userId}', '${subjectName}', false)" class="px-3 py-1 rounded text-white text-xs font-semibold bg-green-500 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-300 disabled:opacity-50" title="Unlock ALL topics in this subject for this user"><i class="fas fa-unlock-alt mr-1"></i>Unlock Subject</button>
+                    <button onclick="toggleSubjectLock('${userId}', '${subjectName}', true)" class="px-3 py-1 rounded text-white text-xs font-semibold bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300 disabled:opacity-50" title="Lock ALL topics in this subject for this user"><i class="fas fa-lock mr-1"></i>Lock Subject</button>
+                </div>
+            `;
+            subjectGroupDiv.appendChild(subjectHeaderDiv);
+            
+            const topicListDiv = document.createElement('div');
+            topicListDiv.className = 'subject-topic-list';
+            
+            if (!topics || topics.length === 0) {
+                 topicListDiv.innerHTML = '<p class="text-xs text-gray-500 dark:text-gray-400 italic">No topics in this subject.</p>';
+                 subjectGroupDiv.appendChild(topicListDiv);
+                 listContainer.appendChild(subjectGroupDiv);
+                 return; // next subject
+            }
+            
+            // --- Render Topics for this Subject ---
+            topics.forEach(topic => {
                 const isGloballyLockedTopic = topic.isGloballyLocked;
                 const effectiveStatusTopic = topic.effectiveStatus;
                 const statusTextTopic = topic.statusText;
                 let statusColorClassTopic;
 
                 if (effectiveStatusTopic === 'locked') {
-                    statusColorClassTopic = 'bg-red-200 text-red-800 dark:bg-red-900 dark:text-red-300';
+                    statusColorClassTopic = 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
                 } else {
-                    statusColorClassTopic = 'bg-green-200 text-green-800 dark:bg-green-900 dark:text-green-300';
+                    statusColorClassTopic = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
                 }
 
                 const showUnlockButtonTopic = effectiveStatusTopic === 'locked';
@@ -1033,1076 +1356,813 @@
                     : `<button id="toggle-topic-lock-${topic._id}" onclick="toggleUserTopicLock('${userId}', '${topic._id}', '${topic.name}', true)" class="px-3 py-1 rounded text-white text-xs font-semibold bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300 disabled:opacity-50" title="${isGloballyLockedTopic ? 'Lock topic for this user (Removes Override)' : 'Lock topic for this user'}"><i class="fas fa-lock mr-1"></i>Lock Topic</button>`;
 
                 const topicDiv = document.createElement('div');
-                topicDiv.className = 'mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border dark:border-gray-600';
+                topicDiv.className = 'topic-container'; // Use a simple container
                 topicDiv.innerHTML = `
                     <div class="flex justify-between items-center mb-2">
                         <span class="font-semibold text-gray-800 dark:text-gray-200">${topic.name}</span>
-                        <div>
-                            <span class="text-sm mr-4 px-2 py-1 rounded ${statusColorClassTopic}">${statusTextTopic}</span>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs mr-2 px-2 py-0.5 rounded ${statusColorClassTopic}">${statusTextTopic}</span>
                             ${topicButtonHtml}
                         </div>
                     </div>
-                    <div id="algo-list-${topic._id}" class="pl-4 border-l-2 border-gray-300 dark:border-gray-500 ml-2 space-y-2">
-                        <div class="loading-skeleton h-6 w-3/4 rounded"></div> {/* Placeholder */}
+                    <div id="algo-list-${topic._id}" class="algo-list">
+                        <div class="loading-skeleton h-6 w-3/4 rounded"></div>
                     </div>`;
-                listContainer.appendChild(topicDiv);
+                topicListDiv.appendChild(topicDiv);
 
-                // Now, render algorithms for this topic (async potentially needed if fetching algo status)
-                // For now, assume status comes from backend or calculate based on user progress (if fetched)
-                renderUserAlgorithmsList(userId, topic._id, topic.algorithms, `algo-list-${topic._id}`);
+                // Render algorithms for this topic
+                renderUserAlgorithmsList(userId, topic._id, topic.id, topic.algorithms, `algo-list-${topic._id}`);
             });
+            
+            subjectGroupDiv.appendChild(topicListDiv);
+            listContainer.appendChild(subjectGroupDiv);
+        });
+    }
+
+    // Modified to accept topicCustomId for progress lookup
+    async function renderUserAlgorithmsList(userId, topicMongoId, topicCustomId, algorithms, containerId) {
+        const algoListContainer = document.getElementById(containerId);
+        if (!algoListContainer) return;
+
+        let userProgress = null;
+        try {
+            // This is still inefficient, but necessary if statusData doesn't include user progress
+             const userData = await makeAdminAPICall(`/users/${userId}`); 
+             if(userData?.success && userData.user?.progress) {
+                 userProgress = userData.user.progress[topicCustomId]; // Access progress using custom ID
+             }
+        } catch(e) { console.error("Could not fetch user progress for algorithm status", e); }
+
+
+        if (!algorithms || algorithms.length === 0) {
+            algoListContainer.innerHTML = '<p class="text-xs text-gray-500 dark:text-gray-400 italic">No algorithms in this topic.</p>';
+            return;
         }
 
-        // NEW function to render algorithms within the user topic modal
-        async function renderUserAlgorithmsList(userId, topicMongoId, algorithms, containerId) {
-            const algoListContainer = document.getElementById(containerId);
-            if (!algoListContainer) return;
+        algoListContainer.innerHTML = ''; // Clear placeholder
 
-            // Fetch user data to determine user-specific algorithm status (if not already available)
-            // NOTE: This adds an extra API call per topic, potentially slow.
-            // A better approach might be to enhance the `/users/:userId/topic-statuses` endpoint
-            // to optionally include detailed algorithm statuses.
-            // For now, let's proceed with the simpler approach assuming we need to check user progress.
-            let userProgress = null;
-            try {
-                // Simplified fetch - might need adjustment based on your user data structure
-                 const userData = await makeAdminAPICall(`/users/${userId}`); // Re-fetch user data (inefficient)
-                 if(userData?.success && userData.user?.progress) {
-                     // Need to find the correct topic progress using the topic's *custom ID*, not Mongo ID
-                     const topicDefinition = await makeAdminAPICall(`/topics/${topicMongoId}`); // Fetch topic def to get custom ID
-                     if(topicDefinition?.success && topicDefinition.topic) {
-                         const topicCustomId = topicDefinition.topic.id;
-                         userProgress = userData.user.progress[topicCustomId]; // Access progress using custom ID
-                     }
-                 }
-            } catch(e) { console.error("Could not fetch user progress for algorithm status", e); }
+        algorithms.forEach(algo => {
+            const algoId = algo.id; // String ID like 'bubbleSort'
+            const isGloballyLockedAlgo = algo.isGloballyLocked === true;
 
+            let userAlgoStatus = 'available';
+             if (userProgress?.algorithms && userProgress.algorithms[algoId]) {
+                 userAlgoStatus = userProgress.algorithms[algoId].status || 'available';
+             }
 
-            if (!algorithms || algorithms.length === 0) {
-                algoListContainer.innerHTML = '<p class="text-xs text-gray-500 dark:text-gray-400 italic">No algorithms in this topic.</p>';
-                return;
+             let effectiveAlgoStatus = 'available';
+             if (isGloballyLockedAlgo) {
+                 effectiveAlgoStatus = (userAlgoStatus === 'available') ? 'available' : 'locked';
+             } else {
+                 effectiveAlgoStatus = userAlgoStatus;
+             }
+
+            let statusColorClassAlgo, statusIconAlgo;
+            if (effectiveAlgoStatus === 'locked') {
+                statusColorClassAlgo = 'text-red-500 dark:text-red-400';
+                statusIconAlgo = 'fa-lock';
+            } else {
+                statusColorClassAlgo = 'text-green-500 dark:text-green-400';
+                statusIconAlgo = 'fa-unlock-alt';
+            }
+            
+            // Check completion status from progress
+            const isCompleted = userProgress?.algorithms?.[algoId]?.completed === true;
+            if (isCompleted) {
+                statusIconAlgo = 'fa-check-circle'; // Override icon for completed
+                statusColorClassAlgo = 'text-blue-500 dark:text-blue-400'; // Use blue for completed
             }
 
-            algoListContainer.innerHTML = ''; // Clear placeholder
 
-            algorithms.forEach(algo => {
-                const algoId = algo.id; // String ID like 'bubbleSort'
-                const isGloballyLockedAlgo = algo.isGloballyLocked === true;
-
-                // --- Determine User-Specific Status ---
-                let userAlgoStatus = 'available'; // Default
-                 if (userProgress?.algorithms && userProgress.algorithms[algoId]) {
-                     userAlgoStatus = userProgress.algorithms[algoId].status || 'available';
-                 }
-                 // --- End Determine User-Specific Status ---
-
-                 // --- Determine Effective Status (Simplified - ignores topic lock for now, handled visually by parent) ---
-                 let effectiveAlgoStatus = 'available';
-                 if (isGloballyLockedAlgo) {
-                     effectiveAlgoStatus = (userAlgoStatus === 'available') ? 'available' : 'locked';
-                 } else {
-                     effectiveAlgoStatus = userAlgoStatus;
-                 }
-                 // --- End Effective Status ---
-
-                let statusColorClassAlgo;
-                let statusIconAlgo;
-                if (effectiveAlgoStatus === 'locked') {
-                    statusColorClassAlgo = 'text-red-500 dark:text-red-400';
-                    statusIconAlgo = 'fa-lock';
-                } else { // available or completed
-                    statusColorClassAlgo = 'text-green-500 dark:text-green-400';
-                    statusIconAlgo = 'fa-unlock-alt'; // Or fa-check-circle if completed
-                }
-
-                // Determine button action based on *user-specific* status for direct control
-                const showUnlockButtonAlgo = userAlgoStatus === 'locked'; // Button action depends on user's direct status
-                const algoButtonHtml = showUnlockButtonAlgo
-                    ? `<button onclick="toggleUserAlgorithmLock('${userId}', '${topicMongoId}', '${algoId}', '${algo.name}', false)" class="px-2 py-0.5 rounded text-white text-xs font-semibold bg-green-500 hover:bg-green-600 focus:outline-none focus:ring-1 focus:ring-green-300 disabled:opacity-50" title="Unlock algorithm ONLY for this user"><i class="fas fa-unlock-alt text-xs"></i></button>`
-                    : `<button onclick="toggleUserAlgorithmLock('${userId}', '${topicMongoId}', '${algoId}', '${algo.name}', true)" class="px-2 py-0.5 rounded text-white text-xs font-semibold bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-1 focus:ring-red-300 disabled:opacity-50" title="Lock algorithm ONLY for this user"><i class="fas fa-lock text-xs"></i></button>`;
+            const showUnlockButtonAlgo = userAlgoStatus === 'locked'; // Button action depends on user's direct status
+            const algoButtonHtml = showUnlockButtonAlgo
+                ? `<button onclick="toggleUserAlgorithmLock('${userId}', '${topicMongoId}', '${algoId}', '${algo.name}', false)" class="px-2 py-0.5 rounded text-white text-xs font-semibold bg-green-500 hover:bg-green-600 focus:outline-none focus:ring-1 focus:ring-green-300 disabled:opacity-50" title="Unlock algorithm ONLY for this user"><i class="fas fa-unlock-alt text-xs"></i></button>`
+                : `<button onclick="toggleUserAlgorithmLock('${userId}', '${topicMongoId}', '${algoId}', '${algo.name}', true)" class="px-2 py-0.5 rounded text-white text-xs font-semibold bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-1 focus:ring-red-300 disabled:opacity-50" title="Lock algorithm ONLY for this user"><i class="fas fa-lock text-xs"></i></button>`;
 
 
-                const algoDiv = document.createElement('div');
-                algoDiv.className = 'flex justify-between items-center text-sm';
-                algoDiv.innerHTML = `
-                    <span class="text-gray-700 dark:text-gray-300">
-                        <i class="fas ${statusIconAlgo} ${statusColorClassAlgo} mr-2 w-4 text-center" title="Effective Status: ${effectiveAlgoStatus}"></i>
-                        ${algo.name}
-                        ${isGloballyLockedAlgo ? '<i class="fas fa-globe-americas text-gray-400 dark:text-gray-500 ml-1 text-xs" title="Globally Locked"></i>' : ''}
-                    </span>
-                    <div id="algo-actions-${topicMongoId}-${algoId}">
-                        ${algoButtonHtml}
-                    </div>
-                `;
-                algoListContainer.appendChild(algoDiv);
-            });
+            const algoDiv = document.createElement('div');
+            algoDiv.className = 'flex justify-between items-center text-sm';
+            algoDiv.innerHTML = `
+                <span class="text-gray-700 dark:text-gray-300">
+                    <i class="fas ${statusIconAlgo} ${statusColorClassAlgo} mr-2 w-4 text-center" title="Effective Status: ${effectiveAlgoStatus}${isCompleted ? ' (Completed)' : ''}"></i>
+                    ${algo.name}
+                    ${isGloballyLockedAlgo ? '<i class="fas fa-globe-americas text-gray-400 dark:text-gray-500 ml-1 text-xs" title="Globally Locked"></i>' : ''}
+                </span>
+                <div id="algo-actions-${topicMongoId}-${algoId}" class="space-x-1">
+                    ${algoButtonHtml}
+                </div>
+            `;
+            algoListContainer.appendChild(algoDiv);
+        });
+    }
+
+    async function toggleUserAlgorithmLock(userId, topicMongoId, algoId, algoName, lock) {
+        const action = lock ? 'lock' : 'unlock';
+        const actionVerb = lock ? 'Locking' : 'Unlocking';
+        const buttonContainerId = `algo-actions-${topicMongoId}-${algoId}`;
+        const buttonContainer = document.getElementById(buttonContainerId);
+        const errorP = document.getElementById('manageUserTopicsError');
+        errorP.textContent = ''; 
+
+        let originalButtonHtml = '';
+        if (buttonContainer) {
+            originalButtonHtml = buttonContainer.innerHTML;
+            buttonContainer.innerHTML = `<span class="text-xs text-yellow-600 dark:text-yellow-400"><i class="fas fa-spinner fa-spin mr-1"></i>${actionVerb}...</span>`;
         }
 
-        // NEW function to toggle lock status for a specific algorithm for a specific user
-        async function toggleUserAlgorithmLock(userId, topicMongoId, algoId, algoName, lock) {
-            const action = lock ? 'lock' : 'unlock';
-            const actionVerb = lock ? 'Locking' : 'Unlocking';
-            const buttonContainerId = `algo-actions-${topicMongoId}-${algoId}`;
-            const buttonContainer = document.getElementById(buttonContainerId);
-            const errorP = document.getElementById('manageUserTopicsError');
-            errorP.textContent = ''; // Clear previous errors
+        showGlobalAlert(`${actionVerb} "${algoName}" for user...`, 'info');
+        const endpoint = `/topics/${topicMongoId}/algorithms/${algoId}/${action}`;
 
-            let originalButtonHtml = '';
+        const result = await makeAdminAPICall(endpoint, { method: 'POST', body: JSON.stringify({ userId: userId }) });
+
+        hideGlobalAlert(); 
+
+        if (result?.success) {
+            showGlobalAlert(result.message, 'success');
+            // Refresh just this algorithm's section (or ideally, just the button)
+            // This is complex, so let's just refresh the whole user topic modal
+            const username = document.getElementById('userTopicsModalTitle').textContent.replace('Manage Access for: ', '');
+            await openManageUserTopicsModal(userId, username); // Re-fetch all statuses
+        } else {
+            const errorMsg = result?.message || `Failed to ${action} algorithm for user.`;
+            showGlobalAlert(errorMsg, 'error');
+            errorP.textContent = errorMsg; 
             if (buttonContainer) {
-                originalButtonHtml = buttonContainer.innerHTML; // Store original button
-                buttonContainer.innerHTML = `<span class="text-xs text-yellow-600 dark:text-yellow-400"><i class="fas fa-spinner fa-spin mr-1"></i>${actionVerb}...</span>`;
-            }
-
-            showGlobalAlert(`${actionVerb} "${algoName}" for user...`, 'info');
-            const endpoint = `/topics/${topicMongoId}/algorithms/${algoId}/${action}`;
-
-            const result = await makeAdminAPICall(endpoint, { method: 'POST', body: JSON.stringify({ userId: userId }) });
-
-            hideGlobalAlert(); // Hide working message
-
-            if (result?.success) {
-                showGlobalAlert(result.message, 'success');
-                // Refresh just the algorithm list for this topic to show the change
-                 const topicElement = document.getElementById(`algo-list-${topicMongoId}`);
-                 if (topicElement) {
-                     // Need the algorithms array again to re-render
-                     // This is inefficient - ideally, the API response would tell us the new state
-                     // Or we update the button state directly based on success
-                     const topicDefinition = await makeAdminAPICall(`/topics/${topicMongoId}`); // Re-fetch topic def
-                     if(topicDefinition?.success && topicDefinition.topic?.algorithms) {
-                         renderUserAlgorithmsList(userId, topicMongoId, topicDefinition.topic.algorithms, `algo-list-${topicMongoId}`);
-                     } else {
-                         if (buttonContainer) buttonContainer.innerHTML = '<span class="text-xs text-red-500">Refresh Error</span>'; // Indicate error
-                     }
-                 }
-            } else {
-                const errorMsg = result?.message || `Failed to ${action} algorithm for user.`;
-                showGlobalAlert(errorMsg, 'error');
-                errorP.textContent = errorMsg; // Show error in modal
-                // Restore original button on failure
-                if (buttonContainer) {
-                    buttonContainer.innerHTML = originalButtonHtml;
-                }
+                buttonContainer.innerHTML = originalButtonHtml; // Restore button on failure
             }
         }
+    }
 
-        // Ensure toggleUserTopicLock calls the API correctly (it seems okay already)
-        async function toggleUserTopicLock(userId, topicMongoId, topicName, lock) { // lock = true to lock, false to unlock
-            const action = lock ? 'lock' : 'unlock';
-            const buttonId = `toggle-lock-${topicMongoId}`;
-            const button = document.getElementById(buttonId);
-            const errorP = document.getElementById('manageUserTopicsError');
-            errorP.textContent = '';
+    async function toggleUserTopicLock(userId, topicMongoId, topicName, lock) { // lock = true to lock, false to unlock
+        const action = lock ? 'lock' : 'unlock';
+        const buttonId = `toggle-topic-lock-${topicMongoId}`;
+        const button = document.getElementById(buttonId);
+        const errorP = document.getElementById('manageUserTopicsError');
+        errorP.textContent = '';
 
+        if (button) {
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Working...';
+        }
+
+        showGlobalAlert(`${lock ? 'Locking' : 'Unlocking'} "${topicName}" for user...`, 'info');
+        const endpoint = `/topics/${topicMongoId}/${action}`; 
+        const result = await makeAdminAPICall(endpoint, { method: 'POST', body: JSON.stringify({ userId: userId }) });
+        hideGlobalAlert();
+
+        if (result?.success) {
+            showGlobalAlert(result.message, 'success');
+            const username = document.getElementById('userTopicsModalTitle').textContent.replace('Manage Access for: ', '');
+            await openManageUserTopicsModal(userId, username); // Re-fetch and re-render
+        } else {
+            const errorMsg = result?.message || `Failed to ${action} topic for user.`;
+            showGlobalAlert(errorMsg, 'error');
+            if (errorP) errorP.textContent = errorMsg; 
+            // Button restore is complex as the whole modal re-renders on success anyway
             if (button) {
-                button.disabled = true;
-                button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Working...';
-            }
-
-            // Use showGlobalAlert for feedback
-            showGlobalAlert(`${lock ? 'Locking' : 'Unlocking'} "${topicName}" for user...`, 'info');
-            const endpoint = `/topics/${topicMongoId}/${action}`; // Use lock or unlock endpoint
-
-            // Send userId in the body
-            const result = await makeAdminAPICall(endpoint, { method: 'POST', body: JSON.stringify({ userId: userId }) });
-
-            // Hide the working message immediately after the call finishes
-            hideGlobalAlert();
-
-            if (result?.success) {
-                showGlobalAlert(result.message, 'success');
-                // Refresh the list in the modal by re-fetching data
-                const username = document.getElementById('userTopicsModalTitle').textContent.replace('Manage Topic Access for: ', ''); // Get username from title
-                // Re-call openManageUserTopicsModal to fetch fresh data and re-render
-                await openManageUserTopicsModal(userId, username); // Add await here
-            } else {
-                const errorMsg = result?.message || `Failed to ${action} topic for user.`;
-                showGlobalAlert(errorMsg, 'error');
-                if (errorP) errorP.textContent = errorMsg; // Show error in modal as well
-
-                // Re-enable button on failure and restore its state
-                if (button) {
-                    button.disabled = false;
-                    // Restore button text based on the intended action (lock or unlock)
-                    const iconClass = lock ? 'fa-lock' : 'fa-unlock-alt';
-                    const buttonText = lock ? 'Lock for User' : 'Unlock for User';
-                    const buttonColorClass = lock ? 'bg-red-500 hover:bg-red-600 focus:ring-red-300' : 'bg-green-500 hover:bg-green-600 focus:ring-green-300';
-                    const titleText = lock
-                        ? (topic.isGloballyLocked ? 'Lock topic for this user (Removes Override)' : 'Lock topic for this user') // Re-evaluate title based on current global state if needed
-                        : (topic.isGloballyLocked ? 'Unlock topic ONLY for this user (Overrides Global Lock)' : 'Unlock topic for this user');
-
-                    button.innerHTML = `<i class="fas ${iconClass} mr-1"></i>${buttonText}`;
-                    button.className = `px-3 py-1 rounded text-white text-xs font-semibold focus:outline-none focus:ring-2 disabled:opacity-50 ${buttonColorClass}`;
-                    button.title = titleText; // Update title as well
-                }
+                 button.disabled = false;
+                 button.innerHTML = lock ? `<i class="fas fa-lock mr-1"></i>Lock Topic` : `<i class="fas fa-unlock-alt mr-1"></i>Unlock Topic`;
             }
         }
+    }
 
+    // --- NEW Subject Management Functions ---
+    async function loadSubjects() {
+        const tbody = document.getElementById('subjectsTableBody');
+        tbody.innerHTML = '<tr><td colspan="3" class="p-4" data-label="Loading"><div class="loading-skeleton h-8 w-full"></div></td></tr>'.repeat(2);
+        
+        // Fetch subjects and topics in parallel
+        const [subjectData, topicData] = await Promise.all([
+             makeAdminAPICall('/subjects'),
+             makeAdminAPICall('/topics') // Need topics to count
+        ]);
+        
+        tbody.innerHTML = '';
+        
+        if (subjectData?.success && subjectData.subjects && topicData?.success && topicData.topics) {
+             const topics = topicData.topics;
+             const subjects = subjectData.subjects;
 
-        // Ensure toggleTopicLock calls the API correctly for GLOBAL actions
-        async function toggleTopicLock(topicMongoId, topicName, lock) { // lock is true to lock, false to unlock
-            const action = lock ? 'lock' : 'unlock';
-            if (!confirm(`${lock ? 'Globally lock' : 'Globally unlock'} topic "${topicName}"? This affects ALL users.`)) {
-                return;
+            if (subjects.length === 0) { 
+                tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-gray-500 dark:text-gray-400" data-label="Result">No subjects found. (Add a "subject" to a topic to create one)</td></tr>'; 
+                return; 
             }
-
-            showGlobalAlert(`${lock ? 'Locking' : 'Unlocking'} "${topicName}" globally...`, 'info');
-            const endpoint = `/topics/${topicMongoId}/${action}`; // Use lock or unlock endpoint
-
-            // Send global: true in the body
-            const result = await makeAdminAPICall(endpoint, { method: 'POST', body: JSON.stringify({ global: true }) });
-
-            // Hide the working message immediately after the call finishes
-            hideGlobalAlert();
-
-            if (result?.success) {
-                showGlobalAlert(result.message, 'success');
-            } else {
-                showGlobalAlert(result?.message || `Failed to ${action} topic globally.`, 'error');
-            }
-            // Reload topics list after action attempt to reflect changes
-            loadTopics();
-
-        }
-
-        // ... (rest of the JS code, including toggleUserTopicLock)
-
-        async function toggleUserTopicLock(userId, topicMongoId, topicName, lock) { // lock = true to lock, false to unlock
-            const action = lock ? 'lock' : 'unlock';
-            const buttonId = `toggle-lock-${topicMongoId}`;
-            const button = document.getElementById(buttonId);
-            const errorP = document.getElementById('manageUserTopicsError');
-            errorP.textContent = '';
-
-            if (button) {
-                button.disabled = true;
-                button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Working...';
-            }
-
-
-            showGlobalAlert(`${lock ? 'Locking' : 'Unlocking'} "${topicName}" for user...`, 'info');
-            const endpoint = `/topics/${topicMongoId}/${action}`; // Use lock or unlock endpoint
-
-            // Send userId in the body
-            const result = await makeAdminAPICall(endpoint, { method: 'POST', body: JSON.stringify({ userId: userId }) });
-
-            hideGlobalAlert(); // Hide the working message
-
-            if (result?.success) {
-                showGlobalAlert(result.message, 'success');
-                // Refresh the list in the modal
-                const username = document.getElementById('userTopicsModalTitle').textContent.replace('Manage Topic Access for: ', ''); // Get username from title
-                openManageUserTopicsModal(userId, username); // Re-fetch and re-render
-            } else {
-                const errorMsg = result?.message || `Failed to ${action} topic for user.`;
-                showGlobalAlert(errorMsg, 'error');
-                errorP.textContent = errorMsg;
-                // Re-enable button on failure
-                if (button) {
-                    button.disabled = false;
-                    // Restore button text based on the intended action's OPPOSITE (since it failed)
-                    button.innerHTML = `
-                 ${lock ? '<i class="fas fa-lock mr-1"></i>Lock' : '<i class="fas fa-unlock mr-1"></i>Unlock'}
-             `;
-                }
-            }
-        }
-
-        // --- End User Topic Access Management ---
-
-        async function loadStats() {
-            const container = document.getElementById('statsContainer');
-            container.innerHTML = `<div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow loading-skeleton h-24"></div>`.repeat(4);
-            const data = await makeAdminAPICall('/stats');
-            if (data?.success && data.stats) {
-                container.innerHTML = `
-                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow transition hover:shadow-lg hover:-translate-y-1">
-                        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Users</h3>
-                        <p class="mt-1 text-3xl font-semibold text-gray-900 dark:text-white">${data.stats.totalUsers}</p>
-                    </div>
-                     <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow transition hover:shadow-lg hover:-translate-y-1">
-                        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Active Topics</h3>
-                        <p class="mt-1 text-3xl font-semibold text-gray-900 dark:text-white">${data.stats.activeTopics}</p>
-                    </div>
-                     <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow transition hover:shadow-lg hover:-translate-y-1">
-                        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Achievements</h3>
-                        <p class="mt-1 text-3xl font-semibold text-gray-900 dark:text-white">${data.stats.totalAchievements}</p>
-                    </div>
-                     <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow transition hover:shadow-lg hover:-translate-y-1">
-                        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Leaderboard Entries</h3>
-                        <p class="mt-1 text-3xl font-semibold text-gray-900 dark:text-white">${data.stats.leaderboardUsers}</p>
-                    </div>`;
-            } else {
-                container.innerHTML = '<p class="text-red-500 dark:text-red-400 col-span-full">Failed to load stats.</p>';
-            }
-        }
-
-        // --- User Management ---
-        async function loadUsers(page = 1, search = '', sortBy = currentUserSortBy, sortOrder = currentUserSortOrder) {
-            currentUserPage = page;
-            userSearchTerm = search;
-            currentUserSortBy = sortBy; // Update global sort state
-            currentUserSortOrder = sortOrder;
-
-            const tbody = document.getElementById('usersTableBody');
-            // Adjust colspan for new columns (now 8 columns total)
-            tbody.innerHTML = '<tr><td colspan="8" class="p-4" data-label="Loading"><div class="loading-skeleton h-8 w-full"></div></td></tr>'.repeat(5);
-            renderUserPagination(0, 0, 0, true); // Pass loading state
-
-            // Add sort parameters to API call
-            const endpoint = `/users?page=${page}&limit=10&search=${encodeURIComponent(search)}&sortBy=${sortBy}&sortOrder=${sortOrder}`;
-            const data = await makeAdminAPICall(endpoint);
-
-            tbody.innerHTML = ''; // Clear loading skeletons
-
-            // --- Update Sort Icons in Header ---
-            updateSortIcons();
-
-            if (data?.success && data.users) {
-                if (data.users.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-500 dark:text-gray-400" data-label="Result">No users found.</td></tr>';
-                    renderUserPagination(0, 0, 0); // Render empty state pagination
-                    return;
-                }
-                data.users.forEach(user => {
-                    const tr = document.createElement('tr');
-                    tr.className = "hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors";
-
-                    // --- Safely access rank and points ---
-                    const rankLevel = user.stats?.rank?.level ?? 'N/A';
-                    const rankPoints = user.stats?.rank?.points ?? 0;
-                    // --- End safe access ---
-
-                    // --- Update innerHTML to include Rank and Points ---
-                    tr.innerHTML = `
-                <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white" data-label="Username">${user.username}</td>
-                <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300" data-label="Email">${user.email}</td>
-                <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300" data-label="Rank">${rankLevel}</td>
-                <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300 text-right" data-label="Points">${rankPoints}</td> 
-                <td class="px-6 py-4 text-sm" data-label="Role"><span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${user.role === 'admin' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300' : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'}">${user.role}</span></td>
-                <td class="px-6 py-4 text-sm" data-label="Verified"><span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${user.isEmailVerified ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'}">${user.isEmailVerified ? 'Yes' : 'No'}</span></td>
-                <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300" data-label="Joined">${new Date(user.createdAt).toLocaleDateString()}</td>
-                <td class="px-6 py-4 text-sm font-medium actions-cell" data-label="Actions">
-                    <button onclick="openManageUserTopicsModal('${user._id}', '${user.username}')" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3 focus:outline-none focus:ring-2 focus:ring-blue-300 rounded" title="Manage User Topic Access"><i class="fas fa-list-check"></i></button>
-                    <button onclick="openEditUserModal('${user._id}')" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-3 focus:outline-none focus:ring-2 focus:ring-indigo-300 rounded" title="Edit User"><i class="fas fa-edit"></i></button>
-                    <button onclick="deleteUser('${user._id}', '${user.username}')" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 focus:outline-none focus:ring-2 focus:ring-red-300 rounded" title="Delete User"><i class="fas fa-trash"></i></button>
-                </td>`;
-                    // --- End innerHTML Update ---
-                    tbody.appendChild(tr);
-                });
-                renderUserPagination(data.totalUsers, data.currentPage, data.totalPages);
-            } else {
-                // Adjust colspan for error message
-                tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-red-500 dark:text-red-400" data-label="Error">Failed to load users.</td></tr>';
-                renderUserPagination(0, 0, 0); // Render empty state
-            }
-        }
-        function renderUserPagination(totalUsers, currentPage, totalPages, isLoading = false) {
-            const paginationDiv = document.getElementById('userPagination');
-            const totalInfoSpan = paginationDiv.querySelector('span');
-            const buttonsContainer = paginationDiv.querySelector('div');
-            buttonsContainer.innerHTML = '';
-            if (isLoading) { totalInfoSpan.textContent = 'Loading users...'; return; }
-            totalInfoSpan.textContent = totalPages > 0 ? `Page ${currentPage} of ${totalPages} (Total: ${totalUsers} users)` : `Total Users: ${totalUsers}`;
-            if (totalPages <= 1) return;
-            let buttonsHtml = '';
-            // --- Pass sort parameters to loadUsers in pagination buttons ---
-            const createButton = (page, text, disabled = false) => `<button onclick="loadUsers(${page}, userSearchTerm, currentUserSortBy, currentUserSortOrder)" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded text-sm mx-1 hover:bg-blue-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed" ${disabled ? 'disabled' : ''}>${text}</button>`;
-            // --- End modification ---
-            const createCurrentButton = (page) => `<button class="bg-blue-500 text-white px-3 py-1 rounded text-sm mx-1 focus:outline-none focus:ring-2 focus:ring-blue-300" disabled aria-current="page">${page}</button>`;
-            const createEllipsis = () => `<span class="px-2 py-1 text-gray-500 dark:text-gray-400">...</span>`;
-            buttonsHtml += createButton(currentPage - 1, '&laquo; Prev', currentPage === 1);
-            const maxVisibleButtons = 5, sideButtons = Math.floor((maxVisibleButtons - 3) / 2);
-            if (totalPages <= maxVisibleButtons) { for (let i = 1; i <= totalPages; i++) buttonsHtml += (i === currentPage) ? createCurrentButton(i) : createButton(i, i); }
-            else {
-                buttonsHtml += (1 === currentPage) ? createCurrentButton(1) : createButton(1, 1);
-                if (currentPage > sideButtons + 2) buttonsHtml += createEllipsis();
-                let startPage = Math.max(2, currentPage - sideButtons), endPage = Math.min(totalPages - 1, currentPage + sideButtons);
-                if (currentPage + sideButtons >= totalPages - 1) startPage = Math.max(2, totalPages - maxVisibleButtons + 2);
-                if (currentPage - sideButtons <= 2) endPage = Math.min(totalPages - 1, maxVisibleButtons - 1);
-                for (let i = startPage; i <= endPage; i++) buttonsHtml += (i === currentPage) ? createCurrentButton(i) : createButton(i, i);
-                if (currentPage < totalPages - sideButtons - 1) buttonsHtml += createEllipsis();
-                buttonsHtml += (totalPages === currentPage) ? createCurrentButton(totalPages) : createButton(totalPages, totalPages);
-            }
-            buttonsHtml += createButton(currentPage + 1, 'Next &raquo;', currentPage === totalPages);
-            buttonsContainer.innerHTML = buttonsHtml;
-        }
-
-        // --- NEW Function to handle sort column clicks ---
-        function handleSortClick(event) {
-            const header = event.target.closest('th[data-sort]'); // Find the parent TH with data-sort
-            if (!header) return;
-
-            const sortBy = header.dataset.sort;
-
-            // Determine new sort order
-            let newSortOrder = 'asc';
-            if (sortBy === currentUserSortBy) {
-                // If clicking the same column, toggle the order
-                newSortOrder = currentUserSortOrder === 'asc' ? 'desc' : 'asc';
-            }
-            // else { // Clicking a new column, default to 'asc' }
-
-            loadUsers(1, userSearchTerm, sortBy, newSortOrder); // Load page 1 with new sort
-        }
-
-        // --- NEW Function to update sort icons in table header ---
-        function updateSortIcons() {
-            document.querySelectorAll('#users thead th[data-sort]').forEach(th => {
-                const sortKey = th.dataset.sort;
-                const icon = th.querySelector('i.fas');
-                if (icon) {
-                    if (sortKey === currentUserSortBy) {
-                        icon.classList.remove('fa-sort', 'fa-sort-up', 'fa-sort-down', 'opacity-50');
-                        icon.classList.add(currentUserSortOrder === 'asc' ? 'fa-sort-up' : 'fa-sort-down');
-                        icon.classList.remove('opacity-50'); // Make active icon fully visible
-                    } else {
-                        icon.classList.remove('fa-sort-up', 'fa-sort-down');
-                        icon.classList.add('fa-sort', 'opacity-50'); // Reset to default sort icon
-                    }
-                }
+            
+            subjects.forEach(subjectName => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors";
+                
+                // Count topics for this subject
+                const topicCount = topics.filter(t => t.subject === subjectName).length;
+                
+                tr.innerHTML = `
+                    <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white" data-label="Subject Name">${subjectName}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300" data-label="Topic Count">${topicCount}</td>
+                    <td class="px-6 py-4 text-sm font-medium topic-actions-cell" data-label="Actions">
+                        <button onclick="toggleSubjectLock(null, '${subjectName}', false, true)" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 mr-3 focus:outline-none focus:ring-2 focus:ring-green-300 rounded" title="Unlock All Topics in Subject Globally"><i class="fas fa-globe-americas mr-1"></i>Unlock Globally</button>
+                        <button onclick="toggleSubjectLock(null, '${subjectName}', true, true)" class="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-300 rounded" title="Lock All Topics in Subject Globally"><i class="fas fa-globe-americas mr-1"></i>Lock Globally</button>
+                    </td>`;
+                tbody.appendChild(tr);
             });
+        } else { 
+            tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-red-500 dark:text-red-400" data-label="Error">Failed to load subjects.</td></tr>'; 
         }
-        // --- NEW Topic Lock Functionality ---
-        async function toggleTopicLock(topicMongoId, topicName, lock) { // lock is true to lock, false to unlock
-            const action = lock ? 'lock' : 'unlock';
-            if (!confirm(`${lock ? 'Globally lock' : 'Globally unlock'} topic "${topicName}"? This affects ALL users.`)) {
-                return;
-            }
+    }
+    
+    // Handles both user-specific and global subject locks
+    async function toggleSubjectLock(userId, subjectName, lock, isGlobal = false) {
+        const action = lock ? 'lock' : 'unlock';
+        const scope = isGlobal ? 'globally' : `for user ID ${userId}`;
+        
+        if (isGlobal && !confirm(`${lock ? 'Globally lock' : 'Globally unlock'} ALL topics in subject "${subjectName}"? This affects ALL users.`)) {
+            return;
+        }
 
-            showGlobalAlert(`${lock ? 'Locking' : 'Unlocking'} "${topicName}" globally...`, 'info');
-            const endpoint = `/topics/${topicMongoId}/${action}`; // Use lock or unlock endpoint
-            // Send global: true in the body
-            const result = await makeAdminAPICall(endpoint, { method: 'POST', body: JSON.stringify({ global: true }) });
+        showGlobalAlert(`${lock ? 'Locking' : 'Unlocking'} "${subjectName}" ${scope}...`, 'info');
+        const endpoint = `/subjects/${encodeURIComponent(subjectName)}/${action}`;
+        
+        const bodyPayload = isGlobal ? { global: true } : { userId: userId };
+        
+        const result = await makeAdminAPICall(endpoint, { method: 'POST', body: JSON.stringify(bodyPayload) });
 
-            if (result?.success) {
-                showGlobalAlert(result.message, 'success');
+        hideGlobalAlert();
+
+        if (result?.success) {
+            showGlobalAlert(result.message, 'success');
+            if (isGlobal) {
+                loadSubjects(); // Refresh main subject list
             } else {
-                showGlobalAlert(`Failed to ${action} topic globally.`, 'error');
+                 // Refresh the user topic modal if it's open
+                 const modal = document.getElementById('manageUserTopicsModal');
+                 if(modal.classList.contains('show')) {
+                    const username = document.getElementById('userTopicsModalTitle').textContent.replace('Manage Access for: ', '');
+                    await openManageUserTopicsModal(userId, username); // Re-fetch and re-render
+                 }
             }
-            // Reload topics list after action attempt
-            loadTopics();
+        } else {
+            showGlobalAlert(result?.message || `Failed to ${action} subject ${scope}.`, 'error');
         }
-        // --- END NEW Topic Lock Functionality ---
-        async function openEditUserModal(userId) {
-            const modal = document.getElementById('editUserModal');
-            const form = document.getElementById('editUserForm');
-            form.reset(); document.getElementById('editUserError').textContent = ''; document.getElementById('saveUserChangesBtn').disabled = true;
-            showGlobalAlert('Loading user data...', 'info');
-            const data = await makeAdminAPICall(`/users/${userId}`);
-            hideGlobalAlert();
-            if (data?.success && data.user) {
-                const user = data.user;
-                document.getElementById('modalTitle').textContent = `Edit User: ${user.username}`; document.getElementById('editUserId').value = user._id;
-                document.getElementById('editUserRole').value = user.role; document.querySelector(`input[name="isEmailVerified"][value="${user.isEmailVerified}"]`).checked = true;
-                document.getElementById('saveUserChangesBtn').disabled = false; modal.classList.add('show');
-            }
-        }
-        function closeEditUserModal() { document.getElementById('editUserModal').classList.remove('show'); }
-        // --- Modify saveUserChanges to preserve sort order ---
-        async function saveUserChanges() {
-            const userId = document.getElementById('editUserId').value, role = document.getElementById('editUserRole').value, isEmailVerified = document.querySelector('input[name="isEmailVerified"]:checked').value === 'true';
-            const errorP = document.getElementById('editUserError'), saveButton = document.getElementById('saveUserChangesBtn');
-            errorP.textContent = ''; saveButton.disabled = true; saveButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
-            const result = await makeAdminAPICall(`/users/${userId}`, { method: 'PUT', body: JSON.stringify({ role, isEmailVerified }) });
-            saveButton.disabled = false; saveButton.innerHTML = 'Save Changes';
-            if (result?.success) {
-                showGlobalAlert('User updated!', 'success');
-                closeEditUserModal();
-                // Pass current sort order when reloading
-                loadUsers(currentUserPage, userSearchTerm, currentUserSortBy, currentUserSortOrder);
-            }
-            else { errorP.textContent = result?.message || 'Update failed.'; }
-        }
-        async function deleteUser(userId, username) {
-            if (confirm(`DELETE user "${username}"?\nThis CANNOT be undone.`)) {
-                showGlobalAlert('Deleting user...', 'info');
-                const result = await makeAdminAPICall(`/users/${userId}`, { method: 'DELETE' });
-                if (result?.success) {
-                    showGlobalAlert(`User "${username}" deleted!`, 'success');
-                    const tbody = document.getElementById('usersTableBody');
-                    const isLastOnPage = tbody.childElementCount === 1;
-                    const pageToLoad = isLastOnPage && currentUserPage > 1 ? currentUserPage - 1 : currentUserPage;
-                    // Pass current sort order when reloading
-                    loadUsers(pageToLoad, userSearchTerm, currentUserSortBy, currentUserSortOrder);
-                }
-            }
-        }
+    }
 
-        // --- Topic Management ---
-        async function loadTopics() {
-            const tbody = document.getElementById('topicsTableBody');
-            tbody.innerHTML = '<tr><td colspan="6" class="p-4" data-label="Loading"><div class="loading-skeleton h-8 w-full"></div></td></tr>'.repeat(3);
-            const data = await makeAdminAPICall('/topics');
-            tbody.innerHTML = '';
-            if (data?.success && data.topics) {
-                if (data.topics.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-500 dark:text-gray-400" data-label="Result">No topics found.</td></tr>'; return; }
-                data.topics.forEach(topic => {
-                    const tr = document.createElement('tr');
-                    tr.className = "hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors";
-                    tr.innerHTML = `
+
+    // --- Topic Management ---
+    async function loadTopics() {
+        const tbody = document.getElementById('topicsTableBody');
+        tbody.innerHTML = '<tr><td colspan="6" class="p-4" data-label="Loading"><div class="loading-skeleton h-8 w-full"></div></td></tr>'.repeat(3);
+        const data = await makeAdminAPICall('/topics');
+        tbody.innerHTML = '';
+        if (data?.success && data.topics) {
+            if (data.topics.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-500 dark:text-gray-400" data-label="Result">No topics found.</td></tr>'; return; }
+            data.topics.forEach(topic => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors";
+                tr.innerHTML = `
             <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300" data-label="Order">${topic.order}</td>
             <td class="px-6 py-4 text-sm font-mono text-gray-700 dark:text-gray-200" data-label="ID">${topic.id}</td>
             <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white" data-label="Name">${topic.name}</td>
-            <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300" data-label="Difficulty">${topic.difficulty}</td>
+            <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300" data-label="Subject">${topic.subject || 'N/A'}</td>
             <td class="px-6 py-4 text-sm" data-label="Status">
                 <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${topic.isActive ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300'}">${topic.isActive ? 'Active' : 'Inactive'}</span>
                 ${topic.isGloballyLocked ? '<span class="ml-2 px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"><i class="fas fa-lock mr-1"></i>Global Lock</span>' : ''}
             </td>
-            <td class="px-6 py-4 text-sm font-medium actions-cell" data-label="Actions">
+            <td class="px-6 py-4 text-sm font-medium topic-actions-cell" data-label="Actions">
                 <button onclick="openEditTopicModal('${topic._id}')" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-2 focus:outline-none focus:ring-2 focus:ring-indigo-300 rounded" title="Edit Topic"><i class="fas fa-edit"></i></button>
                 <button onclick="deleteTopic('${topic._id}', '${topic.name}')" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 mr-2 focus:outline-none focus:ring-2 focus:ring-red-300 rounded" title="Delete Topic"><i class="fas fa-trash"></i></button>
                 ${topic.isGloballyLocked
-                            ? `<button onclick="toggleTopicLock('${topic._id}', '${topic.name}', false)" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 focus:outline-none focus:ring-2 focus:ring-green-300 rounded" title="Unlock Globally"><i class="fas fa-unlock"></i></button>`
-                            : `<button onclick="toggleTopicLock('${topic._id}', '${topic.name}', true)" class="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-300 rounded" title="Lock Globally / User"><i class="fas fa-lock"></i></button>`
-                        }
+                        ? `<button onclick="toggleTopicLock('${topic._id}', '${topic.name}', false)" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 focus:outline-none focus:ring-2 focus:ring-green-300 rounded" title="Unlock Globally"><i class="fas fa-unlock"></i></button>`
+                        : `<button onclick="toggleTopicLock('${topic._id}', '${topic.name}', true)" class="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-300 rounded" title="Lock Globally"><i class="fas fa-lock"></i></button>`
+                    }
             </td>`;
-                    tbody.appendChild(tr);
-                });
-            } else { tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-red-500 dark:text-red-400" data-label="Error">Failed to load topics.</td></tr>'; }
-        }
-
-        // --- MODIFIED Topic Management ---
-        let currentTopicAlgorithms = []; // Temporary storage for algorithms while editing a topic
-
-        async function openEditTopicModal(topicId = null) {
-            const modal = document.getElementById('editTopicModal'), form = document.getElementById('editTopicForm'), errorP = document.getElementById('editTopicError'), title = document.getElementById('topicModalTitle'), idInput = document.getElementById('editTopicIdInput'), saveButton = document.getElementById('saveTopicChangesBtn');
-            errorP.textContent = ''; form.reset(); currentTopicAlgorithms = []; // Reset temp algo storage
-            document.getElementById('editTopicId').value = topicId || ''; // Store MongoDB _id here
-            const algoListDiv = document.getElementById('topicAlgorithmsList');
-            if (algoListDiv) {
-                algoListDiv.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 text-sm italic">Loading algorithms...</p>'; // Reset list
-            } else {
-                console.error("Algorithm list container not found!");
-            }
-
-            if (topicId) { // Editing existing topic
-                title.textContent = 'Edit Topic';
-                idInput.readOnly = true; // Don't allow changing custom ID
-                idInput.classList.add('bg-gray-100', 'dark:bg-gray-600');
-                saveButton.disabled = true;
-                showGlobalAlert('Loading topic data...', 'info');
-
-                const data = await makeAdminAPICall(`/topics/${topicId}`); // Fetch by MongoDB _id
-                hideGlobalAlert();
-                saveButton.disabled = false;
-
-                if (data?.success && data.topic) {
-                    const t = data.topic;
-                    idInput.value = t.id; // Display custom ID
-                    document.getElementById('editTopicName').value = t.name;
-                    document.getElementById('editTopicOrder').value = t.order;
-                    document.getElementById('editTopicEstTime').value = t.estimatedTime;
-                    document.getElementById('editTopicIcon').value = t.icon || '';
-                    document.getElementById('editTopicColor').value = t.color || '';
-                    document.getElementById('editTopicDifficulty').value = t.difficulty;
-                    document.getElementById('editTopicIsActive').value = String(t.isActive ?? true);
-                    document.getElementById('editTopicDesc').value = t.description || '';
-
-                    // Load algorithms into temporary storage and render list
-                    // Use t.algorithms directly (assuming backend sends it as array now)
-                    currentTopicAlgorithms = data.topic.algorithms || [];
-                    renderTopicAlgorithmsList();
-                } else {
-                    showGlobalAlert('Could not load topic data.', 'error');
-                    closeEditTopicModal();
-                    return;
-                }
-            } else { // Adding new topic
-                title.textContent = 'Add New Topic';
-                idInput.readOnly = false; // Allow setting custom ID
-                idInput.classList.remove('bg-gray-100', 'dark:bg-gray-600');
-                document.getElementById('editTopicIsActive').value = 'true';
-                document.getElementById('editTopicDifficulty').value = ''; // Reset select
-                currentTopicAlgorithms = []; // Start with empty array
-                renderTopicAlgorithmsList(); // Show "No algorithms" message
-                saveButton.disabled = false;
-            }
-            modal.classList.add('show');
-        }
-
-        function closeEditTopicModal() {
-            document.getElementById('editTopicModal').classList.remove('show');
-            currentTopicAlgorithms = []; // Clear temp storage on close
-        }
-
-        async function saveTopicChanges() {
-            const topicMongoId = document.getElementById('editTopicId').value; // MongoDB _id or empty
-            const errorP = document.getElementById('editTopicError');
-            const saveButton = document.getElementById('saveTopicChangesBtn');
-            errorP.textContent = ''; saveButton.disabled = true; saveButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
-
-            // Validate base topic data first
-            const topicCustomId = document.getElementById('editTopicIdInput').value.trim();
-            const topicName = document.getElementById('editTopicName').value.trim();
-            const topicOrder = document.getElementById('editTopicOrder').value;
-            const topicEstTime = document.getElementById('editTopicEstTime').value;
-            const topicDifficulty = document.getElementById('editTopicDifficulty').value;
-
-            if (!topicCustomId || !topicName || topicOrder === '' || topicEstTime === '' || !topicDifficulty) {
-                errorP.textContent = 'Please fill all required topic fields (*).';
-                saveButton.disabled = false; saveButton.innerHTML = 'Save Changes';
-                return;
-            }
-
-            const topicData = {
-                id: topicCustomId, // Custom String ID for new topics
-                name: topicName,
-                order: parseInt(topicOrder),
-                estimatedTime: parseInt(topicEstTime),
-                difficulty: topicDifficulty,
-                icon: document.getElementById('editTopicIcon').value.trim() || undefined,
-                color: document.getElementById('editTopicColor').value.trim() || undefined,
-                isActive: document.getElementById('editTopicIsActive').value === 'true',
-                description: document.getElementById('editTopicDesc').value.trim() || undefined,
-                // Send the algorithms array directly from our temporary storage
-                algorithms: currentTopicAlgorithms // Send as array
-            };
-
-            // Don't send the custom string 'id' when updating (backend uses MongoDB _id)
-            if (topicMongoId) delete topicData.id;
-
-            const method = topicMongoId ? 'PUT' : 'POST';
-            const endpoint = topicMongoId ? `/topics/${topicMongoId}` : '/topics'; // Use MongoDB _id for PUT
-
-            const result = await makeAdminAPICall(endpoint, { method, body: JSON.stringify(topicData) });
-            saveButton.disabled = false; saveButton.innerHTML = 'Save Changes';
-            if (result?.success) {
-                showGlobalAlert(`Topic ${topicMongoId ? 'updated' : 'created'}!`, 'success');
-                closeEditTopicModal();
-                loadTopics(); // Refresh the main topics list
-            } else {
-                errorP.textContent = result?.message || `Failed to ${topicMongoId ? 'update' : 'create'}.`;
-            }
-        }
-
-        async function deleteTopic(topicId, topicName) {
-            if (confirm(`DELETE topic "${topicName}"?\nThis also removes its algorithms.`)) {
-                showGlobalAlert('Deleting topic...', 'info'); const result = await makeAdminAPICall(`/topics/${topicId}`, { method: 'DELETE' });
-                if (result?.success) { showGlobalAlert(`Topic "${topicName}" deleted!`, 'success'); loadTopics(); }
-            }
-        }
-
-        // --- NEW Algorithm Management Functions ---
-        function renderTopicAlgorithmsList() {
-            const listDiv = document.getElementById('topicAlgorithmsList');
-            const topicMongoId = document.getElementById('editTopicId').value; // Get topic's Mongo ID
-
-            if (!listDiv) return;
-            listDiv.innerHTML = '';
-            if (currentTopicAlgorithms.length === 0) {
-                listDiv.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 text-sm italic">No algorithms added yet.</p>';
-                return;
-            }
-
-            currentTopicAlgorithms.forEach((algo, index) => {
-                const itemDiv = document.createElement('div');
-                itemDiv.className = 'flex justify-between items-center bg-white dark:bg-gray-800 p-2 rounded border dark:border-gray-500 text-sm space-x-2'; // Added space-x-2
-
-                // --- NEW: Lock Status Indicator ---
-                let lockIndicator = '';
-                if (algo.isGloballyLocked) {
-                    lockIndicator = `<span class="ml-1 px-1 py-0.5 inline-flex text-xs leading-4 font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300" title="Globally Locked"><i class="fas fa-lock"></i></span>`;
-                }
-                // User-specific lock status isn't directly available here, maybe fetch later if needed for display.
-
-                // --- NEW: Lock/Unlock Buttons ---
-                const algoId = algo.id; // The string ID like 'bubbleSort'
-                const lockButtonHtml = algo.isGloballyLocked
-                    ? `<button type="button" onclick="toggleAlgorithmLock('${topicMongoId}', '${algoId}', '${algo.name}', false, true)" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 focus:outline-none text-xs" title="Unlock Globally"><i class="fas fa-unlock"></i></button>`
-                    : `<button type="button" onclick="toggleAlgorithmLock('${topicMongoId}', '${algoId}', '${algo.name}', true, true)" class="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300 focus:outline-none text-xs" title="Lock Globally"><i class="fas fa-lock"></i></button>`;
-
-                // Add user-specific lock/unlock if needed (would require knowing current user context or another API call)
-                // For simplicity, we'll focus on global lock/unlock in the topic modal first.
-
-                itemDiv.innerHTML = `
-            <span class="flex-grow">
-                <strong class="font-mono text-blue-600 dark:text-blue-400">${algo.id}</strong> - ${algo.name} (${algo.difficulty})
-                ${lockIndicator}
-            </span>
-            <div class="flex items-center space-x-2 flex-shrink-0">
-                 <button type="button" onclick="openEditAlgorithmModal(${index})" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 focus:outline-none" title="Edit Algorithm"><i class="fas fa-edit"></i></button>
-                 <button type="button" onclick="deleteAlgorithm(${index})" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 focus:outline-none" title="Delete Algorithm"><i class="fas fa-trash"></i></button>
-                 ${lockButtonHtml}
-                 
-                 
-             </div>
-         `;
-                listDiv.appendChild(itemDiv);
+                tbody.appendChild(tr);
             });
+        } else { tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-red-500 dark:text-red-400" data-label="Error">Failed to load topics.</td></tr>'; }
+    }
+
+    async function openEditTopicModal(topicId = null) {
+        const modal = document.getElementById('editTopicModal'), form = document.getElementById('editTopicForm'), errorP = document.getElementById('editTopicError'), title = document.getElementById('topicModalTitle'), idInput = document.getElementById('editTopicIdInput'), saveButton = document.getElementById('saveTopicChangesBtn');
+        errorP.textContent = ''; form.reset(); currentTopicAlgorithms = []; 
+        document.getElementById('editTopicId').value = topicId || ''; 
+        const algoListDiv = document.getElementById('topicAlgorithmsList');
+        if (algoListDiv) {
+            algoListDiv.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 text-sm italic">Loading algorithms...</p>'; 
+        } else {
+            console.error("Algorithm list container not found!");
         }
 
-        // --- NEW: Function to Toggle Algorithm Lock ---
-        async function toggleAlgorithmLock(topicMongoId, algoId, algoName, lock, isGlobal, userId = null) {
-            const action = lock ? 'lock' : 'unlock';
-            const scope = isGlobal ? 'globally' : `for user ${userId || '?'}`; // Adjust message based on scope
+        // TODO: Populate subject dropdown
+        // const subjectSelect = document.getElementById('editTopicSubjectSelect');
+        // subjectSelect.innerHTML = '<option value="">Loading subjects...</option>';
+        // const subjectData = await makeAdminAPICall('/subjects');
+        // if(subjectData?.success) {
+        //     subjectSelect.innerHTML = '<option value="" disabled selected>Select Subject*</option>';
+        //     subjectData.subjects.forEach(s => subjectSelect.add(new Option(s, s)));
+        // } else {
+        //     subjectSelect.innerHTML = '<option value="">Could not load subjects</option>';
+        // }
 
-            // Confirmation (optional but recommended for global)
-            if (isGlobal && !confirm(`${lock ? 'Globally lock' : 'Globally unlock'} algorithm "${algoName}" within this topic?`)) {
-                return;
-            }
 
-            showGlobalAlert(`${lock ? 'Locking' : 'Unlocking'} "${algoName}" ${scope}...`, 'info');
-
-            const endpoint = `/topics/${topicMongoId}/algorithms/${algoId}/${action}`;
-            const bodyPayload = isGlobal ? { global: true } : { userId: userId }; // Need userId for user-specific
-
-            // Error: Need to actually pass userId for user-specific actions later.
-            // For now, this function primarily handles the global toggle via the buttons added.
-            if (!isGlobal && !userId) {
-                hideGlobalAlert();
-                showGlobalAlert('User ID is required for user-specific lock/unlock.', 'error');
-                console.error("User ID missing for user-specific algorithm lock toggle.");
-                return;
-            }
-
-            const result = await makeAdminAPICall(endpoint, { method: 'POST', body: JSON.stringify(bodyPayload) });
-
-            hideGlobalAlert(); // Hide working message
-
-            if (result?.success) {
-                showGlobalAlert(result.message, 'success');
-                // Refresh the topic data in the modal to show the updated lock status
-                // Find the algorithm in currentTopicAlgorithms and update its isGloballyLocked status
-                const algoIndex = currentTopicAlgorithms.findIndex(a => a.id === algoId);
-                if (algoIndex !== -1 && isGlobal) {
-                    currentTopicAlgorithms[algoIndex].isGloballyLocked = lock;
-                    renderTopicAlgorithmsList(); // Re-render the list inside the modal
-                } else if (!isGlobal) {
-                    // TODO: Need a way to refresh user-specific status if displayed
-                    console.log("User-specific lock/unlock successful, but UI refresh might be needed separately.");
-                }
-
-            } else {
-                showGlobalAlert(result?.message || `Failed to ${action} algorithm ${scope}.`, 'error');
-            }
-            // No need to reload the main topics list here, just the modal content
-        }
-
-        function openEditAlgorithmModal(index = null) {
-            const modal = document.getElementById('editAlgorithmModal');
-            const form = document.getElementById('editAlgorithmForm');
-            const title = document.getElementById('algorithmModalTitle');
-            const errorP = document.getElementById('editAlgoError');
-            const algoIdInput = document.getElementById('editAlgoIdInput');
-            errorP.textContent = '';
-            form.reset();
-            document.getElementById('editAlgorithmIndex').value = index !== null ? String(index) : ''; // Store index as string or empty
-
-            if (index !== null && currentTopicAlgorithms[index]) {
-                // Editing existing algorithm
-                title.textContent = 'Edit Algorithm';
-                const algo = currentTopicAlgorithms[index];
-                algoIdInput.value = algo.id;
-                algoIdInput.readOnly = true; // Don't allow changing ID when editing
-                algoIdInput.classList.add('bg-gray-100', 'dark:bg-gray-600');
-                document.getElementById('editAlgoName').value = algo.name;
-                document.getElementById('editAlgoDifficulty').value = algo.difficulty;
-                document.getElementById('editAlgoPoints').value = algo.points;
-                document.getElementById('editAlgoDesc').value = algo.description || '';
-                document.getElementById('editAlgoTimeComplexity').value = algo.timeComplexity || '';
-                document.getElementById('editAlgoSpaceComplexity').value = algo.spaceComplexity || '';
-            } else {
-                // Adding new algorithm
-                title.textContent = 'Add Algorithm';
-                algoIdInput.readOnly = false; // Allow setting ID
-                algoIdInput.classList.remove('bg-gray-100', 'dark:bg-gray-600');
-                document.getElementById('editAlgoDifficulty').value = ''; // Reset select
-            }
-            modal.classList.add('show');
-        }
-
-        function closeEditAlgorithmModal() {
-            document.getElementById('editAlgorithmModal').classList.remove('show');
-        }
-
-        function saveAlgorithmChanges() {
-            const indexStr = document.getElementById('editAlgorithmIndex').value;
-            const index = indexStr === '' ? null : parseInt(indexStr);
-            const errorP = document.getElementById('editAlgoError');
-            const saveButton = document.getElementById('saveAlgorithmChangesBtn');
-            errorP.textContent = '';
+        if (topicId) { // Editing existing topic
+            title.textContent = 'Edit Topic';
+            idInput.readOnly = true; 
+            idInput.classList.add('bg-gray-100', 'dark:bg-gray-600');
             saveButton.disabled = true;
+            showGlobalAlert('Loading topic data...', 'info');
 
-            // Collect data from form
-            const algoData = {
-                id: document.getElementById('editAlgoIdInput').value.trim(),
-                name: document.getElementById('editAlgoName').value.trim(),
-                difficulty: document.getElementById('editAlgoDifficulty').value,
-                points: parseInt(document.getElementById('editAlgoPoints').value),
-                description: document.getElementById('editAlgoDesc').value.trim() || undefined,
-                timeComplexity: document.getElementById('editAlgoTimeComplexity').value.trim() || undefined,
-                spaceComplexity: document.getElementById('editAlgoSpaceComplexity').value.trim() || undefined,
-                isGloballyLocked: index !== null ? currentTopicAlgorithms[index].isGloballyLocked : false
-            };
+            const data = await makeAdminAPICall(`/topics/${topicId}`); // Fetch by MongoDB _id
+            hideGlobalAlert();
+            saveButton.disabled = false;
 
-            // Basic Validation
-            if (!algoData.id || !algoData.name || !algoData.difficulty || isNaN(algoData.points)) {
-                errorP.textContent = 'Please fill all required algorithm fields (*).';
-                saveButton.disabled = false;
-                return;
-            }
-            // Check for duplicate algorithm ID when adding
-            if (index === null && currentTopicAlgorithms.some(a => a.id === algoData.id)) {
-                errorP.textContent = `Algorithm ID '${algoData.id}' already exists in this topic.`;
-                saveButton.disabled = false;
-                return;
-            }
-
-            // Update or add to the temporary array
-            if (index !== null) {
-                algoData.isGloballyLocked = currentTopicAlgorithms[index].isGloballyLocked;
-                // Editing
-                currentTopicAlgorithms[index] = algoData;
+            if (data?.success && data.topic) {
+                const t = data.topic;
+                idInput.value = t.id; // Display custom ID
+                document.getElementById('editTopicName').value = t.name;
+                document.getElementById('editTopicSubject').value = t.subject || ''; // Set subject
+                document.getElementById('editTopicOrder').value = t.order;
+                document.getElementById('editTopicEstTime').value = t.estimatedTime;
+                document.getElementById('editTopicIcon').value = t.icon || '';
+                document.getElementById('editTopicColor').value = t.color || '';
+                document.getElementById('editTopicDifficulty').value = t.difficulty;
+                document.getElementById('editTopicIsActive').value = String(t.isActive ?? true);
+                document.getElementById('editTopicDesc').value = t.description || '';
+                
+                currentTopicAlgorithms = data.topic.algorithms || [];
+                renderTopicAlgorithmsList();
             } else {
-                // Adding
-                currentTopicAlgorithms.push(algoData);
+                showGlobalAlert('Could not load topic data.', 'error');
+                closeEditTopicModal();
+                return;
             }
-
-            // Re-render the list in the topic modal
-            renderTopicAlgorithmsList();
-
-            // Close the algorithm modal and re-enable button
-            closeEditAlgorithmModal();
+        } else { // Adding new topic
+            title.textContent = 'Add New Topic';
+            idInput.readOnly = false; 
+            idInput.classList.remove('bg-gray-100', 'dark:bg-gray-600');
+            document.getElementById('editTopicIsActive').value = 'true';
+            document.getElementById('editTopicDifficulty').value = ''; 
+            currentTopicAlgorithms = []; 
+            renderTopicAlgorithmsList(); 
             saveButton.disabled = false;
         }
+        modal.classList.add('show');
+    }
 
-        function deleteAlgorithm(index) {
-            if (index >= 0 && index < currentTopicAlgorithms.length) {
-                const algoNameToDelete = currentTopicAlgorithms[index].name;
-                if (confirm(`Are you sure you want to delete the algorithm "${algoNameToDelete}" from this topic?\n(This won't delete the topic itself)`)) {
-                    currentTopicAlgorithms.splice(index, 1); // Remove from temporary array
-                    renderTopicAlgorithmsList(); // Update the list in the topic modal
-                }
-            }
-        }
-        // --- END NEW Algorithm Management Functions ---
+    function closeEditTopicModal() {
+        document.getElementById('editTopicModal').classList.remove('show');
+        currentTopicAlgorithms = []; // Clear temp storage on close
+    }
 
-        // --- Achievement Management ---
-        async function loadAchievements() {
-            const tbody = document.getElementById('achievementsTableBody');
-            tbody.innerHTML = '<tr><td colspan="7" class="p-4" data-label="Loading"><div class="loading-skeleton h-8 w-full"></div></td></tr>'.repeat(4);
-            const data = await makeAdminAPICall('/achievements'); tbody.innerHTML = '';
-            if (data?.success && data.achievements) {
-                if (data.achievements.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-500 dark:text-gray-400" data-label="Result">No achievements found.</td></tr>'; return; }
-                data.achievements.forEach(ach => {
-                    const tr = document.createElement('tr'); tr.className = "hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors";
-                    tr.innerHTML = `
-                        <td class="px-6 py-4 text-sm font-mono text-gray-700 dark:text-gray-200" data-label="ID">${ach.id}</td>
-                        <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white" data-label="Name">${ach.name}</td>
-                        <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300" data-label="Category">${ach.category}</td>
-                        <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300" data-label="Points">${ach.points}</td>
-                        <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300" data-label="Rarity">${ach.rarity || 'common'}</td>
-                        <td class="px-6 py-4 text-sm" data-label="Active"><span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${ach.isActive ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300'}">${ach.isActive ? 'Active' : 'Inactive'}</span></td>
-                        <td class="px-6 py-4 text-sm font-medium actions-cell" data-label="Actions">
-                            <button onclick="openEditAchievementModal('${ach._id}')" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-3 focus:outline-none focus:ring-2 focus:ring-indigo-300 rounded" title="Edit Achievement"><i class="fas fa-edit"></i></button>
-                            <button onclick="deleteAchievement('${ach._id}', '${ach.name}')" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 focus:outline-none focus:ring-2 focus:ring-red-300 rounded" title="Delete Achievement"><i class="fas fa-trash"></i></button>
-                        </td>`;
-                    tbody.appendChild(tr);
-                });
-            } else { tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-red-500 dark:text-red-400" data-label="Error">Failed to load achievements.</td></tr>'; }
-        }
-        async function openEditAchievementModal(achievementId = null) {
-            const modal = document.getElementById('editAchievementModal'), form = document.getElementById('editAchievementForm'), errorP = document.getElementById('editAchError'), title = document.getElementById('achievementModalTitle'), idInput = document.getElementById('editAchIdInput'), saveButton = document.getElementById('saveAchChangesBtn');
-            errorP.textContent = ''; form.reset(); document.getElementById('editAchievementId').value = achievementId || '';
-            if (achievementId) {
-                title.textContent = 'Edit Achievement'; idInput.readOnly = true; idInput.classList.add('bg-gray-100', 'dark:bg-gray-600'); saveButton.disabled = true; showGlobalAlert('Loading achievement data...', 'info');
-                const data = await makeAdminAPICall(`/achievements/${achievementId}`); hideGlobalAlert(); saveButton.disabled = false;
-                if (data?.success && data.achievement) {
-                    const ach = data.achievement; idInput.value = ach.id; document.getElementById('editAchName').value = ach.name; document.getElementById('editAchDesc').value = ach.description; document.getElementById('editAchIcon').value = ach.icon;
-                    document.getElementById('editAchCategory').value = ach.category; document.getElementById('editAchPoints').value = ach.points; document.getElementById('editAchRarity').value = ach.rarity || 'common'; document.getElementById('editAchIsActive').value = String(ach.isActive ?? true);
-                    document.getElementById('editAchCriteria').value = ach.criteriaJson || '{}';
-                } else { showGlobalAlert('Could not load achievement data.', 'error'); closeEditAchievementModal(); return; }
-            } else {
-                title.textContent = 'Add New Achievement'; idInput.readOnly = false; idInput.classList.remove('bg-gray-100', 'dark:bg-gray-600');
-                document.getElementById('editAchCriteria').value = '{\n  "type": "example",\n  "value": null\n}'; document.getElementById('editAchIsActive').value = 'true'; document.getElementById('editAchRarity').value = 'common'; document.getElementById('editAchCategory').value = ''; // Reset select
-                saveButton.disabled = false;
-            }
-            modal.classList.add('show');
-        }
-        function closeEditAchievementModal() { document.getElementById('editAchievementModal').classList.remove('show'); }
-        async function saveAchievementChanges() {
-            const achievementId = document.getElementById('editAchievementId').value; const errorP = document.getElementById('editAchError'); const saveButton = document.getElementById('saveAchChangesBtn');
-            errorP.textContent = ''; saveButton.disabled = true; saveButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
-            const achievementData = {
-                id: document.getElementById('editAchIdInput').value.trim(), name: document.getElementById('editAchName').value.trim(), description: document.getElementById('editAchDesc').value.trim(), icon: document.getElementById('editAchIcon').value.trim(),
-                category: document.getElementById('editAchCategory').value, points: parseInt(document.getElementById('editAchPoints').value), rarity: document.getElementById('editAchRarity').value, isActive: document.getElementById('editAchIsActive').value === 'true',
-                criteriaJson: document.getElementById('editAchCriteria').value.trim()
-            };
-            try {
-                const criteria = JSON.parse(achievementData.criteriaJson || '{}'); if (typeof criteria !== 'object' || criteria === null || !criteria.type || criteria.value === undefined) throw new Error("Criteria JSON must be an object with 'type' and 'value'.");
-            } catch (e) { errorP.textContent = `Invalid Criteria JSON: ${e.message}`; saveButton.disabled = false; saveButton.innerHTML = 'Save Changes'; return; }
-            if (achievementId) delete achievementData.id; // Don't send string ID on update
-            const method = achievementId ? 'PUT' : 'POST'; const endpoint = achievementId ? `/achievements/${achievementId}` : '/achievements';
-            const result = await makeAdminAPICall(endpoint, { method, body: JSON.stringify(achievementData) });
+    async function saveTopicChanges() {
+        const topicMongoId = document.getElementById('editTopicId').value; // MongoDB _id or empty
+        const errorP = document.getElementById('editTopicError');
+        const saveButton = document.getElementById('saveTopicChangesBtn');
+        errorP.textContent = ''; saveButton.disabled = true; saveButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+
+        const topicCustomId = document.getElementById('editTopicIdInput').value.trim();
+        const topicName = document.getElementById('editTopicName').value.trim();
+        const topicSubject = document.getElementById('editTopicSubject').value.trim(); // Get subject
+        const topicOrder = document.getElementById('editTopicOrder').value;
+        const topicEstTime = document.getElementById('editTopicEstTime').value;
+        const topicDifficulty = document.getElementById('editTopicDifficulty').value;
+
+        if (!topicCustomId || !topicName || !topicSubject || topicOrder === '' || topicEstTime === '' || !topicDifficulty) {
+            errorP.textContent = 'Please fill all required topic fields (*).';
             saveButton.disabled = false; saveButton.innerHTML = 'Save Changes';
-            if (result?.success) { showGlobalAlert(`Achievement ${achievementId ? 'updated' : 'created'}!`, 'success'); closeEditAchievementModal(); loadAchievements(); }
-            else { errorP.textContent = result?.message || `Failed to ${achievementId ? 'update' : 'create'}.`; }
+            return;
         }
-        async function deleteAchievement(achievementId, achievementName) {
-            if (confirm(`DELETE achievement "${achievementName}"?`)) {
-                showGlobalAlert('Deleting achievement...', 'info'); const result = await makeAdminAPICall(`/achievements/${achievementId}`, { method: 'DELETE' });
-                if (result?.success) { showGlobalAlert(`Achievement "${achievementName}" deleted!`, 'success'); loadAchievements(); }
+
+        const topicData = {
+            id: topicCustomId, // Custom String ID for new topics
+            name: topicName,
+            subject: topicSubject, // Add subject to data
+            order: parseInt(topicOrder),
+            estimatedTime: parseInt(topicEstTime),
+            difficulty: topicDifficulty,
+            icon: document.getElementById('editTopicIcon').value.trim() || undefined,
+            color: document.getElementById('editTopicColor').value.trim() || undefined,
+            isActive: document.getElementById('editTopicIsActive').value === 'true',
+            description: document.getElementById('editTopicDesc').value.trim() || undefined,
+            algorithms: currentTopicAlgorithms 
+        };
+
+        if (topicMongoId) delete topicData.id;
+
+        const method = topicMongoId ? 'PUT' : 'POST';
+        const endpoint = topicMongoId ? `/topics/${topicMongoId}` : '/topics'; 
+
+        const result = await makeAdminAPICall(endpoint, { method, body: JSON.stringify(topicData) });
+        saveButton.disabled = false; saveButton.innerHTML = 'Save Changes';
+        if (result?.success) {
+            showGlobalAlert(`Topic ${topicMongoId ? 'updated' : 'created'}!`, 'success');
+            closeEditTopicModal();
+            loadTopics(); // Refresh the main topics list
+            loadSubjects(); // Refresh subjects list as a new one might have been added
+        } else {
+            errorP.textContent = result?.message || `Failed to ${topicMongoId ? 'update' : 'create'}.`;
+        }
+    }
+
+    async function deleteTopic(topicId, topicName) {
+        if (confirm(`DELETE topic "${topicName}"?\nThis also removes its algorithms.`)) {
+            showGlobalAlert('Deleting topic...', 'info'); const result = await makeAdminAPICall(`/topics/${topicId}`, { method: 'DELETE' });
+            if (result?.success) { 
+                showGlobalAlert(`Topic "${topicName}" deleted!`, 'success'); 
+                loadTopics(); 
+                loadSubjects(); // Refresh subjects list as one might be empty now
             }
         }
+    }
 
-        // --- Settings Actions ---
-        async function regenerateLeaderboard() {
-            if (!confirm("Regenerate 'all-time' leaderboard? This recalculates ranks.")) return;
-            const statusP = document.getElementById('settingsStatus'), button = document.getElementById('regenerateLeaderboardBtn');
-            button.disabled = true; statusP.textContent = 'Regenerating...'; statusP.className = 'mt-2 text-sm text-yellow-600 dark:text-yellow-400';
-            const result = await makeAdminAPICall('/leaderboard/regenerate', { method: 'POST', body: JSON.stringify({ type: 'all-time' }) });
-            button.disabled = false;
-            if (result?.success) { statusP.textContent = result.message; statusP.className = 'mt-2 text-sm text-green-600 dark:text-green-400'; showGlobalAlert(result.message, 'success'); }
-            else { const errorMsg = result?.message || 'Failed.'; statusP.textContent = `Error: ${errorMsg}`; statusP.className = 'mt-2 text-sm text-red-500 dark:text-red-400'; }
+    // --- Algorithm Management Functions (within Topic Modal) ---
+    function renderTopicAlgorithmsList() {
+        const listDiv = document.getElementById('topicAlgorithmsList');
+        const topicMongoId = document.getElementById('editTopicId').value; 
+
+        if (!listDiv) return;
+        listDiv.innerHTML = '';
+        if (currentTopicAlgorithms.length === 0) {
+            listDiv.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 text-sm italic">No algorithms added yet.</p>';
+            return;
         }
 
-        // --- Navigation & Initialization ---
-        function adminLogout() { if (confirm('Logout?')) { localStorage.clear(); window.location.href = 'auth.html'; } }
+        currentTopicAlgorithms.forEach((algo, index) => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'flex justify-between items-center bg-white dark:bg-gray-800 p-2 rounded border dark:border-gray-500 text-sm space-x-2';
 
-        function handleNavigation() {
-            const hash = window.location.hash || '#overview';
-            const targetSectionId = hash.substring(1);
-            document.querySelectorAll('.admin-section').forEach(sec => sec.classList.add('hidden'));
-            const targetSection = document.getElementById(targetSectionId) || document.getElementById('overview');
-            targetSection.classList.remove('hidden');
-            const sectionIdToShow = targetSection.id;
+            let lockIndicator = '';
+            if (algo.isGloballyLocked) {
+                lockIndicator = `<span class="ml-1 px-1 py-0.5 inline-flex text-xs leading-4 font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300" title="Globally Locked"><i class="fas fa-lock"></i></span>`;
+            }
 
-            // --- Modify loadIfEmpty for users to use current sort state ---
-            const loadIfEmpty = (id, loaderFn, tableBodyId) => {
-                if (sectionIdToShow === id) {
-                    const body = document.getElementById(tableBodyId);
-                    if (!body || !body.hasChildNodes() || (body.children.length === 1 && body.querySelector('[data-label="Loading"]'))) {
-                        if (id === 'users') {
-                            // Pass current sort state when loading users section
-                            loaderFn(1, '', currentUserSortBy, currentUserSortOrder); // Load page 1, empty search, current sort
-                        } else {
-                            loaderFn(); // For other sections like topics/achievements
-                        }
+            const algoId = algo.id; 
+            const lockButtonHtml = (topicMongoId && algoId) // Only show lock buttons if topic exists in DB
+                ? (algo.isGloballyLocked
+                    ? `<button type="button" onclick="toggleAlgorithmLock('${topicMongoId}', '${algoId}', '${algo.name}', false, true)" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 focus:outline-none text-xs" title="Unlock Globally"><i class="fas fa-unlock"></i></button>`
+                    : `<button type="button" onclick="toggleAlgorithmLock('${topicMongoId}', '${algoId}', '${algo.name}', true, true)" class="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300 focus:outline-none text-xs" title="Lock Globally"><i class="fas fa-lock"></i></button>`)
+                : ''; // Don't show lock buttons for a new topic
+
+            itemDiv.innerHTML = `
+        <span class="flex-grow">
+            <strong class="font-mono text-blue-600 dark:text-blue-400">${algo.id}</strong> - ${algo.name} (${algo.difficulty})
+            ${lockIndicator}
+        </span>
+        <div class="flex items-center space-x-2 flex-shrink-0">
+             <button type="button" onclick="openEditAlgorithmModal(${index})" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 focus:outline-none" title="Edit Algorithm"><i class="fas fa-edit"></i></button>
+             <button type="button" onclick="deleteAlgorithm(${index})" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 focus:outline-none" title="Delete Algorithm"><i class="fas fa-trash"></i></button>
+             ${lockButtonHtml}
+         </div>
+     `;
+            listDiv.appendChild(itemDiv);
+        });
+    }
+
+    async function toggleAlgorithmLock(topicMongoId, algoId, algoName, lock, isGlobal, userId = null) {
+        const action = lock ? 'lock' : 'unlock';
+        const scope = isGlobal ? 'globally' : `for user ${userId || '?'}`; 
+        
+        if (isGlobal && !confirm(`${lock ? 'Globally lock' : 'Globally unlock'} algorithm "${algoName}" within this topic?`)) {
+            return;
+        }
+        if (!isGlobal && !userId) {
+             showGlobalAlert('User ID is required for user-specific lock/unlock.', 'error');
+             console.error("User ID missing for user-specific algorithm lock toggle.");
+             return;
+         }
+
+        showGlobalAlert(`${lock ? 'Locking' : 'Unlocking'} "${algoName}" ${scope}...`, 'info');
+        const endpoint = `/topics/${topicMongoId}/algorithms/${algoId}/${action}`;
+        const bodyPayload = isGlobal ? { global: true } : { userId: userId };
+        
+        const result = await makeAdminAPICall(endpoint, { method: 'POST', body: JSON.stringify(bodyPayload) });
+
+        hideGlobalAlert(); 
+
+        if (result?.success) {
+            showGlobalAlert(result.message, 'success');
+            const algoIndex = currentTopicAlgorithms.findIndex(a => a.id === algoId);
+            if (algoIndex !== -1 && isGlobal) {
+                currentTopicAlgorithms[algoIndex].isGloballyLocked = lock;
+                renderTopicAlgorithmsList(); // Re-render the list inside the modal
+            } else if (!isGlobal) {
+                // This function is called from the *topic* modal, not the *user topic* modal
+                // We'd need to reload the user topic modal if it's open
+                console.log("User-specific lock/unlock successful (if user modal is open, it needs refresh).");
+            }
+
+        } else {
+            showGlobalAlert(result?.message || `Failed to ${action} algorithm ${scope}.`, 'error');
+        }
+    }
+
+    function openEditAlgorithmModal(index = null) {
+        const modal = document.getElementById('editAlgorithmModal');
+        const form = document.getElementById('editAlgorithmForm');
+        const title = document.getElementById('algorithmModalTitle');
+        const errorP = document.getElementById('editAlgoError');
+        const algoIdInput = document.getElementById('editAlgoIdInput');
+        errorP.textContent = '';
+        form.reset();
+        document.getElementById('editAlgorithmIndex').value = index !== null ? String(index) : ''; 
+
+        if (index !== null && currentTopicAlgorithms[index]) {
+            title.textContent = 'Edit Algorithm';
+            const algo = currentTopicAlgorithms[index];
+            algoIdInput.value = algo.id;
+            algoIdInput.readOnly = true; 
+            algoIdInput.classList.add('bg-gray-100', 'dark:bg-gray-600');
+            document.getElementById('editAlgoName').value = algo.name;
+            document.getElementById('editAlgoDifficulty').value = algo.difficulty;
+            document.getElementById('editAlgoPoints').value = algo.points;
+            document.getElementById('editAlgoDesc').value = algo.description || '';
+            document.getElementById('editAlgoTimeComplexity').value = algo.timeComplexity || '';
+            document.getElementById('editAlgoSpaceComplexity').value = algo.spaceComplexity || '';
+        } else {
+            title.textContent = 'Add Algorithm';
+            algoIdInput.readOnly = false; 
+            algoIdInput.classList.remove('bg-gray-100', 'dark:bg-gray-600');
+            document.getElementById('editAlgoDifficulty').value = ''; // Reset select
+        }
+        modal.classList.add('show');
+    }
+
+    function closeEditAlgorithmModal() {
+        document.getElementById('editAlgorithmModal').classList.remove('show');
+    }
+
+    function saveAlgorithmChanges() {
+        const indexStr = document.getElementById('editAlgorithmIndex').value;
+        const index = indexStr === '' ? null : parseInt(indexStr);
+        const errorP = document.getElementById('editAlgoError');
+        const saveButton = document.getElementById('saveAlgorithmChangesBtn');
+        errorP.textContent = '';
+        saveButton.disabled = true;
+
+        const algoData = {
+            id: document.getElementById('editAlgoIdInput').value.trim(),
+            name: document.getElementById('editAlgoName').value.trim(),
+            difficulty: document.getElementById('editAlgoDifficulty').value,
+            points: parseInt(document.getElementById('editAlgoPoints').value),
+            description: document.getElementById('editAlgoDesc').value.trim() || undefined,
+            timeComplexity: document.getElementById('editAlgoTimeComplexity').value.trim() || undefined,
+            spaceComplexity: document.getElementById('editAlgoSpaceComplexity').value.trim() || undefined,
+            // Preserve lock status if editing, default to false if new
+            isGloballyLocked: index !== null ? currentTopicAlgorithms[index].isGloballyLocked : false 
+        };
+
+        if (!algoData.id || !algoData.name || !algoData.difficulty || isNaN(algoData.points)) {
+            errorP.textContent = 'Please fill all required algorithm fields (*).';
+            saveButton.disabled = false;
+            return;
+        }
+        if (index === null && currentTopicAlgorithms.some(a => a.id === algoData.id)) {
+            errorP.textContent = `Algorithm ID '${algoData.id}' already exists in this topic.`;
+            saveButton.disabled = false;
+            return;
+        }
+
+        if (index !== null) {
+            currentTopicAlgorithms[index] = algoData;
+        } else {
+            currentTopicAlgorithms.push(algoData);
+        }
+
+        renderTopicAlgorithmsList();
+        closeEditAlgorithmModal();
+        saveButton.disabled = false;
+    }
+
+    function deleteAlgorithm(index) {
+        if (index >= 0 && index < currentTopicAlgorithms.length) {
+            const algoNameToDelete = currentTopicAlgorithms[index].name;
+            if (confirm(`Are you sure you want to delete the algorithm "${algoNameToDelete}" from this topic?\n(This won't save until you save the topic)`)) {
+                currentTopicAlgorithms.splice(index, 1); 
+                renderTopicAlgorithmsList(); 
+            }
+        }
+    }
+    
+    // --- Topic Global Lock (from main list) ---
+    async function toggleTopicLock(topicMongoId, topicName, lock) { // lock is true to lock, false to unlock
+        const action = lock ? 'lock' : 'unlock';
+        if (!confirm(`${lock ? 'Globally lock' : 'Globally unlock'} topic "${topicName}"? This affects ALL users.`)) {
+            return;
+        }
+
+        showGlobalAlert(`${lock ? 'Locking' : 'Unlocking'} "${topicName}" globally...`, 'info');
+        const endpoint = `/topics/${topicMongoId}/${action}`; 
+        const result = await makeAdminAPICall(endpoint, { method: 'POST', body: JSON.stringify({ global: true }) });
+
+        hideGlobalAlert();
+
+        if (result?.success) {
+            showGlobalAlert(result.message, 'success');
+        } else {
+            showGlobalAlert(result?.message || `Failed to ${action} topic globally.`, 'error');
+        }
+        loadTopics(); // Refresh the main topics list
+    }
+
+
+    // --- Achievement Management ---
+    async function loadAchievements() {
+        const tbody = document.getElementById('achievementsTableBody');
+        tbody.innerHTML = '<tr><td colspan="7" class="p-4" data-label="Loading"><div class="loading-skeleton h-8 w-full"></div></td></tr>'.repeat(4);
+        const data = await makeAdminAPICall('/achievements'); tbody.innerHTML = '';
+        if (data?.success && data.achievements) {
+            if (data.achievements.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-500 dark:text-gray-400" data-label="Result">No achievements found.</td></tr>'; return; }
+            data.achievements.forEach(ach => {
+                const tr = document.createElement('tr'); tr.className = "hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors";
+                tr.innerHTML = `
+                    <td class="px-6 py-4 text-sm font-mono text-gray-700 dark:text-gray-200" data-label="ID">${ach.id}</td>
+                    <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white" data-label="Name">${ach.name}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300" data-label="Category">${ach.category}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300" data-label="Points">${ach.points}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300" data-label="Rarity">${ach.rarity || 'common'}</td>
+                    <td class="px-6 py-4 text-sm" data-label="Active"><span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${ach.isActive ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300'}">${ach.isActive ? 'Active' : 'Inactive'}</span></td>
+                    <td class="px-6 py-4 text-sm font-medium actions-cell" data-label="Actions">
+                        <button onclick="openEditAchievementModal('${ach._id}')" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-3 focus:outline-none focus:ring-2 focus:ring-indigo-300 rounded" title="Edit Achievement"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteAchievement('${ach._id}', '${ach.name}')" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 focus:outline-none focus:ring-2 focus:ring-red-300 rounded" title="Delete Achievement"><i class="fas fa-trash"></i></button>
+                    </td>`;
+                tbody.appendChild(tr);
+            });
+        } else { tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-red-500 dark:text-red-400" data-label="Error">Failed to load achievements.</td></tr>'; }
+    }
+    async function openEditAchievementModal(achievementId = null) {
+        const modal = document.getElementById('editAchievementModal'), form = document.getElementById('editAchievementForm'), errorP = document.getElementById('editAchError'), title = document.getElementById('achievementModalTitle'), idInput = document.getElementById('editAchIdInput'), saveButton = document.getElementById('saveAchChangesBtn');
+        errorP.textContent = ''; form.reset(); document.getElementById('editAchievementId').value = achievementId || '';
+        if (achievementId) {
+            title.textContent = 'Edit Achievement'; idInput.readOnly = true; idInput.classList.add('bg-gray-100', 'dark:bg-gray-600'); saveButton.disabled = true; showGlobalAlert('Loading achievement data...', 'info');
+            const data = await makeAdminAPICall(`/achievements/${achievementId}`); hideGlobalAlert(); saveButton.disabled = false;
+            if (data?.success && data.achievement) {
+                const ach = data.achievement; idInput.value = ach.id; document.getElementById('editAchName').value = ach.name; document.getElementById('editAchDesc').value = ach.description; document.getElementById('editAchIcon').value = ach.icon;
+                document.getElementById('editAchCategory').value = ach.category; document.getElementById('editAchPoints').value = ach.points; document.getElementById('editAchRarity').value = ach.rarity || 'common'; document.getElementById('editAchIsActive').value = String(ach.isActive ?? true);
+                document.getElementById('editAchCriteria').value = ach.criteriaJson || '{}';
+            } else { showGlobalAlert('Could not load achievement data.', 'error'); closeEditAchievementModal(); return; }
+        } else {
+            title.textContent = 'Add New Achievement'; idInput.readOnly = false; idInput.classList.remove('bg-gray-100', 'dark:bg-gray-600');
+            document.getElementById('editAchCriteria').value = '{\n  "type": "example",\n  "value": null\n}'; document.getElementById('editAchIsActive').value = 'true'; document.getElementById('editAchRarity').value = 'common'; document.getElementById('editAchCategory').value = ''; // Reset select
+            saveButton.disabled = false;
+        }
+        modal.classList.add('show');
+    }
+    function closeEditAchievementModal() { document.getElementById('editAchievementModal').classList.remove('show'); }
+    async function saveAchievementChanges() {
+        const achievementId = document.getElementById('editAchievementId').value; const errorP = document.getElementById('editAchError'); const saveButton = document.getElementById('saveAchChangesBtn');
+        errorP.textContent = ''; saveButton.disabled = true; saveButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+        const achievementData = {
+            id: document.getElementById('editAchIdInput').value.trim(), name: document.getElementById('editAchName').value.trim(), description: document.getElementById('editAchDesc').value.trim(), icon: document.getElementById('editAchIcon').value.trim(),
+            category: document.getElementById('editAchCategory').value, points: parseInt(document.getElementById('editAchPoints').value), rarity: document.getElementById('editAchRarity').value, isActive: document.getElementById('editAchIsActive').value === 'true',
+            criteriaJson: document.getElementById('editAchCriteria').value.trim()
+        };
+        try {
+            const criteria = JSON.parse(achievementData.criteriaJson || '{}'); if (typeof criteria !== 'object' || criteria === null || !criteria.type || criteria.value === undefined) throw new Error("Criteria JSON must be an object with 'type' and 'value'.");
+        } catch (e) { errorP.textContent = `Invalid Criteria JSON: ${e.message}`; saveButton.disabled = false; saveButton.innerHTML = 'Save Changes'; return; }
+        if (achievementId) delete achievementData.id; 
+        const method = achievementId ? 'PUT' : 'POST'; const endpoint = achievementId ? `/achievements/${achievementId}` : '/achievements';
+        const result = await makeAdminAPICall(endpoint, { method, body: JSON.stringify(achievementData) });
+        saveButton.disabled = false; saveButton.innerHTML = 'Save Changes';
+        if (result?.success) { showGlobalAlert(`Achievement ${achievementId ? 'updated' : 'created'}!`, 'success'); closeEditAchievementModal(); loadAchievements(); }
+        else { errorP.textContent = result?.message || `Failed to ${achievementId ? 'update' : 'create'}.`; }
+    }
+    async function deleteAchievement(achievementId, achievementName) {
+        if (confirm(`DELETE achievement "${achievementName}"?`)) {
+            showGlobalAlert('Deleting achievement...', 'info'); const result = await makeAdminAPICall(`/achievements/${achievementId}`, { method: 'DELETE' });
+            if (result?.success) { showGlobalAlert(`Achievement "${achievementName}" deleted!`, 'success'); loadAchievements(); }
+        }
+    }
+
+    // --- Settings Actions ---
+    async function regenerateLeaderboard() {
+        if (!confirm("Regenerate 'all-time' leaderboard? This recalculates ranks.")) return;
+        const statusP = document.getElementById('settingsStatus'), button = document.getElementById('regenerateLeaderboardBtn');
+        button.disabled = true; statusP.textContent = 'Regenerating...'; statusP.className = 'mt-2 text-sm text-yellow-600 dark:text-yellow-400';
+        const result = await makeAdminAPICall('/leaderboard/regenerate', { method: 'POST', body: JSON.stringify({ type: 'all-time' }) });
+        button.disabled = false;
+        if (result?.success) { statusP.textContent = result.message; statusP.className = 'mt-2 text-sm text-green-600 dark:text-green-400'; showGlobalAlert(result.message, 'success'); }
+        else { const errorMsg = result?.message || 'Failed.'; statusP.textContent = `Error: ${errorMsg}`; statusP.className = 'mt-2 text-sm text-red-500 dark:text-red-400'; }
+    }
+
+    // --- Navigation & Initialization ---
+    function adminLogout() { if (confirm('Logout?')) { localStorage.clear(); window.location.href = 'auth.html'; } }
+
+    function handleNavigation() {
+        const hash = window.location.hash || '#overview';
+        const targetSectionId = hash.substring(1);
+        document.querySelectorAll('.admin-section').forEach(sec => sec.classList.add('hidden'));
+        const targetSection = document.getElementById(targetSectionId) || document.getElementById('overview');
+        targetSection.classList.remove('hidden');
+        const sectionIdToShow = targetSection.id;
+
+        const loadIfEmpty = (id, loaderFn, tableBodyId) => {
+            if (sectionIdToShow === id) {
+                const body = document.getElementById(tableBodyId);
+                if (!body || !body.hasChildNodes() || (body.children.length === 1 && body.querySelector('[data-label="Loading"]'))) {
+                    if (id === 'users') {
+                        loaderFn(1, '', currentUserSortBy, currentUserSortOrder); 
+                    } else {
+                        loaderFn(); 
                     }
                 }
-            };
-            // --- End modification ---
-
-            loadIfEmpty('users', loadUsers, 'usersTableBody');
-            loadIfEmpty('topics', loadTopics, 'topicsTableBody');
-            loadIfEmpty('achievements', loadAchievements, 'achievementsTableBody');
-
-            if (sectionIdToShow === 'overview' && document.getElementById('statsContainer').querySelector('.loading-skeleton')) {
-                loadStats();
             }
+        };
 
-            document.querySelectorAll('.nav-link').forEach(link => { link.classList.remove('active'); if (link.getAttribute('href') === `#${sectionIdToShow}`) link.classList.add('active'); });
-            closeMobileMenu();
-        }
-        function toggleMobileMenu() {
-            const sidebar = document.querySelector('.sidebar'), overlay = document.getElementById('overlay'), isOpen = sidebar.classList.contains('translate-x-0');
-            sidebar.classList.toggle('-translate-x-full', isOpen); sidebar.classList.toggle('translate-x-0', !isOpen); overlay.classList.toggle('hidden', isOpen);
-        }
-        function closeMobileMenu() { document.querySelector('.sidebar').classList.add('-translate-x-full'); document.querySelector('.sidebar').classList.remove('translate-x-0'); document.getElementById('overlay').classList.add('hidden'); }
+        loadIfEmpty('users', loadUsers, 'usersTableBody');
+        loadIfEmpty('subjects', loadSubjects, 'subjectsTableBody'); // NEW
+        loadIfEmpty('topics', loadTopics, 'topicsTableBody');
+        loadIfEmpty('achievements', loadAchievements, 'achievementsTableBody');
 
-        // Re-check auth on pageshow (handles browser back button from cache)
-            window.addEventListener('pageshow', function(event) {
-                // event.persisted is true if page is from back/forward cache
-                if (!checkAdminAuth()) {
-                    console.error("ADMIN PAGE: Auth check FAILED on pageshow. Halting script.");
-                }
+        if (sectionIdToShow === 'overview' && document.getElementById('statsContainer').querySelector('.loading-skeleton')) {
+            loadStats();
+        }
+
+        document.querySelectorAll('.nav-link').forEach(link => { link.classList.remove('active'); if (link.getAttribute('href') === `#${sectionIdToShow}`) link.classList.add('active'); });
+        closeMobileMenu();
+    }
+    function toggleMobileMenu() {
+        const sidebar = document.querySelector('.sidebar'), overlay = document.getElementById('overlay'), isOpen = sidebar.classList.contains('translate-x-0');
+        sidebar.classList.toggle('-translate-x-full', isOpen); sidebar.classList.toggle('translate-x-0', !isOpen); overlay.classList.toggle('hidden', isOpen);
+    }
+    function closeMobileMenu() { document.querySelector('.sidebar').classList.add('-translate-x-full'); document.querySelector('.sidebar').classList.remove('translate-x-0'); document.getElementById('overlay').classList.add('hidden'); }
+
+    // Re-check auth on pageshow (handles browser back button from cache)
+    window.addEventListener('pageshow', function(event) {
+        if (!checkAdminAuth()) {
+            console.error("ADMIN PAGE: Auth check FAILED on pageshow. Halting script.");
+        }
+    });
+    
+    // --- DOMContentLoaded ---
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log("ADMIN PAGE: Checking auth status...");
+        if (!checkAdminAuth()) {
+            console.error("ADMIN PAGE: Auth check FAILED. Halting script.");
+            return;
+        }
+        console.log("ADMIN PAGE: Auth check PASSED.");
+
+        // --- Setup Event Listeners ---
+        console.log("ADMIN PAGE: Setting up event listeners and navigation...");
+        document.getElementById('adminLogoutBtn').addEventListener('click', adminLogout);
+        document.getElementById('mobileMenuBtn').addEventListener('click', toggleMobileMenu);
+        document.getElementById('overlay').addEventListener('click', closeMobileMenu);
+        document.getElementById('regenerateLeaderboardBtn').addEventListener('click', regenerateLeaderboard);
+
+        // User Modal Listeners
+        document.getElementById('closeUserModalBtnTop').addEventListener('click', closeEditUserModal);
+        document.getElementById('closeUserModalBtn').addEventListener('click', closeEditUserModal);
+        document.getElementById('saveUserChangesBtn').addEventListener('click', saveUserChanges);
+        document.getElementById('editUserModal').addEventListener('click', (event) => { if (event.target === event.currentTarget) closeEditUserModal(); });
+
+        // Topic Modal Listeners
+        document.getElementById('closeTopicModalBtnTop').addEventListener('click', closeEditTopicModal);
+        document.getElementById('closeTopicModalBtn').addEventListener('click', closeEditTopicModal);
+        document.getElementById('saveTopicChangesBtn').addEventListener('click', saveTopicChanges);
+        document.getElementById('editTopicModal').addEventListener('click', (event) => { if (event.target === event.currentTarget) closeEditTopicModal(); });
+
+        // Algorithm Modal Listeners
+        document.getElementById('closeAlgorithmModalBtnTop').addEventListener('click', closeEditAlgorithmModal);
+        document.getElementById('closeAlgorithmModalBtn').addEventListener('click', closeEditAlgorithmModal);
+        document.getElementById('saveAlgorithmChangesBtn').addEventListener('click', saveAlgorithmChanges);
+        document.getElementById('editAlgorithmModal').addEventListener('click', (event) => { if (event.target === event.currentTarget) closeEditAlgorithmModal(); });
+
+        // Achievement Modal Listeners
+        document.getElementById('closeAchievementModalBtnTop').addEventListener('click', closeEditAchievementModal);
+        document.getElementById('closeAchievementModalBtn').addEventListener('click', closeEditAchievementModal);
+        document.getElementById('saveAchChangesBtn').addEventListener('click', saveAchievementChanges);
+        document.getElementById('editAchievementModal').addEventListener('click', (event) => { if (event.target === event.currentTarget) closeEditAchievementModal(); });
+
+        // User Sort Click Listener
+        const usersTableHead = document.querySelector('#users table thead');
+        if (usersTableHead) {
+            usersTableHead.addEventListener('click', handleSortClick);
+        } else {
+            console.error("Could not find users table head to attach sort listener.");
+        }
+
+        // User Search Listener
+        const searchInput = document.getElementById('userSearchInput');
+        if (searchInput) {
+            let searchTimeout;
+            searchInput.addEventListener('input', () => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    loadUsers(1, searchInput.value.trim(), currentUserSortBy, currentUserSortOrder);
+                }, 400);
             });
-        
-        // --- DOMContentLoaded ---
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log("ADMIN PAGE: Checking auth status...");
-            if (!checkAdminAuth()) {
-                console.error("ADMIN PAGE: Auth check FAILED. Halting script.");
-                return;
-            }
-            console.log("ADMIN PAGE: Auth check PASSED.");
+        } else { console.warn("Could not find 'userSearchInput'."); }
 
-            // --- Setup Event Listeners ---
-            console.log("ADMIN PAGE: Setting up event listeners and navigation...");
-            document.getElementById('adminLogoutBtn').addEventListener('click', adminLogout);
-            document.getElementById('mobileMenuBtn').addEventListener('click', toggleMobileMenu);
-            document.getElementById('overlay').addEventListener('click', closeMobileMenu);
-            document.getElementById('regenerateLeaderboardBtn').addEventListener('click', regenerateLeaderboard);
-
-            // User Modal Listeners
-            document.getElementById('closeUserModalBtnTop').addEventListener('click', closeEditUserModal);
-            document.getElementById('closeUserModalBtn').addEventListener('click', closeEditUserModal);
-            document.getElementById('saveUserChangesBtn').addEventListener('click', saveUserChanges);
-            const editUserModalElement = document.getElementById('editUserModal');
-            if (editUserModalElement) {
-                editUserModalElement.addEventListener('click', (event) => { if (event.target === editUserModalElement) closeEditUserModal(); });
-            } else { console.error("Could not find 'editUserModal'."); }
-
-            // Topic Modal Listeners
-            document.getElementById('closeTopicModalBtnTop').addEventListener('click', closeEditTopicModal);
-            document.getElementById('closeTopicModalBtn').addEventListener('click', closeEditTopicModal);
-            document.getElementById('saveTopicChangesBtn').addEventListener('click', saveTopicChanges);
-            const editTopicModalElement = document.getElementById('editTopicModal');
-            if (editTopicModalElement) {
-                editTopicModalElement.addEventListener('click', (event) => { if (event.target === editTopicModalElement) closeEditTopicModal(); });
-            } else { console.error("Could not find 'editTopicModal'."); }
-
-            // NEW: Algorithm Modal Listeners
-            document.getElementById('closeAlgorithmModalBtnTop').addEventListener('click', closeEditAlgorithmModal);
-            document.getElementById('closeAlgorithmModalBtn').addEventListener('click', closeEditAlgorithmModal);
-            document.getElementById('saveAlgorithmChangesBtn').addEventListener('click', saveAlgorithmChanges);
-            const editAlgorithmModalElement = document.getElementById('editAlgorithmModal');
-            if (editAlgorithmModalElement) {
-                editAlgorithmModalElement.addEventListener('click', (event) => { if (event.target === editAlgorithmModalElement) closeEditAlgorithmModal(); });
-            } else { console.error("Could not find 'editAlgorithmModal'."); }
-
-            // Achievement Modal Listeners
-            document.getElementById('closeAchievementModalBtnTop').addEventListener('click', closeEditAchievementModal);
-            document.getElementById('closeAchievementModalBtn').addEventListener('click', closeEditAchievementModal);
-            document.getElementById('saveAchChangesBtn').addEventListener('click', saveAchievementChanges);
-            const editAchievementModalElement = document.getElementById('editAchievementModal');
-            if (editAchievementModalElement) {
-                editAchievementModalElement.addEventListener('click', (event) => { if (event.target === editAchievementModalElement) closeEditAchievementModal(); });
-            } else { console.error("Could not find 'editAchievementModal'."); }
-
-            // --- Add Sort Click Listener ---
-            const usersTableHead = document.querySelector('#users table thead');
-            if (usersTableHead) {
-                usersTableHead.addEventListener('click', handleSortClick);
-            } else {
-                console.error("Could not find users table head to attach sort listener.");
-            }
-            // --- End Add Sort Click Listener ---
-
-            // User Search Listener
-            const searchInput = document.getElementById('userSearchInput');
-            if (searchInput) {
-                let searchTimeout;
-                searchInput.addEventListener('input', () => {
-                    clearTimeout(searchTimeout);
-                    searchTimeout = setTimeout(() => {
-                        // Pass current sort order when searching
-                        loadUsers(1, searchInput.value.trim(), currentUserSortBy, currentUserSortOrder);
-                    }, 400);
-                });
-            } else { console.warn("Could not find 'userSearchInput'."); }
-
-            // User Topic Management Modal Listeners
-            document.getElementById('closeUserTopicsModalBtnTop').addEventListener('click', closeManageUserTopicsModal);
-            document.getElementById('closeUserTopicsModalBtn').addEventListener('click', closeManageUserTopicsModal);
-            const manageUserTopicsModalElement = document.getElementById('manageUserTopicsModal');
-            if (manageUserTopicsModalElement) {
-                manageUserTopicsModalElement.addEventListener('click', (event) => {
-                    if (event.target === manageUserTopicsModalElement) closeManageUserTopicsModal();
-                });
-            } else { console.error("Could not find 'manageUserTopicsModal'."); }
-
-            // --- Initial Navigation ---
-            window.addEventListener('hashchange', handleNavigation);
-            handleNavigation(); // Load section based on initial hash or default
-            console.log("ADMIN PAGE: Initial navigation complete.");
+        // User Topic Management Modal Listeners
+        document.getElementById('closeUserTopicsModalBtnTop').addEventListener('click', closeManageUserTopicsModal);
+        document.getElementById('closeUserTopicsModalBtn').addEventListener('click', closeManageUserTopicsModal);
+        document.getElementById('manageUserTopicsModal').addEventListener('click', (event) => {
+            if (event.target === event.currentTarget) closeManageUserTopicsModal();
         });
-    </script>
+        
+        // --- Initial Navigation ---
+        window.addEventListener('hashchange', handleNavigation);
+        handleNavigation(); // Load section based on initial hash or default
+        console.log("ADMIN PAGE: Initial navigation complete.");
+    });
+</script>
 </body>
 
 
 </html>
-
-
-
