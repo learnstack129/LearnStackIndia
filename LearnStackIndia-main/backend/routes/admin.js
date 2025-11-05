@@ -6,6 +6,7 @@ const User = require('../models/User');
 const Topic = require('../models/Topic');
 const AchievementTemplate = require('../models/Achievement');
 const Leaderboard = require('../models/Leaderboard'); // Needed for potential leaderboard actions
+const SubjectMeta = require('../models/SubjectMeta');
 
 const router = express.Router();
 
@@ -788,4 +789,5 @@ router.post('/topics/:topicMongoId/algorithms/:algoId/unlock', adminAuth, async 
 
 
 module.exports = router;
+
 
