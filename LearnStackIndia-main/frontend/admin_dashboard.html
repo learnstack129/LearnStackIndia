@@ -1424,6 +1424,7 @@
     }
 
 // Modified to accept algorithms with pre-fetched user progress
+// Replace the entire function with this one
 function renderUserAlgorithmsList(userId, topicMongoId, topicCustomId, algorithmsWithProgress, containerId) {
     const algoListContainer = document.getElementById(containerId);
     if (!algoListContainer) return;
@@ -1436,10 +1437,10 @@ function renderUserAlgorithmsList(userId, topicMongoId, topicCustomId, algorithm
     algoListContainer.innerHTML = ''; // Clear placeholder
 
     algorithmsWithProgress.forEach(algo => {
-        const algoId = algo.id; // String ID like 'bubbleSort'
+        const algoId = algo.id;
         const isGloballyLockedAlgo = algo.isGloballyLocked === true;
 
-        // Get data directly from the object
+        // Get data directly from the passed object
         const userAlgoStatus = algo.userProgress?.status || 'available';
         const effectiveAlgoStatus = algo.effectiveAlgoStatus || 'available';
         const isCompleted = algo.userProgress?.completed === true;
@@ -1454,11 +1455,11 @@ function renderUserAlgorithmsList(userId, topicMongoId, topicCustomId, algorithm
         }
 
         if (isCompleted) {
-            statusIconAlgo = 'fa-check-circle'; // Override icon
+            statusIconAlgo = 'fa-check-circle';
             statusColorClassAlgo = 'text-blue-500 dark:text-blue-400'; 
         }
 
-        const showUnlockButtonAlgo = userAlgoStatus === 'locked'; // Button action depends on user's direct status
+        const showUnlockButtonAlgo = userAlgoStatus === 'locked';
         const algoButtonHtml = showUnlockButtonAlgo
             ? `<button onclick="toggleUserAlgorithmLock('${userId}', '${topicMongoId}', '${algoId}', '${algo.name}', false)" class="px-2 py-0.5 rounded text-white text-xs font-semibold bg-green-500 hover:bg-green-600 focus:outline-none focus:ring-1 focus:ring-green-300 disabled:opacity-50" title="Unlock algorithm ONLY for this user"><i class="fas fa-unlock-alt text-xs"></i></button>`
             : `<button onclick="toggleUserAlgorithmLock('${userId}', '${topicMongoId}', '${algoId}', '${algo.name}', true)" class="px-2 py-0.5 rounded text-white text-xs font-semibold bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-1 focus:ring-red-300 disabled:opacity-50" title="Lock algorithm ONLY for this user"><i class="fas fa-lock text-xs"></i></button>`;
@@ -2292,5 +2293,6 @@ async function loadSubjects() {
 
 
 </html>
+
 
 
