@@ -8,6 +8,7 @@ const auth = require('../middleware/auth'); //
 const Topic = require('../models/Topic'); // Import Topic model
 const AchievementTemplate = require('../models/Achievement'); // Import Achievement model
 const Leaderboard = require('../models/Leaderboard'); // Import Leaderboard model
+const SubjectMeta = require('../models/SubjectMeta');
 
 const router = express.Router();
 
@@ -918,5 +919,6 @@ router.get('/me', auth, async (req, res) => { //
 
 
 module.exports = router;
+
 
 
