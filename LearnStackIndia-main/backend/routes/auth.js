@@ -289,7 +289,7 @@ router.post('/login', async (req, res) => { //
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }); //
 
         // Convert profile.socialLinks Map to Object for JSON response
-        const socialLinksObject = Object.fromEntries(user.profile.socialLinks || new Map()); //
+        const socialLinksObject = Object.fromEntries(user.profile?.socialLinks || new Map()); // <--- FIX 1
 
         res.json({ //
             success: true, //
@@ -300,7 +300,7 @@ router.post('/login', async (req, res) => { //
                 email: user.email, //
                 role: user.role, //
                 profile: { // Send profile parts, converting subdoc and Map
-                    ...(user.profile.toObject ? user.profile.toObject() : user.profile), //
+                    ...(user.profile?.toObject ? user.profile.toObject() : user.profile), // <--- FIX 2
                     socialLinks: socialLinksObject //
                 },
                 // Omit large fields like progress, achievements, dailyActivity
@@ -918,6 +918,7 @@ router.get('/me', auth, async (req, res) => { //
 
 
 module.exports = router;
+
 
 
 
