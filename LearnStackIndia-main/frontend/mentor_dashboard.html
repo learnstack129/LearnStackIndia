@@ -351,39 +351,21 @@
                     <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white" id="addQuestionModalTitle">Add Question</h3>
                     <button onclick="closeAddQuestionModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 focus:outline-none"><i class="fas fa-times text-xl"></i></button>
                 </div>
+                
                 <form id="addQuestionForm" class="space-y-4 px-7 py-3 max-h-[70vh] overflow-y-auto">
                     <input type="hidden" id="addQuestionTestId">
+                    
                     <div>
                         <label for="questionText" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Question Text*</label>
                         <textarea id="questionText" rows="3" required class="input-field"></textarea>
                     </div>
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label for="questionOption0" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Option 1*</label>
-                            <input type="text" id="questionOption0" required class="input-field option-input">
-                        </div>
-                         <div>
-                            <label for="questionOption1" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Option 2*</label>
-                            <input type="text" id="questionOption1" required class="input-field option-input">
-                        </div>
-                         <div>
-                            <label for="questionOption2" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Option 3*</label>
-                            <input type="text" id="questionOption2" required class="input-field option-input">
-                        </div>
-                         <div>
-                            <label for="questionOption3" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Option 4*</label>
-                            <input type="text" id="questionOption3" required class="input-field option-input">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="correctAnswerIndex" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Correct Answer*</label>
-                            <select id="correctAnswerIndex" required class="input-field">
-                                <option value="" disabled selected>Select correct option</option>
-                                <option value="0">Option 1</option>
-                                <option value="1">Option 2</option>
-                                <option value="2">Option 3</option>
-                                <option value="3">Option 4</option>
+                            <label for="questionType" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Question Type*</label>
+                            <select id="questionType" required class="input-field">
+                                <option value="mcq" selected>Multiple Choice (MCQ)</option>
+                                <option value="short_answer">Short Answer</option>
                             </select>
                         </div>
                         <div>
@@ -391,6 +373,46 @@
                             <input type="number" id="questionTimeLimit" required class="input-field" value="90" min="10">
                         </div>
                     </div>
+                    
+                    <div id="mcqFields" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="questionOption0" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Option 1*</label>
+                                <input type="text" id="questionOption0" class="input-field option-input">
+                            </div>
+                            <div>
+                                <label for="questionOption1" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Option 2*</label>
+                                <input type="text" id="questionOption1" class="input-field option-input">
+                            </div>
+                            <div>
+                                <label for="questionOption2" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Option 3</label>
+                                <input type="text" id="questionOption2" class="input-field option-input">
+                            </div>
+                            <div>
+                                <label for="questionOption3" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Option 4</label>
+                                <input type="text" id="questionOption3" class="input-field option-input">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="correctAnswerIndex" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Correct Answer*</label>
+                            <select id="correctAnswerIndex" class="input-field">
+                                <option value="" disabled selected>Select correct option</option>
+                                <option value="0">Option 1</option>
+                                <option value="1">Option 2</option>
+                                <option value="2">Option 3</option>
+                                <option value="3">Option 4</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="shortAnswerFields" class="space-y-4 hidden">
+                         <div>
+                            <label for="shortAnswers" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Acceptable Answers*</label>
+                            <textarea id="shortAnswers" rows="4" class="input-field" placeholder="Enter acceptable answers, one per line."></textarea>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Note: Answers are typically case-insensitive, but exact matches are preferred.</p>
+                        </div>
+                    </div>
+                    
                     <p id="addQuestionError" class="text-red-500 text-sm h-4"></p>
                 </form>
                 <div class="items-center px-4 py-3 border-t border-gray-200 dark:border-gray-700 mt-4 flex justify-end space-x-3">
