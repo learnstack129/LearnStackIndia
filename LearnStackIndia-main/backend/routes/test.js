@@ -40,12 +40,17 @@ router.get('/active', auth, async (req, res) => {
     try {
         const tests = await Test.find({ isActive: true })
             .select('title createdBy')
-            .populate('createdBy', 'username'); // <-- THIS LINE IS LIKELY FAILING
+            // --- FIX ---
+            // Changed the populate syntax to be more robust.
+            // This is a more explicit way to select fields from a populated document
+            // and is less likely to cause internal errors.
+            .populate({ path: 'createdBy', select: 'username' }); 
+            // --- END FIX ---
 
         res.json({ success: true, tests });
     } catch (error) {
         console.error("Error fetching active tests:", error);
-        res.status(500).json({ message: 'Server error fetching active tests' }); // <-- This is the error you see
+        res.status(500).json({ message: 'Server error fetching active tests' });
     }
 });
 // --- END NEW ROUTE ---
