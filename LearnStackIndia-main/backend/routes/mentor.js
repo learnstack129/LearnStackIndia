@@ -46,6 +46,45 @@ router.post('/tests', mentorAuth, async (req, res) => {
     }
 });
 
+// --- NEW DELETE ROUTE ---
+// DELETE: Delete a test and all associated data
+router.delete('/tests/:testId', mentorAuth, async (req, res) => {
+    try {
+        const { testId } = req.params;
+
+        // 1. Find the test and ensure the mentor owns it
+        const test = await Test.findOne({ _id: testId, createdBy: req.user.id });
+        if (!test) {
+            return res.status(404).json({ message: 'Test not found or you do not own this test' });
+        }
+
+        const questionIds = test.questions;
+
+        // 2. Delete the Test itself
+        await Test.deleteOne({ _id: test._id });
+
+        // 3. Delete all associated Questions
+        if (questionIds && questionIds.length > 0) {
+            await Question.deleteMany({ _id: { $in: questionIds } });
+        }
+
+        // 4. Pull all associated testAttempts from all users
+        await User.updateMany(
+            { 'testAttempts.testId': testId },
+            { $pull: { testAttempts: { testId: testId } } }
+        );
+        
+        console.log(`[Test Delete] Mentor ${req.user.id} deleted test ${testId}. Associated questions and attempts removed.`);
+        res.json({ success: true, message: `Test "${test.title}" deleted successfully.` });
+
+    } catch (error) {
+        console.error("Error deleting test:", error);
+        res.status(500).json({ message: 'Error deleting test' });
+    }
+});
+// --- END NEW DELETE ROUTE ---
+
+
 // POST: Add a new question (MCQ or Short Answer) and link it to a test
 router.post('/tests/:testId/questions', mentorAuth, async (req, res) => {
     try {
