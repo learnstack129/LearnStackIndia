@@ -266,6 +266,8 @@ router.post('/resend-otp', async (req, res) => { //
     }
 });
 
+// backend/routes/auth.js
+
 // --- Login Route ---
 router.post('/login', async (req, res) => { //
     try {
@@ -292,8 +294,11 @@ router.post('/login', async (req, res) => { //
 
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }); //
 
-        // Convert profile.socialLinks Map to Object for JSON response
-        const socialLinksObject = Object.fromEntries(user.profile?.socialLinks || new Map()); // <--- FIX 1
+        // --- START OF FIX ---
+        // Safely get profile and social links, providing empty object defaults if they don't exist
+        const userProfileObject = user.profile ? (user.profile.toObject ? user.profile.toObject() : user.profile) : {};
+        const socialLinksObject = Object.fromEntries(userProfileObject.socialLinks || new Map());
+        // --- END OF FIX ---
 
         res.json({ //
             success: true, //
@@ -303,9 +308,9 @@ router.post('/login', async (req, res) => { //
                 username: user.username, //
                 email: user.email, //
                 role: user.role, //
-                profile: { // Send profile parts, converting subdoc and Map
-                    ...(user.profile?.toObject ? user.profile.toObject() : user.profile), // <--- FIX 2
-                    socialLinks: socialLinksObject //
+                profile: { 
+                    ...userProfileObject,     // Use the safe object
+                    socialLinks: socialLinksObject 
                 },
                 // Omit large fields like progress, achievements, dailyActivity
             }
@@ -922,6 +927,7 @@ router.get('/me', auth, async (req, res) => { //
 
 
 module.exports = router;
+
 
 
 
