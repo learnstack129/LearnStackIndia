@@ -468,7 +468,7 @@
                 let data;
                 try {
                     const text = await response.text();
-                    data = text ? JSON.parse(text) : { success: response.ok };
+                    data = text ? JSON.parse(text) : { success: response.ok, message: response.ok ? "Operation successful" : "Operation failed" };
                 } catch (e) {
                     if (!response.ok) throw new Error(`HTTP Error ${response.status}: ${response.statusText}. Response not JSON.`);
                     return { success: true };
@@ -557,13 +557,15 @@
             tr.className = "hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors";
             const questionCount = test.questions ? test.questions.length : 0;
             
-            // --- NEW: Toggle Button Logic ---
             const isActive = test.isActive === true;
             const toggleButtonHtml = isActive
                 ? `<button onclick="toggleTestActive('${test._id}', ${test.isActive})" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 mr-3" title="Deactivate Test"><i class="fas fa-power-off"></i></button>`
                 : `<button onclick="toggleTestActive('${test._id}', ${test.isActive})" class="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300 mr-3" title="Activate Test"><i class="fas fa-power-off"></i></button>`;
-            // --- END NEW LOGIC ---
 
+            // --- MODIFICATION: Call deleteTest function ---
+            // Escape single quotes in the test title for the confirm dialog
+            const escapedTitle = test.title.replace(/'/g, "\\'");
+            
             tr.innerHTML = `
                 <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white" data-label="Title">${test.title}</td>
                 <td class="px-6 py-4 text-sm" data-label="Status"><span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${isActive ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300'}">${isActive ? 'Active' : 'Draft'}</span></td>
@@ -571,9 +573,10 @@
                 <td class="px-6 py-4 text-sm font-medium actions-cell" data-label="Actions">
                     <button onclick="openAddQuestionModal('${test._id}')" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3" title="Add Question"><i class="fas fa-plus"></i></button>
                     ${toggleButtonHtml} 
-                    <button onclick="alert('Delete soon')" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300" title="Delete Test"><i class="fas fa-trash"></i></button>
+                    <button onclick="deleteTest('${test._id}', '${escapedTitle}')" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300" title="Delete Test"><i class="fas fa-trash"></i></button>
                 </td>
             `;
+            // --- END MODIFICATION ---
             tbody.appendChild(tr);
         });
             } else {
@@ -581,6 +584,27 @@
             }
         }
         
+        // --- NEW FUNCTION: deleteTest ---
+        async function deleteTest(testId, testName) {
+            if (!confirm(`Are you sure you want to permanently delete the test "${testName}"?\n\nThis will also delete ALL associated questions and ALL user attempts for this test.`)) {
+                return;
+            }
+            
+            showGlobalAlert('Deleting test...', 'info');
+            
+            const result = await makeMentorAPICall(`/tests/${testId}`, {
+                method: 'DELETE' 
+            });
+            
+            if (result?.success) {
+                showGlobalAlert(result.message, 'success');
+                loadMentorTests(); // Refresh the list
+                populateMonitorTestSelect(); // Refresh the monitoring dropdown
+            }
+            // Error is handled by makeMentorAPICall's global alert
+        }
+        // --- END NEW FUNCTION ---
+
         // --- Create Test Modal ---
         function openCreateTestModal() {
             document.getElementById('createTestForm').reset();
@@ -591,27 +615,24 @@
             document.getElementById('createTestModal').classList.remove('show');
         }
 
-        // --- NEW: Toggle Test Active Status ---
-async function toggleTestActive(testId, currentStatus) {
-    const action = currentStatus ? 'Deactivate' : 'Activate';
-    if (!confirm(`Are you sure you want to ${action} this test?`)) {
-        return;
-    }
-    
-    showGlobalAlert(`${action.replace(/e$/, 'ing')} test...`, 'info');
-    
-    // We will create this API route next
-    const result = await makeMentorAPICall(`/tests/${testId}/toggle`, {
-        method: 'POST' 
-    });
-    
-    if (result?.success) {
-        showGlobalAlert(result.message, 'success');
-        loadMentorTests(); // Refresh the list
-        populateMonitorTestSelect(); // Refresh the monitoring dropdown
-    }
-    // API error will be handled by makeMentorAPICall's global alert
-}
+        async function toggleTestActive(testId, currentStatus) {
+            const action = currentStatus ? 'Deactivate' : 'Activate';
+            if (!confirm(`Are you sure you want to ${action} this test?`)) {
+                return;
+            }
+            
+            showGlobalAlert(`${action.replace(/e$/, 'ing')} test...`, 'info');
+            
+            const result = await makeMentorAPICall(`/tests/${testId}/toggle`, {
+                method: 'POST' 
+            });
+            
+            if (result?.success) {
+                showGlobalAlert(result.message, 'success');
+                loadMentorTests(); // Refresh the list
+                populateMonitorTestSelect(); // Refresh the monitoring dropdown
+            }
+        }
         
         async function saveNewTest() {
             const title = document.getElementById('newTestTitle').value;
@@ -644,6 +665,29 @@ async function toggleTestActive(testId, currentStatus) {
         }
         
         // --- Add Question Modal ---
+        function setupQuestionTypeToggle() {
+            const typeSelect = document.getElementById('questionType');
+            if (typeSelect) {
+                typeSelect.addEventListener('change', (e) => {
+                    const type = e.target.value;
+                    toggleQuestionFields(type);
+                });
+            }
+        }
+
+        function toggleQuestionFields(type) {
+            const mcqFields = document.getElementById('mcqFields');
+            const shortAnswerFields = document.getElementById('shortAnswerFields');
+            
+            if (type === 'mcq') {
+                mcqFields.classList.remove('hidden');
+                shortAnswerFields.classList.add('hidden');
+            } else if (type === 'short_answer') {
+                mcqFields.classList.add('hidden');
+                shortAnswerFields.classList.remove('hidden');
+            }
+        }
+
         function openAddQuestionModal(testId) {
             document.getElementById('addQuestionForm').reset();
             document.getElementById('addQuestionError').textContent = '';
@@ -652,89 +696,96 @@ async function toggleTestActive(testId, currentStatus) {
             if(test) {
                 document.getElementById('addQuestionModalTitle').textContent = `Add Question to: ${test.title}`;
             }
+            
+            // Default to MCQ view when opening
+            toggleQuestionFields('mcq');
+            document.getElementById('questionType').value = 'mcq';
+            
             document.getElementById('addQuestionModal').classList.add('show');
         }
+        
         function closeAddQuestionModal() {
             document.getElementById('addQuestionModal').classList.remove('show');
         }
-        async function saveNewQuestion() {
-    const testId = document.getElementById('addQuestionTestId').value;
-    const errorP = document.getElementById('addQuestionError');
-    const saveButton = document.getElementById('saveQuestionBtn');
-    errorP.textContent = '';
-    saveButton.disabled = true;
-    saveButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
-
-    const questionType = document.getElementById('questionType').value;
-    
-    const questionData = {
-        text: document.getElementById('questionText').value.trim(),
-        timeLimit: parseInt(document.getElementById('questionTimeLimit').value, 10),
-        questionType: questionType
-    };
-
-    // --- Validation ---
-    if (!questionData.text || isNaN(questionData.timeLimit) || questionData.timeLimit < 10) {
-        errorP.textContent = 'Please fill in Question Text and a valid Time Limit (min 10s).';
-        saveButton.disabled = false; saveButton.innerHTML = 'Save Question';
-        return;
-    }
-
-    if (questionType === 'mcq') {
-        questionData.options = [
-            document.getElementById('questionOption0').value.trim(),
-            document.getElementById('questionOption1').value.trim(),
-            document.getElementById('questionOption2').value.trim(),
-            document.getElementById('questionOption3').value.trim(),
-        ].filter(opt => opt.length > 0); // Only include non-empty options
-
-        questionData.correctAnswerIndex = parseInt(document.getElementById('correctAnswerIndex').value, 10);
         
-        if (questionData.options.length < 2) {
-            errorP.textContent = 'MCQ questions must have at least 2 options.';
-            saveButton.disabled = false; saveButton.innerHTML = 'Save Question';
-            return;
-        }
-        if (isNaN(questionData.correctAnswerIndex)) {
-            errorP.textContent = 'Please select a correct answer for the MCQ.';
-            saveButton.disabled = false; saveButton.innerHTML = 'Save Question';
-            return;
-        }
-        if (questionData.correctAnswerIndex >= questionData.options.length) {
-             errorP.textContent = 'Correct answer index is invalid for the number of options provided.';
-             saveButton.disabled = false; saveButton.innerHTML = 'Save Question';
-             return;
-        }
+        async function saveNewQuestion() {
+            const testId = document.getElementById('addQuestionTestId').value;
+            const errorP = document.getElementById('addQuestionError');
+            const saveButton = document.getElementById('saveQuestionBtn');
+            errorP.textContent = '';
+            saveButton.disabled = true;
+            saveButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
 
-    } else if (questionType === 'short_answer') {
-        questionData.shortAnswers = document.getElementById('shortAnswers').value
-            .split('\n')
-            .map(s => s.trim())
-            .filter(s => s.length > 0);
+            const questionType = document.getElementById('questionType').value;
             
-        if (questionData.shortAnswers.length === 0) {
-            errorP.textContent = 'Short Answer questions must have at least one acceptable answer.';
+            const questionData = {
+                text: document.getElementById('questionText').value.trim(),
+                timeLimit: parseInt(document.getElementById('questionTimeLimit').value, 10),
+                questionType: questionType
+            };
+
+            // --- Validation ---
+            if (!questionData.text || isNaN(questionData.timeLimit) || questionData.timeLimit < 10) {
+                errorP.textContent = 'Please fill in Question Text and a valid Time Limit (min 10s).';
+                saveButton.disabled = false; saveButton.innerHTML = 'Save Question';
+                return;
+            }
+
+            if (questionType === 'mcq') {
+                questionData.options = [
+                    document.getElementById('questionOption0').value.trim(),
+                    document.getElementById('questionOption1').value.trim(),
+                    document.getElementById('questionOption2').value.trim(),
+                    document.getElementById('questionOption3').value.trim(),
+                ].filter(opt => opt.length > 0); // Only include non-empty options
+
+                questionData.correctAnswerIndex = parseInt(document.getElementById('correctAnswerIndex').value, 10);
+                
+                if (questionData.options.length < 2) {
+                    errorP.textContent = 'MCQ questions must have at least 2 options.';
+                    saveButton.disabled = false; saveButton.innerHTML = 'Save Question';
+                    return;
+                }
+                if (isNaN(questionData.correctAnswerIndex)) {
+                    errorP.textContent = 'Please select a correct answer for the MCQ.';
+                    saveButton.disabled = false; saveButton.innerHTML = 'Save Question';
+                    return;
+                }
+                if (questionData.correctAnswerIndex >= questionData.options.length) {
+                     errorP.textContent = 'Correct answer index is invalid for the number of options provided.';
+                     saveButton.disabled = false; saveButton.innerHTML = 'Save Question';
+                     return;
+                }
+
+            } else if (questionType === 'short_answer') {
+                questionData.shortAnswers = document.getElementById('shortAnswers').value
+                    .split('\n')
+                    .map(s => s.trim())
+                    .filter(s => s.length > 0);
+                    
+                if (questionData.shortAnswers.length === 0) {
+                    errorP.textContent = 'Short Answer questions must have at least one acceptable answer.';
+                    saveButton.disabled = false; saveButton.innerHTML = 'Save Question';
+                    return;
+                }
+            }
+            // --- End Validation ---
+
+            const result = await makeMentorAPICall(`/tests/${testId}/questions`, {
+                method: 'POST',
+                body: JSON.stringify(questionData)
+            });
+
             saveButton.disabled = false; saveButton.innerHTML = 'Save Question';
-            return;
+
+            if (result?.success) {
+                showGlobalAlert('Question added!', 'success');
+                closeAddQuestionModal();
+                loadMentorTests(); // Refresh test list to update question count
+            } else {
+                errorP.textContent = result?.message || 'Failed to add question.';
+            }
         }
-    }
-    // --- End Validation ---
-
-    const result = await makeMentorAPICall(`/tests/${testId}/questions`, {
-        method: 'POST',
-        body: JSON.stringify(questionData)
-    });
-
-    saveButton.disabled = false; saveButton.innerHTML = 'Save Question';
-
-    if (result?.success) {
-        showGlobalAlert('Question added!', 'success');
-        closeAddQuestionModal();
-        loadMentorTests(); // Refresh test list to update question count
-    } else {
-        errorP.textContent = result?.message || 'Failed to add question.';
-    }
-}
         
         // --- MONITORING SECTION ---
         async function populateMonitorTestSelect() {
@@ -829,47 +880,6 @@ async function toggleTestActive(testId, currentStatus) {
                 // showGlobalAlert is already called on API error
             }
         }
-
-        // --- Add Question Modal Logic ---
-
-function setupQuestionTypeToggle() {
-    const typeSelect = document.getElementById('questionType');
-    if (typeSelect) {
-        typeSelect.addEventListener('change', (e) => {
-            const type = e.target.value;
-            toggleQuestionFields(type);
-        });
-    }
-}
-
-function toggleQuestionFields(type) {
-    const mcqFields = document.getElementById('mcqFields');
-    const shortAnswerFields = document.getElementById('shortAnswerFields');
-    
-    if (type === 'mcq') {
-        mcqFields.classList.remove('hidden');
-        shortAnswerFields.classList.add('hidden');
-    } else if (type === 'short_answer') {
-        mcqFields.classList.add('hidden');
-        shortAnswerFields.classList.remove('hidden');
-    }
-}
-
-function openAddQuestionModal(testId) {
-    document.getElementById('addQuestionForm').reset();
-    document.getElementById('addQuestionError').textContent = '';
-    document.getElementById('addQuestionTestId').value = testId;
-    const test = allMentorTests.find(t => t._id === testId);
-    if(test) {
-        document.getElementById('addQuestionModalTitle').textContent = `Add Question to: ${test.title}`;
-    }
-    
-    // Default to MCQ view when opening
-    toggleQuestionFields('mcq');
-    document.getElementById('questionType').value = 'mcq';
-    
-    document.getElementById('addQuestionModal').classList.add('show');
-}
         
         // --- DOMContentLoaded ---
         document.addEventListener('DOMContentLoaded', () => {
