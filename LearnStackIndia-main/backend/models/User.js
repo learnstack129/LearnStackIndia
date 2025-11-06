@@ -152,17 +152,20 @@ const userSchema = new mongoose.Schema({
 
     // --- Profile ---
     profile: {
-        avatar: { type: String, default: 'https://placeholder-image-service.onrender.com/image/100x100?prompt=User%20avatar%20profile%20picture%20with%20neutral%20background' },
-        firstName: { type: String, trim: true },
-        lastName: { type: String, trim: true },
-        bio: { type: String, trim: true, maxlength: 200 },
-        location: { type: String, trim: true },
-        website: { type: String, trim: true },
-        socialLinks: { // Dynamic Map for social links
-            type: Map,
-            of: String,
-            default: () => new Map()
-        }
+        type: { // <-- This 'type' wrapper is new
+            avatar: { type: String, default: 'https://placeholder-image-service.onrender.com/image/100x100?prompt=User%20avatar%20profile%20picture%20with%20neutral%20background' },
+            firstName: { type: String, trim: true },
+            lastName: { type: String, trim: true },
+            bio: { type: String, trim: true, maxlength: 200 },
+            location: { type: String, trim: true },
+            website: { type: String, trim: true },
+            socialLinks: {
+                type: Map,
+                of: String,
+                default: () => new Map()
+            }
+        },
+        default: () => ({}) // <-- This default value is the fix
     },
 
     // --- Progress & Stats ---
@@ -649,6 +652,7 @@ userSchema.methods.hasAchievement = function (achievementId) {
 
 
 module.exports = mongoose.model('User', userSchema);
+
 
 
 
