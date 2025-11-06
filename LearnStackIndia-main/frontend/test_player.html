@@ -521,48 +521,48 @@
     }
 }
         function loadQuestion(question) {
-            if (!question) {
-                // This was the last question
-                stopQuestionTimer();
-                showModal('completeModal');
-                document.getElementById('finalScore').textContent = '...'; // TODO: Get score from submit
-                return;
-            }
-            
-            currentQuestion = question;
-            questionNumber += 1;
-            // totalQuestions = ? // Need this from API
-            
-            questionText.textContent = currentQuestion.text;
-            questionCounter.textContent = `Question ${questionNumber}`; // TODO: / ${totalQuestions}
-            
-            // Render based on type
-            if (currentQuestion.questionType === 'mcq') {
-                mcqOptions.innerHTML = '';
-                mcqOptions.classList.remove('hidden');
-                shortAnswerBox.classList.add('hidden');
-                
-                currentQuestion.options.forEach((option, index) => {
-                    const button = document.createElement('button');
-                    button.className = 'answer-option';
-                    button.dataset.index = index;
-                    button.textContent = option;
-                    button.onclick = () => selectOption(button);
-                    mcqOptions.appendChild(button);
-                });
-                
-            } else if (currentQuestion.questionType === 'short_answer') {
-                mcqOptions.classList.add('hidden');
-                shortAnswerBox.classList.remove('hidden');
-                shortAnswerInput.value = '';
-            }
-            
-            // Start timer
-            startQuestionTimer(currentQuestion.timeLimit);
-            isSubmitting = false;
-            submitAnswerBtn.disabled = false;
-            submitAnswerBtn.innerHTML = '<span>Submit Answer</span><i class="fas fa-arrow-right ml-2"></i>';
-        }
+    if (!question) {
+        // This was the last question
+        stopQuestionTimer();
+        showModal('completeModal');
+        // We need to get the final score from the last submit response
+        // Let's assume handleSubmitAnswer will handle this.
+        return;
+    }
+    
+    currentQuestion = question;
+    questionNumber += 1;
+    
+    questionText.textContent = currentQuestion.text;
+    questionCounter.textContent = `Question ${questionNumber} / ${totalQuestions}`; // <-- USE TOTAL QUESTIONS
+    
+    // Render based on type
+    if (currentQuestion.questionType === 'mcq') {
+        mcqOptions.innerHTML = '';
+        mcqOptions.classList.remove('hidden');
+        shortAnswerBox.classList.add('hidden');
+        
+        currentQuestion.options.forEach((option, index) => {
+            const button = document.createElement('button');
+            button.className = 'answer-option';
+            button.dataset.index = index;
+            button.textContent = option;
+            button.onclick = () => selectOption(button);
+            mcqOptions.appendChild(button);
+        });
+        
+    } else if (currentQuestion.questionType === 'short_answer') {
+        mcqOptions.classList.add('hidden');
+        shortAnswerBox.classList.remove('hidden');
+        shortAnswerInput.value = '';
+    }
+    
+    // Start timer
+    startQuestionTimer(currentQuestion.timeLimit);
+    isSubmitting = false;
+    submitAnswerBtn.disabled = false;
+    submitAnswerBtn.innerHTML = '<span>Submit Answer</span><i class="fas fa-arrow-right ml-2"></i>';
+}
         
         function selectOption(selectedButton) {
             // Remove 'selected' from all other buttons
