@@ -98,6 +98,40 @@ router.post('/tests/:testId/questions', mentorAuth, async (req, res) => {
 });
 // --- User Monitoring & Control ---
 
+// ... after POST /tests/:testId/questions route ...
+
+// POST: Toggle a test's active status
+router.post('/tests/:testId/toggle', mentorAuth, async (req, res) => {
+    try {
+        const { testId } = req.params;
+
+        // Find the test and check if mentor owns it
+        const test = await Test.findOne({ _id: testId, createdBy: req.user.id });
+        if (!test) {
+            return res.status(404).json({ message: 'Test not found or you do not own this test' });
+        }
+        
+        // Flip the active status
+        test.isActive = !test.isActive;
+        await test.save();
+        
+        const message = test.isActive ? `Test "${test.title}" is now Active.` : `Test "${test.title}" is now a Draft.`;
+        console.log(`[Test Toggle] Mentor ${req.user.id} set test ${testId} to ${test.isActive}`);
+        
+        res.json({ success: true, message: message, test: test });
+
+    } catch (error) {
+        console.error("Error toggling test status:", error);
+         if (error.name === 'ValidationError') {
+             return res.status(400).json({ message: `Validation Error: ${error.message}` });
+         }
+        res.status(500).json({ message: 'Error toggling test status' });
+    }
+});
+
+// --- User Monitoring & Control ---
+// ... (rest of the file) ...
+
 // GET: Get all user attempts for a specific test (for monitoring)
 router.get('/tests/:testId/attempts', mentorAuth, async (req, res) => {
      try {
