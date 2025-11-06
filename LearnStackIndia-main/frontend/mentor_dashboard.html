@@ -278,6 +278,7 @@
                     <li class="mb-2"><a href="#my-tests" class="nav-link block p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 active"><i class="fas fa-file-alt mr-2 w-4 inline-block text-center"></i>My Tests</a></li>
                     <li class="mb-2"><a href="#leaderboard" class="nav-link block p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700"><i class="fas fa-trophy mr-2 w-4 inline-block text-center"></i>Leaderboard</a></li>
                     <li class="mb-2"><a href="#monitoring" class="nav-link block p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700"><i class="fas fa-eye mr-2 w-4 inline-block text-center"></i>Live Monitoring</a></li>
+                    <li class="mb-2"><a href="#doubts" class="nav-link block p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700"><i class="fas fa-question-circle mr-2 w-4 inline-block text-center"></i>Doubts Forum</a></li>
                     </ul>
             </nav>
             <div>
@@ -371,6 +372,20 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </section>
+            <section id="doubts" class="mb-8 mentor-section hidden">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700 dark:text-gray-300">Doubts Forum Management</h2>
+            
+                <div class="mb-4">
+                    <label for="doubtSubjectSelect" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Filter by Subject:</label>
+                    <select id="doubtSubjectSelect" class="input-field mt-1 w-full md:w-1/3">
+                        <option value="">Loading subjects...</option>
+                    </select>
+                </div>
+            
+                <div id="mentorDoubtsContainer" class="space-y-6">
+                    <p class="text-center text-gray-500 dark:text-gray-400">Please select a subject to view doubts.</p>
                 </div>
             </section>
 
@@ -605,6 +620,9 @@
             }
             if(sectionIdToShow === 'leaderboard') {
                 loadLeaderboard();
+            }
+            if(sectionIdToShow === 'doubts') {
+                populateDoubtSubjects(); // Load subjects, which then triggers loading doubts
             }
         }
         function toggleMobileMenu() {
@@ -1153,6 +1171,164 @@
                 loadTestAttempts(); 
             }
         }
+
+        // --- NEW: DOUBTS FORUM SECTION ---
+
+async function populateDoubtSubjects() {
+    const select = document.getElementById('doubtSubjectSelect');
+    select.innerHTML = '<option value="">Loading subjects...</option>';
+    
+    // We need a new endpoint to get *all* subjects that have doubts.
+    // For now, we'll just re-use the /api/admin/subjects endpoint
+    // A better endpoint would be /api/doubts/subjects
+    const data = await makeMentorAPICall('/../admin/subjects'); // Hacky path, replace with proper endpoint
+    
+    if (data && data.subjects) {
+        allSubjectsWithDoubts = data.subjects;
+        select.innerHTML = '<option value="">Select a subject</option>';
+        allSubjectsWithDoubts.forEach(subject => {
+            const option = new Option(subject, subject);
+            select.appendChild(option);
+        });
+    } else {
+        select.innerHTML = '<option value="">No subjects found</option>';
+    }
+}
+
+async function loadDoubtsForMentor() {
+    const subject = document.getElementById('doubtSubjectSelect').value;
+    const container = document.getElementById('mentorDoubtsContainer');
+    
+    if (!subject) {
+        container.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400">Please select a subject to view doubts.</p>';
+        return;
+    }
+
+    container.innerHTML = '<div class="loading-skeleton h-32 rounded-lg"></div>';
+    
+    // Use the new /api/doubts endpoint
+    const data = await makeMentorAPICall(`/../doubts?subject=${encodeURIComponent(subject)}`);
+
+    if (data && data.success && data.doubts) {
+        container.innerHTML = '';
+        if (data.doubts.length === 0) {
+            container.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400">No doubts found for this subject.</p>';
+            return;
+        }
+        data.doubts.forEach(doubt => {
+            const card = createMentorDoubtCard(doubt);
+            container.appendChild(card);
+        });
+    } else {
+        container.innerHTML = '<p class="text-center text-red-500 dark:text-red-400">Failed to load doubts.</p>';
+    }
+}
+
+function createMentorDoubtCard(doubt) {
+    const card = document.createElement('div');
+    const isResolved = doubt.isResolved;
+    card.className = `bg-white dark:bg-gray-800 rounded-lg shadow-md border-l-4 ${isResolved ? 'border-green-500' : 'border-blue-500'} p-5`;
+    card.id = `doubt-${doubt._id}`;
+
+    const postedDate = new Date(doubt.createdAt).toLocaleString();
+    const canResolve = !isResolved; // Mentors can always resolve
+
+    card.innerHTML = `
+        <div class="flex justify-between items-start mb-2">
+            <div>
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">${doubt.title}</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                    Asked by ${doubt.postedBy.username} on ${postedDate}
+                </p>
+            </div>
+            <div class="flex items-center gap-2">
+                ${isResolved ? `<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"><i class="fas fa-check mr-1"></i>Resolved</span>` : ''}
+                ${canResolve ? `<button onclick="markDoubtResolved('${doubt._id}')" class="btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" title="Mark as Resolved"><i class="fas fa-check"></i></button>` : ''}
+            </div>
+        </div>
+        <p class="text-gray-700 dark:text-gray-300 whitespace-pre-wrap mb-4">${doubt.questionText}</p>
+        <div id="mentor-replies-${doubt._id}" class="space-y-3 mt-4 border-t dark:border-gray-600 pt-4">
+            ${doubt.replies.map(createMentorReplyCard).join('')}
+        </div>
+        <form data-doubt-id="${doubt._id}" class="reply-form mt-4 space-y-2">
+            <textarea class="input-field text-sm" rows="2" placeholder="Write your answer..." required></textarea>
+            <div class="text-right">
+                <button type="submit" class="btn-primary" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">
+                    <i class="fas fa-reply mr-1"></i>Post Reply
+                </button>
+            </div>
+        </form>
+    `;
+    return card;
+}
+
+function createMentorReplyCard(reply) {
+    const postedDate = new Date(reply.createdAt).toLocaleString();
+    const isThisMentor = reply.postedBy._id === JSON.parse(localStorage.getItem('currentUser')).id;
+    const isMentor = reply.postedBy.role !== 'user';
+    
+    let mentorLabel = '(Mentor)';
+    if (isThisMentor) mentorLabel = '(You)';
+    else if (reply.postedBy.role === 'admin') mentorLabel = '(Admin)';
+
+    return `
+        <div class="flex gap-3 p-3 rounded-lg border-l-4 ${isMentor ? 'bg-yellow-50 dark:bg-yellow-900/30 border-yellow-400' : 'bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-500'}">
+            <img src="${reply.postedBy.profile?.avatar || 'https://placeholder-image-service.onrender.com/image/40x40'}" alt="${reply.postedBy.username}" class="w-10 h-10 rounded-full flex-shrink-0">
+            <div class="flex-grow">
+                <p class="font-semibold text-sm text-gray-800 dark:text-white">
+                    ${reply.postedBy.username} ${isMentor ? `<span class="text-xs font-medium text-yellow-600 dark:text-yellow-400">${mentorLabel}</span>` : ''}
+                </p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">${postedDate}</p>
+                <p class="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-wrap">${reply.text}</p>
+            </div>
+        </div>
+    `;
+}
+
+async function handleMentorReplySubmit(e) {
+    e.preventDefault();
+    const form = e.target;
+    const doubtId = form.dataset.doubtId;
+    const textarea = form.querySelector('textarea');
+    const button = form.querySelector('button');
+    const text = textarea.value.trim();
+    
+    if (!text) return;
+    
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    
+    // Use the new /api/doubts endpoint
+    const data = await makeMentorAPICall(`/../doubts/${doubtId}/reply`, {
+        method: 'POST',
+        body: JSON.stringify({ text: text })
+    });
+    
+    button.disabled = false;
+    button.innerHTML = '<i class="fas fa-reply mr-1"></i>Post Reply';
+    
+    if (data && data.success) {
+        const newReplyCard = createMentorReplyCard(data.reply); // Use mentor card creator
+        document.getElementById(`mentor-replies-${doubtId}`).appendChild(newReplyCard);
+        textarea.value = '';
+    } else {
+        showGlobalAlert(data.message || 'Failed to post reply', 'error');
+    }
+}
+
+async function markDoubtResolved(doubtId) {
+    if (!confirm('Mark this doubt as resolved?')) return;
+    
+    const data = await makeMentorAPICall(`/../doubts/${doubtId}/resolve`, { method: 'PUT' });
+    if (data && data.success) {
+        showGlobalAlert('Doubt marked as resolved.', 'success');
+        loadDoubtsForMentor(); // Refresh the list
+    } else {
+        showGlobalAlert(data.message || 'Failed to resolve doubt.', 'error');
+    }
+}
+
+// --- END: DOUBTS FORUM SECTION ---
         
         // --- DOMContentLoaded ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -1176,6 +1352,14 @@
             // Add click listener for the new refresh button
             document.getElementById('refreshMonitorBtn').addEventListener('click', loadTestAttempts);
             // *** END: MODIFICATION ***
+            // --- NEW: Doubts Forum Listeners ---
+            document.getElementById('doubtSubjectSelect').addEventListener('change', loadDoubtsForMentor);
+            document.getElementById('mentorDoubtsContainer').addEventListener('submit', (e) => {
+                if (e.target.classList.contains('reply-form')) {
+                    handleMentorReplySubmit(e);
+                }
+            });
+            // --- END NEW ---
         
             // Initial Navigation
             window.addEventListener('hashchange', handleNavigation);
