@@ -165,7 +165,7 @@ const userSchema = new mongoose.Schema({
                 default: () => new Map()
             }
         },
-        default: () => ({}) // <-- This default value is the fix
+        
     },
 
     // --- Progress & Stats ---
@@ -652,6 +652,7 @@ userSchema.methods.hasAchievement = function (achievementId) {
 
 
 module.exports = mongoose.model('User', userSchema);
+
 
 
 
