@@ -627,46 +627,83 @@
             document.getElementById('addQuestionModal').classList.remove('show');
         }
         async function saveNewQuestion() {
-            const testId = document.getElementById('addQuestionTestId').value;
-            const errorP = document.getElementById('addQuestionError');
-            const saveButton = document.getElementById('saveQuestionBtn');
-            errorP.textContent = '';
+    const testId = document.getElementById('addQuestionTestId').value;
+    const errorP = document.getElementById('addQuestionError');
+    const saveButton = document.getElementById('saveQuestionBtn');
+    errorP.textContent = '';
+    saveButton.disabled = true;
+    saveButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+
+    const questionType = document.getElementById('questionType').value;
+    
+    const questionData = {
+        text: document.getElementById('questionText').value.trim(),
+        timeLimit: parseInt(document.getElementById('questionTimeLimit').value, 10),
+        questionType: questionType
+    };
+
+    // --- Validation ---
+    if (!questionData.text || isNaN(questionData.timeLimit) || questionData.timeLimit < 10) {
+        errorP.textContent = 'Please fill in Question Text and a valid Time Limit (min 10s).';
+        saveButton.disabled = false; saveButton.innerHTML = 'Save Question';
+        return;
+    }
+
+    if (questionType === 'mcq') {
+        questionData.options = [
+            document.getElementById('questionOption0').value.trim(),
+            document.getElementById('questionOption1').value.trim(),
+            document.getElementById('questionOption2').value.trim(),
+            document.getElementById('questionOption3').value.trim(),
+        ].filter(opt => opt.length > 0); // Only include non-empty options
+
+        questionData.correctAnswerIndex = parseInt(document.getElementById('correctAnswerIndex').value, 10);
         
-            const questionData = {
-                text: document.getElementById('questionText').value,
-                options: [
-                    document.getElementById('questionOption0').value,
-                    document.getElementById('questionOption1').value,
-                    document.getElementById('questionOption2').value,
-                    document.getElementById('questionOption3').value,
-                ],
-                correctAnswerIndex: parseInt(document.getElementById('correctAnswerIndex').value, 10),
-                timeLimit: parseInt(document.getElementById('questionTimeLimit').value, 10)
-            };
-            
-            // Validation
-            if (!questionData.text || questionData.options.some(opt => !opt) || isNaN(questionData.correctAnswerIndex) || isNaN(questionData.timeLimit)) {
-                errorP.textContent = 'Please fill all required fields correctly.';
-                return;
-            }
-        
-            saveButton.disabled = true; saveButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
-        
-            const result = await makeMentorAPICall(`/tests/${testId}/questions`, {
-                method: 'POST',
-                body: JSON.stringify(questionData)
-            });
-        
+        if (questionData.options.length < 2) {
+            errorP.textContent = 'MCQ questions must have at least 2 options.';
             saveButton.disabled = false; saveButton.innerHTML = 'Save Question';
-        
-            if (result?.success) {
-                showGlobalAlert('Question added!', 'success');
-                closeAddQuestionModal();
-                loadMentorTests(); // Refresh test list to update question count
-            } else {
-                errorP.textContent = result?.message || 'Failed to add question.';
-            }
+            return;
         }
+        if (isNaN(questionData.correctAnswerIndex)) {
+            errorP.textContent = 'Please select a correct answer for the MCQ.';
+            saveButton.disabled = false; saveButton.innerHTML = 'Save Question';
+            return;
+        }
+        if (questionData.correctAnswerIndex >= questionData.options.length) {
+             errorP.textContent = 'Correct answer index is invalid for the number of options provided.';
+             saveButton.disabled = false; saveButton.innerHTML = 'Save Question';
+             return;
+        }
+
+    } else if (questionType === 'short_answer') {
+        questionData.shortAnswers = document.getElementById('shortAnswers').value
+            .split('\n')
+            .map(s => s.trim())
+            .filter(s => s.length > 0);
+            
+        if (questionData.shortAnswers.length === 0) {
+            errorP.textContent = 'Short Answer questions must have at least one acceptable answer.';
+            saveButton.disabled = false; saveButton.innerHTML = 'Save Question';
+            return;
+        }
+    }
+    // --- End Validation ---
+
+    const result = await makeMentorAPICall(`/tests/${testId}/questions`, {
+        method: 'POST',
+        body: JSON.stringify(questionData)
+    });
+
+    saveButton.disabled = false; saveButton.innerHTML = 'Save Question';
+
+    if (result?.success) {
+        showGlobalAlert('Question added!', 'success');
+        closeAddQuestionModal();
+        loadMentorTests(); // Refresh test list to update question count
+    } else {
+        errorP.textContent = result?.message || 'Failed to add question.';
+    }
+}
         
         // --- MONITORING SECTION ---
         async function populateMonitorTestSelect() {
@@ -761,7 +798,47 @@
                 // showGlobalAlert is already called on API error
             }
         }
-        
+
+        // --- Add Question Modal Logic ---
+
+function setupQuestionTypeToggle() {
+    const typeSelect = document.getElementById('questionType');
+    if (typeSelect) {
+        typeSelect.addEventListener('change', (e) => {
+            const type = e.target.value;
+            toggleQuestionFields(type);
+        });
+    }
+}
+
+function toggleQuestionFields(type) {
+    const mcqFields = document.getElementById('mcqFields');
+    const shortAnswerFields = document.getElementById('shortAnswerFields');
+    
+    if (type === 'mcq') {
+        mcqFields.classList.remove('hidden');
+        shortAnswerFields.classList.add('hidden');
+    } else if (type === 'short_answer') {
+        mcqFields.classList.add('hidden');
+        shortAnswerFields.classList.remove('hidden');
+    }
+}
+
+function openAddQuestionModal(testId) {
+    document.getElementById('addQuestionForm').reset();
+    document.getElementById('addQuestionError').textContent = '';
+    document.getElementById('addQuestionTestId').value = testId;
+    const test = allMentorTests.find(t => t._id === testId);
+    if(test) {
+        document.getElementById('addQuestionModalTitle').textContent = `Add Question to: ${test.title}`;
+    }
+    
+    // Default to MCQ view when opening
+    toggleQuestionFields('mcq');
+    document.getElementById('questionType').value = 'mcq';
+    
+    document.getElementById('addQuestionModal').classList.add('show');
+}
         
         // --- DOMContentLoaded ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -779,7 +856,7 @@
             // Add Question Modal
             document.getElementById('saveQuestionBtn').addEventListener('click', saveNewQuestion);
             document.getElementById('addQuestionModal').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeAddQuestionModal(); });
-            
+            setupQuestionTypeToggle(); // Initialize the show/hide logic for question types
             // Monitoring
             document.getElementById('monitorTestSelect').addEventListener('change', loadTestAttempts);
         
