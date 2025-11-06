@@ -46,6 +46,18 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// This middleware ensures the database is connected *before*
+// any /api/ route is handled.
+app.use('/api', async (req, res, next) => {
+  try {
+    await connectDB(); // Awaits the connection promise
+    next(); // Proceeds to the route (e.g., /api/auth/login)
+  } catch (error) {
+    console.error('❌ Database connection middleware error:', error);
+    res.status(500).json({ message: 'Server connection error. Please try again later.' });
+  }
+});
+
 // Basic health check
 app.get('/api/health', (req, res) => {
   res.json({
@@ -142,8 +154,8 @@ process.on('uncaughtException', (err) => {
   process.exit(1);
 });
 
-connectDB();
 
 module.exports = app; // Export app for potential testing
+
 
 
