@@ -14,7 +14,7 @@ const router = express.Router();
 router.get('/tests', mentorAuth, async (req, res) => {
     try {
         const tests = await Test.find({ createdBy: req.user.id })
-            .populate('questions', 'text timeLimit')
+            .populate('questions', 'text timeLimit') // Populates text/timeLimit for the list
             .sort({ createdAt: -1 });
             
         res.json({ success: true, tests });
@@ -46,7 +46,6 @@ router.post('/tests', mentorAuth, async (req, res) => {
     }
 });
 
-// --- NEW DELETE ROUTE ---
 // DELETE: Delete a test and all associated data
 router.delete('/tests/:testId', mentorAuth, async (req, res) => {
     try {
@@ -82,8 +81,6 @@ router.delete('/tests/:testId', mentorAuth, async (req, res) => {
         res.status(500).json({ message: 'Error deleting test' });
     }
 });
-// --- END NEW DELETE ROUTE ---
-
 
 // POST: Add a new question (MCQ or Short Answer) and link it to a test
 router.post('/tests/:testId/questions', mentorAuth, async (req, res) => {
@@ -124,7 +121,19 @@ router.post('/tests/:testId/questions', mentorAuth, async (req, res) => {
         test.questions.push(newQuestion._id);
         await test.save();
         
-        res.status(201).json({ success: true, message: 'Question added to test', question: newQuestion });
+        // --- MODIFICATION: Return the fully populated question ---
+        // We do this so the frontend can immediately add it to the list
+        const populatedQuestion = {
+             _id: newQuestion._id,
+             text: newQuestion.text,
+             timeLimit: newQuestion.timeLimit
+        };
+
+        res.status(201).json({ 
+            success: true, 
+            message: 'Question added to test', 
+            question: populatedQuestion // Send back the populated question
+        });
 
     } catch (error) {
         console.error("Error adding question:", error);
@@ -135,9 +144,132 @@ router.post('/tests/:testId/questions', mentorAuth, async (req, res) => {
         res.status(500).json({ message: 'Error adding question' });
     }
 });
-// --- User Monitoring & Control ---
 
-// ... after POST /tests/:testId/questions route ...
+// --- NEW ROUTE: GET a single question's full details for editing ---
+router.get('/questions/:questionId', mentorAuth, async (req, res) => {
+    try {
+        const { questionId } = req.params;
+        
+        const question = await Question.findOne({
+            _id: questionId,
+            createdBy: req.user.id // Ensure mentor owns this question
+        });
+
+        if (!question) {
+            return res.status(404).json({ message: 'Question not found or access denied' });
+        }
+        
+        res.json({ success: true, question });
+
+    } catch (error) {
+        console.error("Error fetching question details:", error);
+        res.status(500).json({ message: 'Error fetching question details' });
+    }
+});
+
+// --- NEW ROUTE: UPDATE a single question ---
+router.put('/questions/:questionId', mentorAuth, async (req, res) => {
+    try {
+        const { questionId } = req.params;
+        const {
+            text,
+            questionType,
+            options,
+            correctAnswerIndex,
+            shortAnswers,
+            timeLimit 
+        } = req.body;
+
+        // Find the question and check ownership
+        const question = await Question.findOne({
+            _id: questionId,
+            createdBy: req.user.id
+        });
+
+        if (!question) {
+            return res.status(404).json({ message: 'Question not found or access denied' });
+        }
+        
+        // Update fields
+        question.text = text;
+        question.questionType = questionType;
+        question.timeLimit = timeLimit;
+
+        if (questionType === 'mcq') {
+            question.options = options;
+            question.correctAnswerIndex = correctAnswerIndex;
+            question.shortAnswers = undefined;
+        } else if (questionType === 'short_answer') {
+            question.shortAnswers = shortAnswers;
+            question.options = undefined;
+            question.correctAnswerIndex = undefined;
+        }
+
+        // The pre-save hook in Question.js will run and validate
+        await question.save(); 
+        
+        // --- MODIFICATION: Return the updated, populated question text/time ---
+        const populatedQuestion = {
+             _id: question._id,
+             text: question.text,
+             timeLimit: question.timeLimit
+        };
+
+        res.json({ 
+            success: true, 
+            message: 'Question updated successfully',
+            question: populatedQuestion // Send back updated data for the list
+        });
+
+    } catch (error) {
+        console.error("Error updating question:", error);
+         if (error.name === 'ValidationError') {
+             return res.status(400).json({ message: `Validation Error: ${error.message}` });
+         }
+        res.status(500).json({ message: 'Error updating question' });
+    }
+});
+
+// --- NEW ROUTE: DELETE a single question (from Test and Question collection) ---
+router.delete('/tests/:testId/questions/:questionId', mentorAuth, async (req, res) => {
+    try {
+        const { testId, questionId } = req.params;
+
+        // 1. Find the question and check ownership
+        const question = await Question.findOne({
+            _id: questionId,
+            createdBy: req.user.id
+        });
+        if (!question) {
+             return res.status(404).json({ message: 'Question not found or access denied' });
+        }
+
+        // 2. Find the test and check ownership
+        const test = await Test.findOne({
+            _id: testId,
+            createdBy: req.user.id
+        });
+        if (!test) {
+            return res.status(404).json({ message: 'Test not found or access denied' });
+        }
+
+        // 3. Delete the question from the Question collection
+        await Question.deleteOne({ _id: questionId });
+        
+        // 4. Pull the question's ID from the test's 'questions' array
+        await Test.updateOne(
+            { _id: testId },
+            { $pull: { questions: questionId } }
+        );
+
+        res.json({ success: true, message: 'Question deleted successfully' });
+
+    } catch (error) {
+        console.error("Error deleting question:", error);
+        res.status(500).json({ message: 'Error deleting question' });
+    }
+});
+
 
 // POST: Toggle a test's active status
 router.post('/tests/:testId/toggle', mentorAuth, async (req, res) => {
@@ -169,7 +301,6 @@ router.post('/tests/:testId/toggle', mentorAuth, async (req, res) => {
 });
 
 // --- User Monitoring & Control ---
-// ... (rest of the file) ...
 
 // GET: Get all user attempts for a specific test (for monitoring)
 router.get('/tests/:testId/attempts', mentorAuth, async (req, res) => {
@@ -252,9 +383,5 @@ router.post('/attempts/unlock', mentorAuth, async (req, res) => {
          res.status(500).json({ message: 'Error unlocking test' });
     }
 });
-
-
-// TODO: Add a route for real-time violation logging (this is complex, requires WebSocket or polling)
-// GET /violations/live
 
 module.exports = router;
