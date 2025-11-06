@@ -74,6 +74,7 @@ app.use('/api/achievements', achievementsModule); // <-- FIXED LINE
 app.use('/api/leaderboard', require('./routes/leaderboard'));
 app.use('/api/admin', require('./routes/admin')); // Mount admin routes under /api/admin
 app.use('/api/mentor', require('./routes/mentor')); // <-- ADD THIS NEW MENTOR ROUTE
+app.use('/api/test', require('./routes/test'));
 
 // --- END ADJUSTED Route Imports ---
 
@@ -116,7 +117,8 @@ app.use('*', (req, res) => {
       '/api/achievements/...',
       '/api/leaderboard/...',
       '/api/admin/...',
-      '/api/mentor/...' // <-- ADD THIS
+      '/api/mentor/...', 
+      '/api/test/...'
     ]
   });
 });
@@ -143,3 +145,4 @@ process.on('uncaughtException', (err) => {
 connectDB();
 
 module.exports = app; // Export app for potential testing
+
