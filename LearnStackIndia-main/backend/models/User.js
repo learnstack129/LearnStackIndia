@@ -283,8 +283,6 @@ userSchema.pre('save', async function (next) {
     if (this.isModified('password')) {
         console.log('[User Pre-Save] Hashing password...');
         this.password = await bcrypt.hash(this.password, 12);
-        // Do NOT set passwordChangedAt here, set it only on explicit reset/change
-        // Only clear reset tokens if password changes *during* save, not necessarily on reset action
         if (!this.isNew) { // Don't clear tokens for initial registration
             this.passwordResetToken = undefined;
             this.passwordResetExpires = undefined;
@@ -294,55 +292,72 @@ userSchema.pre('save', async function (next) {
     // --- Dynamic Initialization of Progress & Learning Path on NEW user ---
     if (this.isNew) {
         console.log('[User Pre-Save] Initializing progress for new user...');
-        console.log('[User Pre-Save] Initializing default stats and learningPath for new user...');
-        if (!this.stats) { this.stats = {}; } 
+        
+        // --- FIX 1: Initialize ALL default objects for a new user ---
+        console.log('[User Pre-Save] Initializing default stats and learningPath...');
+        if (!this.stats) { this.stats = {}; } // Ensure stats object itself exists
         this.stats.rank = { level: 'Bronze', points: 0 };
         this.stats.streak = { current: 0, longest: 0, lastActiveDate: null };
         this.stats.timeSpent = { total: 0, today: 0, thisWeek: 0, thisMonth: 0 };
         
-        if (!this.learningPath) { this.learningPath = {}; }
+        if (!this.learningPath) { this.learningPath = {}; } // <-- Fixes "cannot set topicOrder of undefined"
+        // --- END FIX 1 ---
+
         try {
-            const topics = await Topic.find({ isActive: true }).sort({ order: 1 }).select('id algorithms isGloballyLocked order').lean(); // Added isGloballyLocked and order
+            // --- FIX 2: Move Topic import inside the function ---
+            // This avoids a Mongoose model race condition on Vercel
+            const Topic = require('./Topic'); 
+            // --- END FIX 2 ---
+            
+            const topics = await Topic.find({ isActive: true }).sort({ order: 1 }).select('id algorithms isGloballyLocked order').lean();
             const topicOrder = [];
+            
             topics.forEach(topic => {
                 topicOrder.push(topic.id);
-                // Initialize progress map entry for each topic
-                // Initialize progress map entry for each topic
                 const algoMap = new Map();
-                topic.algorithms.forEach(algo => {
-                    // Initialize each algorithm with defaults (Mongoose handles this)
-                    algoMap.set(algo.id, {});
-                });
-                // --- MODIFIED LINE: Set initial status based on global lock ---
+                if (topic.algorithms) { // Check if algorithms exists
+                    topic.algorithms.forEach(algo => {
+                        algoMap.set(algo.id, {});
+                    });
+                }
                 const initialStatus = topic.isGloballyLocked ? 'locked' : 'available';
                 this.progress.set(topic.id, {
-                    status: initialStatus, // Use global lock status
+                    status: initialStatus,
                     completion: 0,
                     totalTime: 0,
                     algorithms: algoMap
                 });
             });
-            this.learningPath.topicOrder = topicOrder;
-            this.learningPath.currentTopic = topicOrder.length > 0 ? topicOrder[0] : null; // Set first topic as current
+            
+            this.learningPath.topicOrder = topicOrder; 
+            this.learningPath.currentTopic = topicOrder.length > 0 ? topicOrder[0] : null;
+            
             console.log(`[User Pre-Save] Initialized progress for ${topics.length} topics. Current: ${this.learningPath.currentTopic}`);
         } catch (error) {
             console.error('[User Pre-Save] Error initializing progress:', error);
-            // Decide how to handle error: proceed without initialization or block save?
-            // For now, let's log and proceed.
+            // Pass the error to stop the save operation
+            return next(new Error('Failed to initialize user topics: ' + error.message));
         }
     }
 
     // --- Recalculate derived stats if progress is modified ---
-    // Note: Checking isModified('progress') might be complex with Maps.
-    // It's often safer to recalculate if not new.
     if (!this.isNew) {
         console.log('[User Pre-Save] Recalculating derived stats...');
+        
+        // --- FIX 3: Add safety checks for existing users who might have null stats ---
+        if (!this.stats) { this.stats = {}; } 
+        if (!this.stats.rank) { this.stats.rank = { level: 'Bronze', points: 0 }; }
+        if (!this.stats.streak) { this.stats.streak = { current: 0, longest: 0, lastActiveDate: null }; }
+        if (!this.stats.timeSpent) { this.stats.timeSpent = { total: 0, today: 0, thisWeek: 0, thisMonth: 0 }; }
+        if (!this.learningPath) { this.learningPath = { completedTopics: [] }; }
+        // --- END FIX 3 ---
+
         let totalCompleted = 0;
         let totalTrackedAlgos = 0;
         let totalAccuracySum = 0;
         let practiceAlgoCount = 0;
         let totalTopicCompletionSum = 0;
-        let activeTopicCount = 0; // Count topics that have algorithms
+        let activeTopicCount = 0; 
 
         this.progress.forEach((topicProgress, topicId) => {
             let topicCompletedAlgos = 0;
@@ -362,15 +377,12 @@ userSchema.pre('save', async function (next) {
                         practiceAlgoCount++;
                     }
                 });
-                // Update topic completion percentage
                 topicProgress.completion = topicTotalAlgos > 0 ? Math.round((topicCompletedAlgos / topicTotalAlgos) * 100) : 0;
                 totalTopicCompletionSum += topicProgress.completion;
 
-                // Update topic status based on completion (only if not locked by admin/prereqs)
                 if (topicProgress.status !== 'locked') {
                     if (topicProgress.completion === 100 && topicProgress.status !== 'completed') {
                         topicProgress.status = 'completed';
-                        // Add to completedTopics array if not already there
                         if (!this.learningPath.completedTopics.includes(topicId)) {
                             this.learningPath.completedTopics.push(topicId);
                             this.markModified('learningPath.completedTopics');
@@ -380,29 +392,24 @@ userSchema.pre('save', async function (next) {
                     }
                 }
             } else {
-                // Ensure completion is 0 if no algorithms
                 topicProgress.completion = 0;
             }
         });
 
         this.stats.algorithmsCompleted = totalCompleted;
-        // Calculate overallProgress based on average topic completion, handles varying algo counts per topic better
         this.stats.overallProgress = activeTopicCount > 0 ? Math.round(totalTopicCompletionSum / activeTopicCount) : 0;
         this.stats.averageAccuracy = practiceAlgoCount > 0 ? Math.round(totalAccuracySum / practiceAlgoCount) : 0;
 
         console.log(`[User Pre-Save] Stats updated: Completed=${totalCompleted}, Overall%=${this.stats.overallProgress}, AvgAcc%=${this.stats.averageAccuracy}`);
 
-        // Update rank based on points (ensure points were updated before save)
         this.updateRank(); // updateRank now marks modified
         console.log(`[User Pre-Save] Rank updated: Level=${this.stats.rank.level}, Points=${this.stats.rank.points}`);
 
-        // Mark progress as modified since sub-properties changed
         this.markModified('progress');
     }
 
     next();
 });
-
 // --- INSTANCE METHODS ---
 
 // Check password
@@ -642,6 +649,7 @@ userSchema.methods.hasAchievement = function (achievementId) {
 
 
 module.exports = mongoose.model('User', userSchema);
+
 
 
 
