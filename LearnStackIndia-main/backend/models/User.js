@@ -409,6 +409,8 @@ userSchema.methods.correctPassword = async function (candidatePassword) {
 };
 
 // Update daily activity & streak
+// backend/models/User.js
+
 userSchema.methods.updateDailyActivity = function (activityData = {}) {
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Normalize to start of day UTC
@@ -423,12 +425,6 @@ userSchema.methods.updateDailyActivity = function (activityData = {}) {
         todayActivity = { date: today, timeSpent: 0, algorithmsAttempted: 0, algorithmsCompleted: 0, pointsEarned: 0, topicsStudied: [], sessions: [] };
         this.dailyActivity.push(todayActivity);
         isNewDayRecord = true;
-        // Optional: Limit array size here if desired
-        // const MAX_DAYS = 90;
-        // if (this.dailyActivity.length > MAX_DAYS) {
-        //     this.dailyActivity.sort((a, b) => b.date - a.date); // Sort descending
-        //     this.dailyActivity.splice(MAX_DAYS); // Keep only the most recent MAX_DAYS
-        // }
     }
 
     // Increment activity data
@@ -445,20 +441,18 @@ userSchema.methods.updateDailyActivity = function (activityData = {}) {
         todayActivity.sessions.push(activityData.session);
     }
 
+    // --- FIX: Ensure stats and sub-objects exist ---
+    if (!this.stats) { this.stats = {}; }
+    if (!this.stats.timeSpent) { this.stats.timeSpent = { total: 0, today: 0, thisWeek: 0, thisMonth: 0 }; }
+    if (!this.stats.streak) { this.stats.streak = { current: 0, longest: 0, lastActiveDate: null }; }
+    // --- END FIX ---
+
     // --- Update timeSpent stats ---
     this.stats.timeSpent.today = todayActivity.timeSpent; // Update today's total
     this.stats.timeSpent.total = (this.stats.timeSpent.total || 0) + timeIncrementMinutes; // Increment overall total
 
-    // TODO: Implement logic to update thisWeek and thisMonth if needed on each update,
-    // or calculate them periodically/on demand. For simplicity, we only update today/total here.
-    // Example (simplified week update):
-    // const startOfWeek = ... calculate start of week ...
-    // let weekTotal = 0;
-    // this.dailyActivity.forEach(day => { if (day.date >= startOfWeek) weekTotal += day.timeSpent });
-    // this.stats.timeSpent.thisWeek = weekTotal;
-
     // --- Update Streak ---
-    const lastActive = this.stats.streak.lastActiveDate;
+    const lastActive = this.stats.streak.lastActiveDate; // Now safe
     let daysDiff = -1; // Default to indicate no previous date or large gap
 
     if (lastActive) {
@@ -485,9 +479,17 @@ userSchema.methods.updateDailyActivity = function (activityData = {}) {
     this.markModified('stats.timeSpent'); // Mark timeSpent as modified
 };
 
-
 // Update user rank based on points
 userSchema.methods.updateRank = function () {
+    // --- FIX: Ensure stats and rank objects exist ---
+    if (!this.stats) {
+        this.stats = {};
+    }
+    if (!this.stats.rank) {
+        this.stats.rank = { level: 'Bronze', points: 0 };
+    }
+    // --- END FIX ---
+
     const points = this.stats.rank.points || 0;
     let newLevel = 'Bronze'; // Default
 
@@ -633,3 +635,4 @@ userSchema.methods.hasAchievement = function (achievementId) {
 
 
 module.exports = mongoose.model('User', userSchema);
+
