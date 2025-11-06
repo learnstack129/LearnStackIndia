@@ -261,6 +261,10 @@
         [data-theme="dark"] .btn-secondary { background-color: var(--bg-tertiary-light); }
         .btn-secondary:hover { background-color: var(--border-color); }
         [data-theme="dark"] .btn-secondary:hover { background-color: #4b5563; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
@@ -328,7 +332,7 @@
             <i class="fas fa-exclamation-triangle text-5xl text-yellow-500 mb-4"></i>
             <h2 class="text-2xl font-bold mb-2">Violation Detected!</h2>
             <p id="warningStrikeText" class="text-lg mb-4">You have left fullscreen or switched tabs.</p>
-            <p class="text-gray-600 dark:text-gray-400 mb-6">This is warning <span id="strikeCount">1</span> of 2. Your question timer is still running.</p>
+            <p class="text-gray-600 dark:text-gray-400 mb-6">This is warning <span id="strikeCount">1</span> of 3.</p>
             <button id="resumeTestBtn" class="btn-primary w-full">Re-enter Fullscreen to Continue</button>
         </div>
     </div>
@@ -354,7 +358,7 @@
     </div>
 
     <script>
-              // frontend/test_player.js
+        // frontend/test_player.js
         
         // --- Globals ---
         const API_BASE_URL = '/api';
@@ -368,6 +372,7 @@
         let isSubmitting = false;
         let questionNumber = 0;
         let totalQuestions = 0;
+        let hasUnloggedViolation = false; // *** NEW *** Flag to track if a violation needs to be logged
         
         // --- DOM Elements ---
         const pageLoader = document.getElementById('pageLoader');
@@ -392,13 +397,11 @@
         
         // --- Initialization ---
         document.addEventListener('DOMContentLoaded', () => {
-            // 1. Check for login token FIRST
             if (!getAuthToken()) {
                 redirectToLogin();
                 return;
             }
             
-            // 2. Get Test ID from URL
             const params = new URLSearchParams(window.location.search);
             currentTestId = params.get('testId');
             if (!currentTestId) {
@@ -407,16 +410,14 @@
                 return;
             }
         
-            // 3. Show password modal
             showModal('passwordModal');
             pageLoader.classList.add('hidden');
-            // TODO: Fetch test title to display on password modal
-            // For now, just show the modal
             
-            // 4. Add Listeners
             startTestBtn.addEventListener('click', handleTestStart);
-            resumeTestBtn.addEventListener('click', requestProctoring);
             submitAnswerBtn.addEventListener('click', handleSubmitAnswer);
+            
+            // *** MODIFIED LISTENER ***
+            resumeTestBtn.addEventListener('click', handleResumeAttempt); // Changed from requestProctoring
             
             // Add proctoring listeners (they will be activated after test starts)
             document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -473,103 +474,90 @@
         
         // --- Test Flow ---
         async function handleTestStart() {
-    const password = testPasswordInput.value;
-    if (!password) {
-        passwordError.textContent = 'Password is required.';
-        return;
-    }
-    
-    startTestBtn.disabled = true;
-    startTestBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Starting...';
-    passwordError.textContent = '';
-    
-    const data = await makeTestAPICall(`/start/${currentTestId}`, {
-        method: 'POST',
-        body: JSON.stringify({ password })
-    });
-    
-    if (data && data.success) {
-        // Start the test
-        currentAttemptId = data.attemptId;
-        currentStrikes = data.strikes;
-        testTitle.textContent = data.testTitle;
-        totalQuestions = data.totalQuestions || 0; // <-- SAVE TOTAL QUESTIONS
-        updateStrikeUI();
-        
-        // Hide password modal
-        hideModal('passwordModal');
-        
-        // --- THIS IS THE KEY ---
-        // Request fullscreen *before* showing the test
-        requestProctoring();
-        
-        // Show test UI
-        testUI.classList.remove('hidden');
-        
-        // Load the first question
-        loadQuestion(data.currentQuestion); // Pass first question
+            const password = testPasswordInput.value;
+            if (!password) {
+                passwordError.textContent = 'Password is required.';
+                return;
+            }
+            
+            startTestBtn.disabled = true;
+            startTestBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Starting...';
+            passwordError.textContent = '';
+            
+            const data = await makeTestAPICall(`/start/${currentTestId}`, {
+                method: 'POST',
+                body: JSON.stringify({ password })
+            });
+            
+            if (data && data.success) {
+                currentAttemptId = data.attemptId;
+                currentStrikes = data.strikes;
+                testTitle.textContent = data.testTitle;
+                totalQuestions = data.totalQuestions || 0; 
+                updateStrikeUI();
+                
+                hideModal('passwordModal');
+                
+                // *** MODIFIED ***
+                // Request fullscreen *before* showing the test
+                requestFullscreenAndResume(); // Use new function name
+                
+                testUI.classList.remove('hidden');
+                loadQuestion(data.currentQuestion); 
 
-    } else if (data && data.status === 'locked') {
-        // User is locked out
-        hideModal('passwordModal');
-        showModal('lockedModal');
-    } else {
-        // Wrong password or other error
-        passwordError.textContent = data ? data.message : 'An unknown error occurred.';
-        startTestBtn.disabled = false;
-        startTestBtn.innerHTML = 'Start Test';
-    }
-}
+            } else if (data && data.status === 'locked') {
+                hideModal('passwordModal');
+                showModal('lockedModal');
+            } else {
+                passwordError.textContent = data ? data.message : 'An unknown error occurred.';
+                startTestBtn.disabled = false;
+                startTestBtn.innerHTML = 'Start Test';
+            }
+        }
+
         function loadQuestion(question) {
-    if (!question) {
-        // This was the last question
-        stopQuestionTimer();
-        showModal('completeModal');
-        // We need to get the final score from the last submit response
-        // Let's assume handleSubmitAnswer will handle this.
-        return;
-    }
-    
-    currentQuestion = question;
-    questionNumber += 1;
-    
-    questionText.textContent = currentQuestion.text;
-    questionCounter.textContent = `Question ${questionNumber} / ${totalQuestions}`; // <-- USE TOTAL QUESTIONS
-    
-    // Render based on type
-    if (currentQuestion.questionType === 'mcq') {
-        mcqOptions.innerHTML = '';
-        mcqOptions.classList.remove('hidden');
-        shortAnswerBox.classList.add('hidden');
-        
-        currentQuestion.options.forEach((option, index) => {
-            const button = document.createElement('button');
-            button.className = 'answer-option';
-            button.dataset.index = index;
-            button.textContent = option;
-            button.onclick = () => selectOption(button);
-            mcqOptions.appendChild(button);
-        });
-        
-    } else if (currentQuestion.questionType === 'short_answer') {
-        mcqOptions.classList.add('hidden');
-        shortAnswerBox.classList.remove('hidden');
-        shortAnswerInput.value = '';
-    }
-    
-    // Start timer
-    startQuestionTimer(currentQuestion.timeLimit);
-    isSubmitting = false;
-    submitAnswerBtn.disabled = false;
-    submitAnswerBtn.innerHTML = '<span>Submit Answer</span><i class="fas fa-arrow-right ml-2"></i>';
-}
+            if (!question) {
+                stopQuestionTimer();
+                showModal('completeModal');
+                return;
+            }
+            
+            currentQuestion = question;
+            questionNumber += 1;
+            
+            questionText.textContent = currentQuestion.text;
+            questionCounter.textContent = `Question ${questionNumber} / ${totalQuestions}`; 
+            
+            if (currentQuestion.questionType === 'mcq') {
+                mcqOptions.innerHTML = '';
+                mcqOptions.classList.remove('hidden');
+                shortAnswerBox.classList.add('hidden');
+                
+                currentQuestion.options.forEach((option, index) => {
+                    const button = document.createElement('button');
+                    button.className = 'answer-option';
+                    button.dataset.index = index;
+                    button.textContent = option;
+                    button.onclick = () => selectOption(button);
+                    mcqOptions.appendChild(button);
+                });
+                
+            } else if (currentQuestion.questionType === 'short_answer') {
+                mcqOptions.classList.add('hidden');
+                shortAnswerBox.classList.remove('hidden');
+                shortAnswerInput.value = '';
+            }
+            
+            startQuestionTimer(currentQuestion.timeLimit);
+            isSubmitting = false;
+            submitAnswerBtn.disabled = false;
+            submitAnswerBtn.innerHTML = '<span>Submit Answer</span><i class="fas fa-arrow-right ml-2"></i>';
+        }
         
         function selectOption(selectedButton) {
-            // Remove 'selected' from all other buttons
             document.querySelectorAll('.answer-option').forEach(btn => {
                 btn.classList.remove('selected');
             });
-            // Add 'selected' to the clicked button
             selectedButton.classList.add('selected');
         }
         
@@ -591,17 +579,14 @@
                 answer = shortAnswerInput.value;
             }
             
-            // Handle "Time's Up" (no answer submitted)
             if (answer === null && timeLeft <= 0) {
                 console.log("Time's up! Submitting null.");
-                // We still call the API to get the next question
             } else if (answer === null) {
-                // User just clicked submit without selecting/typing
                 alert('Please select or type an answer.');
                 isSubmitting = false;
                 submitAnswerBtn.disabled = false;
                 submitAnswerBtn.innerHTML = '<span>Submit Answer</span><i class="fas fa-arrow-right ml-2"></i>';
-                startQuestionTimer(timeLeft); // Resume timer
+                startQuestionTimer(timeLeft); 
                 return;
             }
             
@@ -615,8 +600,6 @@
             });
             
             if (data) {
-                // TODO: Show "Correct" or "Incorrect" feedback for a moment
-                
                 if (data.testComplete) {
                     hideModal('test-ui');
                     showModal('completeModal');
@@ -625,18 +608,17 @@
                     loadQuestion(data.nextQuestion);
                 }
             } else {
-                // API call failed
                 isSubmitting = false;
                 submitAnswerBtn.disabled = false;
                 submitAnswerBtn.innerHTML = '<span>Submit Answer</span><i class="fas fa-arrow-right ml-2"></i>';
-                startQuestionTimer(timeLeft); // Resume timer
+                startQuestionTimer(timeLeft); 
             }
         }
         
         // --- Timer Logic ---
         function startQuestionTimer(seconds) {
             stopQuestionTimer();
-            timeLeft = seconds;
+            if (seconds > 0) timeLeft = seconds; // Don't reset to 0 if resuming
             isPaused = false;
             updateTimerDisplay();
             
@@ -668,94 +650,131 @@
         
         function handleTimeUp() {
             console.log("Time's up for this question!");
-            // Auto-submit a null answer
             handleSubmitAnswer(); 
         }
         
         // --- Proctoring & Violation Logic ---
-        function requestProctoring() {
-            if (document.fullscreenElement) {
-                // Already in fullscreen, hide modal
-                hideModal('warningModal');
-                isPaused = false;
-            } else {
-                // Request fullscreen
-                document.documentElement.requestFullscreen()
-                    .then(() => {
-                        hideModal('warningModal');
-                        isPaused = false;
-                    })
-                    .catch(err => {
-                        console.error("Fullscreen request failed:", err);
-                        // Keep modal open, user must click again
-                    });
-            }
-        }
-        
+
+        // *** START: MODIFIED PROCTORING LOGIC ***
+
         function handleVisibilityChange() {
-            if (document.hidden) {
-                // User switched tabs
+            if (document.hidden && !isPaused) { 
                 console.log("VIOLATION: Tab switched");
-                handleViolation();
+                pauseForViolation(); 
             }
         }
         
         function handleFullscreenChange() {
-            if (!document.fullscreenElement) {
-                // User exited fullscreen
+            if (!document.fullscreenElement && !isPaused) { 
                 console.log("VIOLATION: Fullscreen exited");
-                handleViolation();
+                pauseForViolation(); 
             }
         }
         
-        async function handleViolation() {
-            if (isPaused) return; // Violation already being handled
+        function pauseForViolation() {
+            if (isPaused) return; // Violation already triggered
             isPaused = true;
+            hasUnloggedViolation = true; // Mark that we need to log this
+            stopQuestionTimer(); 
+
+            // Optimistically update the UI to show the *next* strike
+            const nextStrike = currentStrikes + 1;
+            updateStrikeUI(nextStrike); 
             
-            // 1. Log violation with backend
+            if (nextStrike >= 3) {
+                document.getElementById('strikeCount').textContent = '3';
+                document.getElementById('warningStrikeText').textContent = '3-strike limit reached. Test will be locked upon resuming.';
+            } else {
+                document.getElementById('strikeCount').textContent = nextStrike;
+                document.getElementById('warningStrikeText').textContent = `You have left fullscreen or switched tabs.`;
+            }
+            showModal('warningModal');
+        }
+
+        async function handleResumeAttempt() {
+            let isNowLocked = false;
+            
+            // 1. Log the violation if one happened
+            if (hasUnloggedViolation) {
+                isNowLocked = await logViolationAPI(); 
+                hasUnloggedViolation = false; // Mark as logged
+            }
+
+            // 2. If the API call resulted in a lock, stop here
+            if (isNowLocked) {
+                return; 
+            }
+            
+            // 3. If not locked, request fullscreen and resume
+            requestFullscreenAndResume();
+        }
+
+        async function logViolationAPI() {
+            // This function now *only* calls the API and returns if the user is locked
             const data = await makeTestAPICall('/violation', {
                 method: 'POST',
                 body: JSON.stringify({ attemptId: currentAttemptId })
             });
             
             if (!data) {
-                // Failed to log violation, maybe auth error
-                isPaused = false;
-                return;
+                alert("Error logging violation. Please try resuming again.");
+                hasUnloggedViolation = true; // Mark for retry
+                return false; // Not locked (API failed)
             }
         
-            // 2. Update local state
             currentStrikes = data.strikes;
-            updateStrikeUI();
+            updateStrikeUI(); // Update with the *confirmed* strike count
         
-            // 3. Check for lock
             if (data.status === 'locked') {
                 stopQuestionTimer();
                 hideModal('warningModal');
                 showModal('lockedModal');
-                // Exit fullscreen if we're in it
                 if(document.fullscreenElement) document.exitFullscreen();
-                // Remove proctoring listeners
                 document.removeEventListener('visibilitychange', handleVisibilityChange);
                 document.removeEventListener('fullscreenchange', handleFullscreenChange);
+                isPaused = true; // Keep test paused (locked)
+                return true; // Return true = is locked
+            }
+
+            // Not locked
+            return false; // Return false = not locked
+        }
+        
+        function requestFullscreenAndResume() {
+            // This function now also resumes the timer
+            const resumeTest = () => {
+                hideModal('warningModal');
+                isPaused = false;
+                startQuestionTimer(timeLeft); // <-- RESUME TIMER
+            };
+
+            if (document.fullscreenElement) {
+                resumeTest();
             } else {
-                // Show warning modal
-                document.getElementById('strikeCount').textContent = currentStrikes;
-                document.getElementById('warningStrikeText').textContent = data.message;
-                showModal('warningModal');
+                document.documentElement.requestFullscreen()
+                    .then(resumeTest)
+                    .catch(err => {
+                        console.error("Fullscreen request failed:", err);
+                        // User *must* be in fullscreen. Keep modal open.
+                        isPaused = true; // Keep test paused
+                    });
             }
         }
         
-        function updateStrikeUI() {
+        function updateStrikeUI(optimisticStrikes = -1) {
+            // Use the optimistic count if provided, otherwise use the confirmed count
+            const strikesToDisplay = optimisticStrikes !== -1 ? optimisticStrikes : currentStrikes;
+            
             for (let i = 1; i <= 3; i++) {
                 const strikeDot = document.getElementById(`strike${i}`);
-                if (i <= currentStrikes) {
+                if (i <= strikesToDisplay) {
                     strikeDot.classList.add('active');
                 } else {
                     strikeDot.classList.remove('active');
                 }
             }
         }
+        // *** END: MODIFIED PROCTORING LOGIC ***
         
         // --- Modal Utilities ---
         function showModal(modalId) {
