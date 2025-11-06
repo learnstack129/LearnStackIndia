@@ -428,7 +428,19 @@ userSchema.methods.correctPassword = async function (candidatePassword) {
 // Update daily activity & streak
 // backend/models/User.js
 
+// backend/models/User.js
+
 userSchema.methods.updateDailyActivity = function (activityData = {}) {
+    // --- START OF FIX: Add all safety checks here ---
+    // This block ensures stats objects exist before they are accessed.
+    if (!this.stats) { this.stats = {}; }
+    if (!this.stats.rank) { this.stats.rank = { level: 'Bronze', points: 0 }; }
+    if (!this.stats.streak) { this.stats.streak = { current: 0, longest: 0, lastActiveDate: null }; }
+    if (!this.stats.timeSpent) { this.stats.timeSpent = { total: 0, today: 0, thisWeek: 0, thisMonth: 0 }; }
+    if (!this.learningPath) { this.learningPath = { completedTopics: [] }; }
+    if (!this.progress) { this.progress = new Map(); }
+    // --- END OF FIX ---
+
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Normalize to start of day UTC
 
@@ -459,6 +471,8 @@ userSchema.methods.updateDailyActivity = function (activityData = {}) {
     }
 
     // --- FIX: Ensure stats and sub-objects exist ---
+    // This block is now redundant because of the fix at the top,
+    // but it is harmless to leave as a double-check.
     if (!this.stats) { this.stats = {}; }
     if (!this.stats.timeSpent) { this.stats.timeSpent = { total: 0, today: 0, thisWeek: 0, thisMonth: 0 }; }
     if (!this.stats.streak) { this.stats.streak = { current: 0, longest: 0, lastActiveDate: null }; }
@@ -653,6 +667,7 @@ userSchema.methods.hasAchievement = function (achievementId) {
 
 
 module.exports = mongoose.model('User', userSchema);
+
 
 
 
