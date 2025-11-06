@@ -32,7 +32,7 @@ const limiter = rateLimit({
 });
 // Apply limiter more broadly if needed, e.g., app.use(limiter);
 // Or keep it specific to /api/ routes
-app.use('/api/', limiter);
+//app.use('/api/', limiter);
 
 // CORS middleware
 app.use(cors({
@@ -145,4 +145,5 @@ process.on('uncaughtException', (err) => {
 connectDB();
 
 module.exports = app; // Export app for potential testing
+
 
