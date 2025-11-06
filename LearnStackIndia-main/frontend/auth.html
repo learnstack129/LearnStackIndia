@@ -863,22 +863,32 @@
                 } else if (response.success && response.token) {
                     localStorage.setItem('authToken', response.token);
                     localStorage.setItem('currentUser', JSON.stringify(response.user));
-                    // --- ADMIN REDIRECT LOGIC ---
-                if (response.user.role === 'admin') {
-                    console.log("Admin user detected, redirecting to admin dashboard.");
-                    showForm('successMessage'); // Optionally show success before redirect
-                    document.querySelector('#successMessage p').textContent = 'Login successful! Redirecting to Admin Dashboard...';
-                    setTimeout(() => {
-                        window.location.href = 'admin_dashboard.html'; // Redirect to admin page
-                    }, 1500);
-                } else {
-                    console.log("Regular user detected, redirecting to user dashboard.");
-                    showForm('successMessage');
-                    document.querySelector('#successMessage p').textContent = 'Login successful! Redirecting to Dashboard...';
-                    setTimeout(() => {
-                        window.location.href = 'dashboard.html'; // Redirect to regular user page
-                    }, 1500);
-                }
+                    
+                    // --- ADMIN/MENTOR REDIRECT LOGIC ---
+                    if (response.user.role === 'admin') {
+                        console.log("Admin user detected, redirecting to admin dashboard.");
+                        showForm('successMessage'); // Optionally show success before redirect
+                        document.querySelector('#successMessage p').textContent = 'Login successful! Redirecting to Admin Dashboard...';
+                        setTimeout(() => {
+                            window.location.href = 'admin_dashboard.html'; // Redirect to admin page
+                        }, 1500);
+                    } else if (response.user.role === 'mentor') { // <-- ADD THIS BLOCK
+                        console.log("Mentor user detected, redirecting to mentor dashboard.");
+                        showForm('successMessage'); 
+                        document.querySelector('#successMessage p').textContent = 'Login successful! Redirecting to Mentor Dashboard...';
+                        setTimeout(() => {
+                            window.location.href = 'mentor_dashboard.html'; // Redirect to mentor page
+                        }, 1500);
+                    } else {
+                        console.log("Regular user detected, redirecting to user dashboard.");
+                        showForm('successMessage');
+                        document.querySelector('#successMessage p').textContent = 'Login successful! Redirecting to Dashboard...';
+                        setTimeout(() => {
+                            window.location.href = 'dashboard.html'; // Redirect to regular user page
+                        }, 1500);
+                    }
+                    // --- END REDIRECT LOGIC ---
+
                 }
                 else {
                  // Handle cases where login might succeed but not return expected data
@@ -891,7 +901,6 @@
                 setButtonLoading('loginSubmit', 'loginButtonText', 'loginButtonSpinner', false);
             }
         }
-
         async function handleRegister(username, email, password) {
             try {
                 setButtonLoading('registerSubmit', 'registerButtonText', 'registerButtonSpinner', true);
@@ -1292,6 +1301,7 @@
 </body>
 
 </html>
+
 
 
 
