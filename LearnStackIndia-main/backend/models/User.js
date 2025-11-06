@@ -94,6 +94,32 @@ const dailyActivitySchema = new mongoose.Schema({
     sessions: [dailyActivitySessionSchema]
 }, { _id: false }); // Disable _id for sub-documents in array
 
+// --- NEW: Sub-schema for Test Attempts ---
+const testAttemptSchema = new mongoose.Schema({
+    testId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Test',
+        required: true
+    },
+    status: {
+        type: String,
+        enum: ['inprogress', 'locked', 'completed'],
+        default: 'inprogress'
+    },
+    strikes: {
+        type: Number,
+        default: 0
+    },
+    score: {
+        type: Number,
+        default: 0
+    },
+    startedAt: {
+        type: Date,
+        default: Date.now
+    },
+    completedAt: Date
+}, { _id: true }); // Enable _id for test attempts to allow direct updates
 
 // --- Main User Schema ---
 const userSchema = new mongoose.Schema({
@@ -110,7 +136,11 @@ const userSchema = new mongoose.Schema({
         type: String, required: [true, 'Password is required'],
         minlength: [6, 'Password must be at least 6 characters long'], select: false // Hide by default
     },
-    role: { type: String, enum: ['user', 'admin'], default: 'user' },
+    role: { 
+        type: String, 
+        enum: ['user', 'mentor', 'admin'], // <-- MODIFIED: Added 'mentor'
+        default: 'user' 
+    },
 
     // --- Verification & Security ---
     isEmailVerified: { type: Boolean, default: false },
@@ -178,6 +208,9 @@ const userSchema = new mongoose.Schema({
         topicOrder: { type: [String], default: [] }, // Will be populated from Topic model
         // Removed customPath and preferences from here, moved to main preferences
     },
+    
+    // --- NEW: Test Attempts ---
+    testAttempts: [testAttemptSchema],
 
     // --- Activity & Preferences ---
     dailyActivity: {
