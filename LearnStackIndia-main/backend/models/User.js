@@ -277,8 +277,7 @@ userSchema.virtual('completionPercentage').get(function () {
 
 // --- MIDDLEWARE ---
 
-// backend/models/User.js
-
+// Password Hashing & Stat Updates before saving
 userSchema.pre('save', async function (next) {
     console.log(`[User Pre-Save] Running for: ${this.username}`); // Debug log
 
@@ -431,10 +430,6 @@ userSchema.methods.correctPassword = async function (candidatePassword) {
 // Update daily activity & streak
 // backend/models/User.js
 
-// backend/models/User.js
-
-// backend/models/User.js
-
 userSchema.methods.updateDailyActivity = function (activityData = {}) {
     // --- START OF FIX: Add all safety checks here ---
     // This block ensures stats objects exist before they are accessed.
@@ -474,7 +469,7 @@ userSchema.methods.updateDailyActivity = function (activityData = {}) {
     if (activityData.session) {
         todayActivity.sessions.push(activityData.session);
     }
-
+    
     // --- Update timeSpent stats ---
     this.stats.timeSpent.today = todayActivity.timeSpent; // Update today's total
     this.stats.timeSpent.total = (this.stats.timeSpent.total || 0) + timeIncrementMinutes; // Increment overall total
@@ -506,6 +501,7 @@ userSchema.methods.updateDailyActivity = function (activityData = {}) {
     this.markModified('dailyActivity'); // Mark the array as modified
     this.markModified('stats.timeSpent'); // Mark timeSpent as modified
 };
+
 // Update user rank based on points
 userSchema.methods.updateRank = function () {
     // --- FIX: Ensure stats and rank objects exist ---
@@ -663,15 +659,3 @@ userSchema.methods.hasAchievement = function (achievementId) {
 
 
 module.exports = mongoose.model('User', userSchema);
-
-
-
-
-
-
-
-
-
-
-
-
