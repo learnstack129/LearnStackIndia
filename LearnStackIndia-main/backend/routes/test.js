@@ -39,13 +39,13 @@ async function getOrCreateAttempt(userId, testId) {
 router.get('/active', auth, async (req, res) => {
     try {
         const tests = await Test.find({ isActive: true })
-            .select('title createdBy') // Send non-sensitive data
-            .populate('createdBy', 'username'); // Show mentor name
+            .select('title createdBy')
+            .populate('createdBy', 'username'); // <-- THIS LINE IS LIKELY FAILING
 
         res.json({ success: true, tests });
     } catch (error) {
         console.error("Error fetching active tests:", error);
-        res.status(500).json({ message: 'Server error fetching active tests' });
+        res.status(500).json({ message: 'Server error fetching active tests' }); // <-- This is the error you see
     }
 });
 // --- END NEW ROUTE ---
