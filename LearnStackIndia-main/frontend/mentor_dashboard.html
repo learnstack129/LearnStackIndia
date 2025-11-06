@@ -1181,7 +1181,7 @@ async function populateDoubtSubjects() {
     // We need a new endpoint to get *all* subjects that have doubts.
     // For now, we'll just re-use the /api/admin/subjects endpoint
     // A better endpoint would be /api/doubts/subjects
-    const data = await makeMentorAPICall('/../admin/subjects'); // Hacky path, replace with proper endpoint
+    const data = await makeMentorAPICall('/subjects'); // This will correctly call /api/mentor/subjects
     
     if (data && data.subjects) {
         allSubjectsWithDoubts = data.subjects;
