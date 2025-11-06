@@ -343,11 +343,17 @@
             
             <section id="monitoring" class="mb-8 mentor-section hidden">
                 <h2 class="text-xl font-semibold mb-4 text-gray-700 dark:text-gray-300">Live Monitoring</h2>
-                <div class="mb-4">
-                    <label for="monitorTestSelect" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Select Test to Monitor:</label>
-                    <select id="monitorTestSelect" class="input-field mt-1 w-full md:w-1/3">
-                        <option value="">Loading tests...</option>
-                    </select>
+                
+                <div class="mb-4 flex flex-col sm:flex-row sm:items-end sm:gap-4">
+                    <div class="flex-grow">
+                        <label for="monitorTestSelect" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Select Test to Monitor:</label>
+                        <select id="monitorTestSelect" class="input-field mt-1 w-full md:w-1/3">
+                            <option value="">Loading tests...</option>
+                        </select>
+                    </div>
+                    <button id="refreshMonitorBtn" class="btn-primary mt-2 sm:mt-0" style="padding: 0.5rem 1rem;">
+                        <i class="fas fa-sync-alt mr-1"></i>Refresh
+                    </button>
                 </div>
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
                     <div class="overflow-x-auto p-4">
@@ -484,7 +490,7 @@
         // frontend/mentor_dashboard.js
         const API_BASE_URL = '/api';
         let allMentorTests = []; // Cache for mentor's tests
-        let monitoringInterval = null; // NEW: Interval for live monitoring
+        let monitoringInterval = null; // Interval for live monitoring
         
         // --- UTILITIES ---
         function getAuthToken() { return localStorage.getItem('authToken'); }
@@ -497,7 +503,7 @@
             
             if (!token || (userRole !== 'mentor' && userRole !== 'admin')) {
                 console.warn("Not authenticated as mentor/admin, redirecting...");
-                if (monitoringInterval) clearInterval(monitoringInterval); // NEW: Clear interval
+                if (monitoringInterval) clearInterval(monitoringInterval); // Clear interval
                 localStorage.clear();
                 window.location.href = 'auth.html';
                 return false;
@@ -566,12 +572,14 @@
         
         // --- NAVIGATION ---
         function handleNavigation() {
-            // NEW: Clear monitoring interval when changing views
+            // *** START: MODIFICATION ***
+            // Clear monitoring interval when changing views
             if (monitoringInterval) {
                 clearInterval(monitoringInterval);
                 monitoringInterval = null;
                 console.log("Stopped monitoring interval.");
             }
+            // *** END: MODIFICATION ***
         
             const hash = window.location.hash || '#my-tests';
             const targetSectionId = hash.substring(1);
@@ -589,12 +597,12 @@
             }
             if(sectionIdToShow === 'monitoring') {
                 populateMonitorTestSelect();
-                // NEW: Start polling when monitoring tab is selected
-                // It will only poll if a test is selected
-                monitoringInterval = setInterval(loadTestAttempts, 7000); // Poll every 7 seconds
-                console.log("Started monitoring interval.");
+                // *** START: MODIFICATION ***
+                // Load once immediately when switching to the tab
+                loadTestAttempts(); 
+                console.log("Monitoring tab loaded, interval removed.");
+                // *** END: MODIFICATION ***
             }
-            // NEW: Load leaderboard data
             if(sectionIdToShow === 'leaderboard') {
                 loadLeaderboard();
             }
@@ -605,19 +613,18 @@
         }
         function closeMobileMenu() { document.querySelector('.sidebar').classList.add('-translate-x-full'); document.querySelector('.sidebar').classList.remove('translate-x-0'); document.getElementById('overlay').classList.add('hidden'); }
         function mentorLogout() { 
-            if (monitoringInterval) clearInterval(monitoringInterval); // NEW: Clear interval
+            if (monitoringInterval) clearInterval(monitoringInterval); // Clear interval
             if (confirm('Logout?')) { 
                 localStorage.clear(); 
                 window.location.href = 'auth.html'; 
             } 
         }
 
-        // --- NEW: LEADERBOARD SECTION ---
+        // --- LEADERBOARD SECTION ---
         async function loadLeaderboard() {
             const tbody = document.getElementById('leaderboardTableBody');
             tbody.innerHTML = '<tr><td colspan="4" class="p-4" data-label="Loading"><div class="loading-skeleton h-8 w-full"></div></td></tr>';
             
-            // Use a standard API call, not mentor-specific
             const token = getAuthToken();
             if (!token) { redirectToLogin(); return; }
 
@@ -678,7 +685,6 @@
 
                     const escapedTitle = test.title.replace(/'/g, "\\'");
                     
-                    // NEW: "View Questions" button
                     const viewQuestionsBtn = `<button onclick="toggleQuestionsList(this, '${test._id}')" class="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 mr-3" title="View/Hide Questions"><i class="fas fa-chevron-down"></i></button>`;
 
                     tr.innerHTML = `
@@ -694,7 +700,6 @@
                     `;
                     tbody.appendChild(tr);
 
-                    // NEW: Add hidden row for questions
                     const questionsRow = document.createElement('tr');
                     questionsRow.id = `questions-for-${test._id}`;
                     questionsRow.className = "hidden"; // Start hidden
@@ -712,25 +717,21 @@
             }
         }
         
-        // NEW: Toggle question list visibility
         function toggleQuestionsList(button, testId) {
             const row = document.getElementById(`questions-for-${testId}`);
             const icon = button.querySelector('i');
             if (row.classList.contains('hidden')) {
-                // Show row
                 row.classList.remove('hidden');
                 icon.classList.remove('fa-chevron-down');
                 icon.classList.add('fa-chevron-up');
-                renderQuestionsForTest(testId); // Load and render content
+                renderQuestionsForTest(testId);
             } else {
-                // Hide row
                 row.classList.add('hidden');
                 icon.classList.remove('fa-chevron-up');
                 icon.classList.add('fa-chevron-down');
             }
         }
         
-        // NEW: Render the list of questions for a test
         function renderQuestionsForTest(testId) {
             const container = document.getElementById(`questions-container-${testId}`);
             const test = allMentorTests.find(t => t._id === testId);
@@ -740,7 +741,6 @@
                 return;
             }
 
-            // Build table
             let tableHtml = `
                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600 questions-sub-table">
                     <thead class="bg-gray-100 dark:bg-gray-600">
@@ -783,12 +783,11 @@
             
             if (result?.success) {
                 showGlobalAlert(result.message, 'success');
-                loadMentorTests(); // Refresh the list
-                populateMonitorTestSelect(); // Refresh the monitoring dropdown
+                loadMentorTests(); 
+                populateMonitorTestSelect(); 
             }
         }
 
-        // --- Create Test Modal ---
         function openCreateTestModal() {
             document.getElementById('createTestForm').reset();
             document.getElementById('createTestError').textContent = '';
@@ -812,8 +811,8 @@
             
             if (result?.success) {
                 showGlobalAlert(result.message, 'success');
-                loadMentorTests(); // Refresh the list
-                populateMonitorTestSelect(); // Refresh the monitoring dropdown
+                loadMentorTests(); 
+                populateMonitorTestSelect(); 
             }
         }
         
@@ -841,13 +840,12 @@
             if (result?.success) {
                 showGlobalAlert('Test created!', 'success');
                 closeCreateTestModal();
-                loadMentorTests(); // Refresh the list
+                loadMentorTests(); 
             } else {
                 errorP.textContent = result?.message || 'Failed to create test.';
             }
         }
         
-        // --- Add/Edit Question Modal ---
         function setupQuestionTypeToggle() {
             const typeSelect = document.getElementById('questionType');
             if (typeSelect) {
@@ -871,26 +869,23 @@
             }
         }
 
-        // MODIFIED: Can now accept a questionId for editing
         async function openAddQuestionModal(testId, questionId = null) {
             const form = document.getElementById('addQuestionForm');
             form.reset();
             document.getElementById('addQuestionError').textContent = '';
             document.getElementById('addQuestionTestId').value = testId;
-            document.getElementById('editQuestionId').value = questionId || ''; // Set edit ID
+            document.getElementById('editQuestionId').value = questionId || ''; 
             
             const title = document.getElementById('addQuestionModalTitle');
             const saveButton = document.getElementById('saveQuestionBtn');
             
-            toggleQuestionFields('mcq'); // Default to MCQ view
+            toggleQuestionFields('mcq'); 
             document.getElementById('questionType').value = 'mcq';
 
             if (questionId) {
-                // --- EDIT MODE ---
                 title.textContent = 'Edit Question';
                 saveButton.innerHTML = 'Save Changes';
                 
-                // Fetch full question data
                 showGlobalAlert('Loading question data...', 'info');
                 const data = await makeMentorAPICall(`/questions/${questionId}`);
                 hideGlobalAlert();
@@ -917,7 +912,6 @@
                 }
                 
             } else {
-                // --- ADD MODE ---
                 title.textContent = 'Add New Question';
                 saveButton.innerHTML = 'Save Question';
                 const test = allMentorTests.find(t => t._id === testId);
@@ -933,11 +927,10 @@
             document.getElementById('addQuestionModal').classList.remove('show');
         }
         
-        // MODIFIED: Can now handle both ADD (POST) and EDIT (PUT)
         async function saveNewQuestion() {
             const testId = document.getElementById('addQuestionTestId').value;
-            const questionId = document.getElementById('editQuestionId').value; // NEW
-            const isEditing = !!questionId; // Check if we are editing
+            const questionId = document.getElementById('editQuestionId').value; 
+            const isEditing = !!questionId; 
             
             const errorP = document.getElementById('addQuestionError');
             const saveButton = document.getElementById('saveQuestionBtn');
@@ -953,7 +946,6 @@
                 questionType: questionType
             };
 
-            // --- Validation (same as before) ---
             if (!questionData.text || isNaN(questionData.timeLimit) || questionData.timeLimit < 10) {
                 errorP.textContent = 'Please fill in Question Text and a valid Time Limit (min 10s).';
                 saveButton.disabled = false; saveButton.innerHTML = isEditing ? 'Save Changes' : 'Save Question';
@@ -997,9 +989,7 @@
                     return;
                 }
             }
-            // --- End Validation ---
 
-            // --- NEW: Determine API endpoint and method ---
             const method = isEditing ? 'PUT' : 'POST';
             const endpoint = isEditing ? `/questions/${questionId}` : `/tests/${testId}/questions`;
             
@@ -1014,27 +1004,20 @@
                 showGlobalAlert(result.message, 'success');
                 closeAddQuestionModal();
                 
-                // --- NEW: Update the UI dynamically ---
                 const test = allMentorTests.find(t => t._id === testId);
                 if (test) {
                     if (isEditing) {
-                        // Find and update the question in the local cache
                         const qIndex = test.questions.findIndex(q => q._id === questionId);
                         if (qIndex !== -1) {
                             test.questions[qIndex] = { ...test.questions[qIndex], ...result.question };
                         }
                     } else {
-                        // Add the new question to the local cache
                         test.questions.push(result.question);
                     }
-                    // Re-render the question list for this test if it's open
                     const row = document.getElementById(`questions-for-${testId}`);
                     if (row && !row.classList.contains('hidden')) {
                         renderQuestionsForTest(testId);
                     }
-                    // Update the question count in the main table
-                    const testRow = document.getElementById(`testsTableBody`).querySelector(`tr[onclick*="${testId}"]`); // This is tricky, need a better selector
-                    // Simple solution: just reload the whole test table
                     loadMentorTests();
                 }
             } else {
@@ -1042,7 +1025,6 @@
             }
         }
         
-        // NEW: Delete a question
         async function deleteQuestion(testId, questionId) {
             const questionRow = document.getElementById(`question-row-${questionId}`);
             const questionText = questionRow ? questionRow.cells[0].textContent : 'this question';
@@ -1060,22 +1042,19 @@
             if (result?.success) {
                 showGlobalAlert(result.message, 'success');
                 
-                // Remove from local cache
                 const test = allMentorTests.find(t => t._id === testId);
                 if (test) {
                     test.questions = test.questions.filter(q => q._id !== questionId);
                 }
-                // Re-render the list
                 renderQuestionsForTest(testId);
-                // Update count in main table
-                loadMentorTests(); // Easiest way to update count
+                loadMentorTests();
             }
         }
 
         // --- MONITORING SECTION ---
         async function populateMonitorTestSelect() {
             const select = document.getElementById('monitorTestSelect');
-            const currentVal = select.value; // Preserve selected value
+            const currentVal = select.value; 
             select.innerHTML = '<option value="">Loading tests...</option>';
             
             let testsToUse = allMentorTests;
@@ -1094,7 +1073,7 @@
                     const option = new Option(`${test.title} (${test.questions.length}Q) ${test.isActive ? '[Active]' : '[Draft]'}`, test._id);
                     select.appendChild(option);
                 });
-                select.value = currentVal; // Re-select previous value
+                select.value = currentVal; 
             } else {
                 select.innerHTML = '<option value="">No tests found</option>';
             }
@@ -1102,7 +1081,6 @@
         
         async function loadTestAttempts() {
             const testId = document.getElementById('monitorTestSelect').value;
-            // NEW: If no test is selected, clear the table and stop.
             if (!testId) {
                 document.getElementById('monitoringTableBody').innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500 dark:text-gray-400" data-label="Info">Select a test to see live attempts.</td></tr>';
                 return;
@@ -1110,15 +1088,17 @@
             
             const tbody = document.getElementById('monitoringTableBody');
             
-            // NEW: Don't show skeleton on auto-refresh, just replace content
-            if (!monitoringInterval) { // Only show skeleton on first load
+            // *** START: MODIFICATION ***
+            // Show loading skeleton only if the table is currently empty (initial load)
+            if (!tbody.hasChildNodes() || tbody.innerHTML.includes('data-label="Info"')) {
                  tbody.innerHTML = '<tr><td colspan="4" class="p-4" data-label="Loading"><div class="loading-skeleton h-8 w-full"></div></td></tr>';
             }
+            // *** END: MODIFICATION ***
             
             const data = await makeMentorAPICall(`/tests/${testId}/attempts`);
             
             if (data?.success && data.attempts) {
-                tbody.innerHTML = ''; // Clear old data
+                tbody.innerHTML = ''; 
                 if (data.attempts.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500 dark:text-gray-400" data-label="Result">No users have started this test yet.</td></tr>';
                     return;
@@ -1170,37 +1150,38 @@
             
             if (result?.success) {
                 showGlobalAlert(result.message, 'success');
-                loadTestAttempts(); // Refresh the monitoring list
+                loadTestAttempts(); 
             }
         }
         
         // --- DOMContentLoaded ---
         document.addEventListener('DOMContentLoaded', () => {
-            if (!checkMentorAuth()) return; // Initial auth check
+            if (!checkMentorAuth()) return; 
         
             // Setup Event Listeners
             document.getElementById('mentorLogoutBtn').addEventListener('click', mentorLogout);
             document.getElementById('mobileMenuBtn').addEventListener('click', toggleMobileMenu);
             document.getElementById('overlay').addEventListener('click', closeMobileMenu);
             
-            // Create Test Modal
             document.getElementById('saveTestBtn').addEventListener('click', saveNewTest);
             document.getElementById('createTestModal').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeCreateTestModal(); });
         
-            // Add Question Modal
             document.getElementById('saveQuestionBtn').addEventListener('click', saveNewQuestion);
             document.getElementById('addQuestionModal').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeAddQuestionModal(); });
-            setupQuestionTypeToggle(); // Initialize the show/hide logic for question types
+            setupQuestionTypeToggle(); 
             
+            // *** START: MODIFICATION ***
             // Monitoring
             document.getElementById('monitorTestSelect').addEventListener('change', loadTestAttempts);
+            // Add click listener for the new refresh button
+            document.getElementById('refreshMonitorBtn').addEventListener('click', loadTestAttempts);
+            // *** END: MODIFICATION ***
         
             // Initial Navigation
             window.addEventListener('hashchange', handleNavigation);
-            handleNavigation(); // Load section based on initial hash
+            handleNavigation(); 
         });
         
-        // Re-check auth on pageshow
         window.addEventListener('pageshow', function(event) {
             if (!checkMentorAuth()) {
                 console.error("MENTOR PAGE: Auth check FAILED on pageshow.");
