@@ -294,6 +294,11 @@ userSchema.pre('save', async function (next) {
     // --- Dynamic Initialization of Progress & Learning Path on NEW user ---
     if (this.isNew) {
         console.log('[User Pre-Save] Initializing progress for new user...');
+        console.log('[User Pre-Save] Initializing default stats for new user...');
+        if (!this.stats) { this.stats = {}; } // Ensure stats object itself exists
+        this.stats.rank = { level: 'Bronze', points: 0 };
+        this.stats.streak = { current: 0, longest: 0, lastActiveDate: null };
+        this.stats.timeSpent = { total: 0, today: 0, thisWeek: 0, thisMonth: 0 };
         try {
             const topics = await Topic.find({ isActive: true }).sort({ order: 1 }).select('id algorithms isGloballyLocked order').lean(); // Added isGloballyLocked and order
             const topicOrder = [];
@@ -635,4 +640,5 @@ userSchema.methods.hasAchievement = function (achievementId) {
 
 
 module.exports = mongoose.model('User', userSchema);
+
 
