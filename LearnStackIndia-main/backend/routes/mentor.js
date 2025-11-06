@@ -46,11 +46,18 @@ router.post('/tests', mentorAuth, async (req, res) => {
     }
 });
 
-// POST: Add a new question and link it to a test
+// POST: Add a new question (MCQ or Short Answer) and link it to a test
 router.post('/tests/:testId/questions', mentorAuth, async (req, res) => {
     try {
         const { testId } = req.params;
-        const { text, options, correctAnswerIndex, timeLimit } = req.body;
+        const {
+            text,
+            questionType, // 'mcq' or 'short_answer'
+            options,
+            correctAnswerIndex,
+            shortAnswers,
+            timeLimit 
+        } = req.body;
 
         // Find the test and check if mentor owns it
         const test = await Test.findOne({ _id: testId, createdBy: req.user.id });
@@ -58,15 +65,21 @@ router.post('/tests/:testId/questions', mentorAuth, async (req, res) => {
             return res.status(404).json({ message: 'Test not found or you do not own this test' });
         }
         
-        // Create new question
-        const newQuestion = new Question({
+        // Prepare data for the new question model
+        const questionData = {
             text,
-            options,
-            correctAnswerIndex,
+            questionType,
             timeLimit,
-            createdBy: req.user.id
-        });
-        await newQuestion.save();
+            createdBy: req.user.id,
+            options: (questionType === 'mcq') ? options : undefined,
+            correctAnswerIndex: (questionType === 'mcq') ? correctAnswerIndex : undefined,
+            shortAnswers: (questionType === 'short_answer') ? shortAnswers : undefined
+        };
+
+        // Create new question
+        // The pre-save hook in Question.js will handle validation
+        const newQuestion = new Question(questionData);
+        await newQuestion.save(); // This will trigger the validation hook
         
         // Add question to test
         test.questions.push(newQuestion._id);
@@ -77,12 +90,12 @@ router.post('/tests/:testId/questions', mentorAuth, async (req, res) => {
     } catch (error) {
         console.error("Error adding question:", error);
          if (error.name === 'ValidationError') {
+             // Send validation errors from the model's pre-save hook
              return res.status(400).json({ message: `Validation Error: ${error.message}` });
          }
         res.status(500).json({ message: 'Error adding question' });
     }
 });
-
 // --- User Monitoring & Control ---
 
 // GET: Get all user attempts for a specific test (for monitoring)
