@@ -352,6 +352,7 @@ userSchema.pre('save', async function (next) {
         if (!this.stats.streak) { this.stats.streak = { current: 0, longest: 0, lastActiveDate: null }; }
         if (!this.stats.timeSpent) { this.stats.timeSpent = { total: 0, today: 0, thisWeek: 0, thisMonth: 0 }; }
         if (!this.learningPath) { this.learningPath = { completedTopics: [] }; }
+        if (!this.progress) { this.progress = new Map(); }
         // --- END FIX 3 ---
 
         let totalCompleted = 0;
@@ -652,6 +653,7 @@ userSchema.methods.hasAchievement = function (achievementId) {
 
 
 module.exports = mongoose.model('User', userSchema);
+
 
 
 
