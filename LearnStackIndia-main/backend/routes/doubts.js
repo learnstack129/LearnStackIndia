@@ -46,11 +46,14 @@ router.post('/', auth, async (req, res) => {
         });
 
         await newDoubt.save();
-        
-        // Populate the postedBy user for the response
-        await newDoubt.populate('postedBy', 'username profile.avatar');
+            
+            // Manually populate the postedBy user for the response
+            // (This pattern is safer and matches your 'reply' route logic)
+            const user = await User.findById(req.user.id).select('username profile.avatar').lean();
+            const populatedDoubt = newDoubt.toObject(); // Convert to plain object
+            populatedDoubt.postedBy = user; // Replace the ID with the user object
 
-        res.status(201).json({ success: true, message: 'Doubt posted successfully', doubt: newDoubt });
+            res.status(201).json({ success: true, message: 'Doubt posted successfully', doubt: populatedDoubt });
     } catch (error) {
         console.error("Error posting doubt:", error);
         // Add specific validation error handling
