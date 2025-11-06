@@ -229,7 +229,7 @@ router.put('/users/:id', adminAuth, async (req, res) => {
         const updateData = {};
         const unsetData = {}; // Separate object for $unset
 
-        if (role && ['user', 'admin'].includes(role)) updateData.role = role;
+        if (role && ['user', 'mentor', 'admin'].includes(role)) updateData.role = role;
 
         if (typeof isEmailVerified === 'boolean') {
             updateData.isEmailVerified = isEmailVerified;
@@ -815,6 +815,7 @@ router.post('/topics/:topicMongoId/algorithms/:algoId/unlock', adminAuth, async 
 
 
 module.exports = router;
+
 
 
 
