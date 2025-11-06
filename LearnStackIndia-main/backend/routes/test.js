@@ -34,6 +34,22 @@ async function getOrCreateAttempt(userId, testId) {
     return { user, attempt };
 }
 
+// --- NEW ROUTE: Get all active tests for the dashboard list ---
+// GET /api/test/active
+router.get('/active', auth, async (req, res) => {
+    try {
+        const tests = await Test.find({ isActive: true })
+            .select('title createdBy') // Send non-sensitive data
+            .populate('createdBy', 'username'); // Show mentor name
+
+        res.json({ success: true, tests });
+    } catch (error) {
+        console.error("Error fetching active tests:", error);
+        res.status(500).json({ message: 'Server error fetching active tests' });
+    }
+});
+// --- END NEW ROUTE ---
+
 
 // POST /api/test/start/:testId
 // User starts a test, provides password
@@ -52,6 +68,12 @@ router.post('/start/:testId', auth, async (req, res) => {
         if (!test) {
             return res.status(404).json({ message: 'Test not found' });
         }
+        
+        // --- ADD CHECK FOR isActive ---
+        if (!test.isActive) {
+            return res.status(403).json({ message: 'This test is not currently active.' });
+        }
+        // --- END ADDED CHECK ---
 
         // Check password
         const isMatch = await test.correctPassword(password);
@@ -87,7 +109,8 @@ router.post('/start/:testId', auth, async (req, res) => {
             testTitle: test.title,
             attemptId: attempt._id,
             strikes: attempt.strikes,
-            currentQuestion: firstQuestion // Send first question
+            currentQuestion: firstQuestion, // Send first question
+            totalQuestions: test.questions.length // <-- Send total question count
         });
 
     } catch (error) {
