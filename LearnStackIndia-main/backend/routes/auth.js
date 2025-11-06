@@ -547,7 +547,7 @@ router.get('/dashboard', auth, async (req, res) => {
 
         // --- Assemble Dashboard Data (MODIFIED) ---
         const dashboardData = {
-            user: { username: user.username, profile: user.profile?.toObject(), rank: userRank.level ?? 'Bronze', totalUserAchievements },
+            user: { username: user.username, profile: user.profile?.toObject(), rank: userRank.level ?? 'Bronze', totalUserAchievements, testAttempts: user.testAttempts?.map(attempt => attempt.toObject ? attempt.toObject() : attempt) },
             stats: {
                 overallProgress: realTimeOverallProgress, algorithmsCompleted: userCompletedAlgorithms,
                 totalAlgorithms: currentTotalAlgorithms, timeToday: userTimeSpent.today ?? 0,
@@ -918,6 +918,7 @@ router.get('/me', auth, async (req, res) => { //
 
 
 module.exports = router;
+
 
 
 
