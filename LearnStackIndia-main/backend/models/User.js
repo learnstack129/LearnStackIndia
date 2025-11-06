@@ -277,7 +277,8 @@ userSchema.virtual('completionPercentage').get(function () {
 
 // --- MIDDLEWARE ---
 
-// Password Hashing & Stat Updates before saving
+// backend/models/User.js
+
 userSchema.pre('save', async function (next) {
     console.log(`[User Pre-Save] Running for: ${this.username}`); // Debug log
 
@@ -352,8 +353,10 @@ userSchema.pre('save', async function (next) {
         if (!this.stats.streak) { this.stats.streak = { current: 0, longest: 0, lastActiveDate: null }; }
         if (!this.stats.timeSpent) { this.stats.timeSpent = { total: 0, today: 0, thisWeek: 0, thisMonth: 0 }; }
         if (!this.learningPath) { this.learningPath = { completedTopics: [] }; }
-        if (!this.progress) { this.progress = new Map(); }
-        // --- END FIX 3 ---
+        
+        // --- THIS IS THE CRITICAL FIX for the pre-save crash ---
+        if (!this.progress) { this.progress = new Map(); } 
+        // --- END CRITICAL FIX ---
 
         let totalCompleted = 0;
         let totalTrackedAlgos = 0;
@@ -430,6 +433,8 @@ userSchema.methods.correctPassword = async function (candidatePassword) {
 
 // backend/models/User.js
 
+// backend/models/User.js
+
 userSchema.methods.updateDailyActivity = function (activityData = {}) {
     // --- START OF FIX: Add all safety checks here ---
     // This block ensures stats objects exist before they are accessed.
@@ -470,14 +475,6 @@ userSchema.methods.updateDailyActivity = function (activityData = {}) {
         todayActivity.sessions.push(activityData.session);
     }
 
-    // --- FIX: Ensure stats and sub-objects exist ---
-    // This block is now redundant because of the fix at the top,
-    // but it is harmless to leave as a double-check.
-    if (!this.stats) { this.stats = {}; }
-    if (!this.stats.timeSpent) { this.stats.timeSpent = { total: 0, today: 0, thisWeek: 0, thisMonth: 0 }; }
-    if (!this.stats.streak) { this.stats.streak = { current: 0, longest: 0, lastActiveDate: null }; }
-    // --- END FIX ---
-
     // --- Update timeSpent stats ---
     this.stats.timeSpent.today = todayActivity.timeSpent; // Update today's total
     this.stats.timeSpent.total = (this.stats.timeSpent.total || 0) + timeIncrementMinutes; // Increment overall total
@@ -509,7 +506,6 @@ userSchema.methods.updateDailyActivity = function (activityData = {}) {
     this.markModified('dailyActivity'); // Mark the array as modified
     this.markModified('stats.timeSpent'); // Mark timeSpent as modified
 };
-
 // Update user rank based on points
 userSchema.methods.updateRank = function () {
     // --- FIX: Ensure stats and rank objects exist ---
@@ -667,6 +663,7 @@ userSchema.methods.hasAchievement = function (achievementId) {
 
 
 module.exports = mongoose.model('User', userSchema);
+
 
 
 
