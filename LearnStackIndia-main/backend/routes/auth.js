@@ -164,7 +164,11 @@ router.post('/register', async (req, res) => { //
             console.warn(`Email sending failed for ${email}. User remains unverified.`); //
             // We DON'T roll back here anymore. The user can try to register again which will re-trigger this flow.
             // Or they can use a "resend OTP" button on the frontend.
-            return res.status(500).json({ message: 'Failed to send verification email. Please try again.' }); //
+            
+            // --- FIX: Change from 500 to 400 ---
+            // This is a service failure, not a server crash.
+            return res.status(400).json({ message: 'Failed to send verification email. Please check server email configuration.' }); //
+            // --- END FIX ---
         }
 
         res.status(201).json({ //
@@ -918,6 +922,7 @@ router.get('/me', auth, async (req, res) => { //
 
 
 module.exports = router;
+
 
 
 
