@@ -473,54 +473,53 @@
         
         // --- Test Flow ---
         async function handleTestStart() {
-            const password = testPasswordInput.value;
-            if (!password) {
-                passwordError.textContent = 'Password is required.';
-                return;
-            }
-            
-            startTestBtn.disabled = true;
-            startTestBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Starting...';
-            passwordError.textContent = '';
-            
-            const data = await makeTestAPICall(`/start/${currentTestId}`, {
-                method: 'POST',
-                body: JSON.stringify({ password })
-            });
-            
-            if (data && data.success) {
-                // Start the test
-                currentAttemptId = data.attemptId;
-                currentStrikes = data.strikes;
-                testTitle.textContent = data.testTitle;
-                updateStrikeUI();
-                
-                // Hide password modal
-                hideModal('passwordModal');
-                
-                // --- THIS IS THE KEY ---
-                // Request fullscreen *before* showing the test
-                requestProctoring();
-                
-                // Show test UI
-                testUI.classList.remove('hidden');
-                
-                // Load the first question
-                // TODO: Get total question count
-                loadQuestion(data.currentQuestion);
+    const password = testPasswordInput.value;
+    if (!password) {
+        passwordError.textContent = 'Password is required.';
+        return;
+    }
+    
+    startTestBtn.disabled = true;
+    startTestBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Starting...';
+    passwordError.textContent = '';
+    
+    const data = await makeTestAPICall(`/start/${currentTestId}`, {
+        method: 'POST',
+        body: JSON.stringify({ password })
+    });
+    
+    if (data && data.success) {
+        // Start the test
+        currentAttemptId = data.attemptId;
+        currentStrikes = data.strikes;
+        testTitle.textContent = data.testTitle;
+        totalQuestions = data.totalQuestions || 0; // <-- SAVE TOTAL QUESTIONS
+        updateStrikeUI();
         
-            } else if (data && data.status === 'locked') {
-                // User is locked out
-                hideModal('passwordModal');
-                showModal('lockedModal');
-            } else {
-                // Wrong password or other error
-                passwordError.textContent = data ? data.message : 'An unknown error occurred.';
-                startTestBtn.disabled = false;
-                startTestBtn.innerHTML = 'Start Test';
-            }
-        }
+        // Hide password modal
+        hideModal('passwordModal');
         
+        // --- THIS IS THE KEY ---
+        // Request fullscreen *before* showing the test
+        requestProctoring();
+        
+        // Show test UI
+        testUI.classList.remove('hidden');
+        
+        // Load the first question
+        loadQuestion(data.currentQuestion); // Pass first question
+
+    } else if (data && data.status === 'locked') {
+        // User is locked out
+        hideModal('passwordModal');
+        showModal('lockedModal');
+    } else {
+        // Wrong password or other error
+        passwordError.textContent = data ? data.message : 'An unknown error occurred.';
+        startTestBtn.disabled = false;
+        startTestBtn.innerHTML = 'Start Test';
+    }
+}
         function loadQuestion(question) {
             if (!question) {
                 // This was the last question
