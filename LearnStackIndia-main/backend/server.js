@@ -73,6 +73,8 @@ app.use('/api/topics', require('./routes/topics'));
 app.use('/api/achievements', achievementsModule); // <-- FIXED LINE
 app.use('/api/leaderboard', require('./routes/leaderboard'));
 app.use('/api/admin', require('./routes/admin')); // Mount admin routes under /api/admin
+app.use('/api/mentor', require('./routes/mentor')); // <-- ADD THIS NEW MENTOR ROUTE
+
 // --- END ADJUSTED Route Imports ---
 
 // Error handling middleware
@@ -113,7 +115,8 @@ app.use('*', (req, res) => {
       '/api/topics/...',
       '/api/achievements/...',
       '/api/leaderboard/...',
-      '/api/admin/...'
+      '/api/admin/...',
+      '/api/mentor/...' // <-- ADD THIS
     ]
   });
 });
@@ -140,4 +143,3 @@ process.on('uncaughtException', (err) => {
 connectDB();
 
 module.exports = app; // Export app for potential testing
-
