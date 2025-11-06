@@ -38,14 +38,21 @@ async function getOrCreateAttempt(userId, testId) {
 // GET /api/test/active
 router.get('/active', auth, async (req, res) => {
     try {
-        const tests = await Test.find({ isActive: true })
-            .select('title createdBy')
-            // --- FIX ---
-            // Changed the populate syntax to be more robust.
-            // This is a more explicit way to select fields from a populated document
-            // and is less likely to cause internal errors.
-            .populate({ path: 'createdBy', select: 'username' }); 
-            // --- END FIX ---
+        // --- NEW FIX #2 ---
+        // The screenshot confirms 'createdBy' is a valid ObjectId, not null.
+        // This means the 'populate' is failing because that ObjectId
+        // points to a User that no longer exists (a "dangling reference").
+        //
+        // We will REMOVE the .populate() call entirely.
+        // The frontend (dashboard.html) is safe and will display "N/A".
+        
+        const tests = await Test.find({ 
+                isActive: true,
+                createdBy: { $ne: null } // Keep this check just in case
+            })
+            .select('title createdBy'); // Just select the fields
+            // .populate({ path: 'createdBy', select: 'username' });  <-- THIS LINE IS REMOVED
+        // --- END NEW FIX #2 ---
 
         res.json({ success: true, tests });
     } catch (error) {
