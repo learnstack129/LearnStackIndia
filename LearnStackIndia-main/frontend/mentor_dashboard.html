@@ -553,21 +553,29 @@
                     return;
                 }
                 data.tests.forEach(test => {
-                    const tr = document.createElement('tr');
-                    tr.className = "hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors";
-                    const questionCount = test.questions ? test.questions.length : 0;
-                    tr.innerHTML = `
-                        <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white" data-label="Title">${test.title}</td>
-                        <td class="px-6 py-4 text-sm" data-label="Status"><span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${test.isActive ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300'}">${test.isActive ? 'Active' : 'Draft'}</span></td>
-                        <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300" data-label="Questions">${questionCount}</td>
-                        <td class="px-6 py-4 text-sm font-medium actions-cell" data-label="Actions">
-                            <button onclick="openAddQuestionModal('${test._id}')" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 mr-3" title="Add Question"><i class="fas fa-plus"></i></button>
-                            <button onclick="alert('Toggle active soon')" class="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300 mr-3" title="Activate/Deactivate"><i class="fas fa-power-off"></i></button>
-                            <button onclick="alert('Delete soon')" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300" title="Delete Test"><i class="fas fa-trash"></i></button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+            const tr = document.createElement('tr');
+            tr.className = "hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors";
+            const questionCount = test.questions ? test.questions.length : 0;
+            
+            // --- NEW: Toggle Button Logic ---
+            const isActive = test.isActive === true;
+            const toggleButtonHtml = isActive
+                ? `<button onclick="toggleTestActive('${test._id}', ${test.isActive})" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 mr-3" title="Deactivate Test"><i class="fas fa-power-off"></i></button>`
+                : `<button onclick="toggleTestActive('${test._id}', ${test.isActive})" class="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300 mr-3" title="Activate Test"><i class="fas fa-power-off"></i></button>`;
+            // --- END NEW LOGIC ---
+
+            tr.innerHTML = `
+                <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white" data-label="Title">${test.title}</td>
+                <td class="px-6 py-4 text-sm" data-label="Status"><span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${isActive ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300'}">${isActive ? 'Active' : 'Draft'}</span></td>
+                <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300" data-label="Questions">${questionCount}</td>
+                <td class="px-6 py-4 text-sm font-medium actions-cell" data-label="Actions">
+                    <button onclick="openAddQuestionModal('${test._id}')" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3" title="Add Question"><i class="fas fa-plus"></i></button>
+                    ${toggleButtonHtml} 
+                    <button onclick="alert('Delete soon')" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300" title="Delete Test"><i class="fas fa-trash"></i></button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
             } else {
                 tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-red-500 dark:text-red-400" data-label="Error">Failed to load tests.</td></tr>';
             }
@@ -582,6 +590,29 @@
         function closeCreateTestModal() {
             document.getElementById('createTestModal').classList.remove('show');
         }
+
+        // --- NEW: Toggle Test Active Status ---
+async function toggleTestActive(testId, currentStatus) {
+    const action = currentStatus ? 'Deactivate' : 'Activate';
+    if (!confirm(`Are you sure you want to ${action} this test?`)) {
+        return;
+    }
+    
+    showGlobalAlert(`${action.replace(/e$/, 'ing')} test...`, 'info');
+    
+    // We will create this API route next
+    const result = await makeMentorAPICall(`/tests/${testId}/toggle`, {
+        method: 'POST' 
+    });
+    
+    if (result?.success) {
+        showGlobalAlert(result.message, 'success');
+        loadMentorTests(); // Refresh the list
+        populateMonitorTestSelect(); // Refresh the monitoring dropdown
+    }
+    // API error will be handled by makeMentorAPICall's global alert
+}
+        
         async function saveNewTest() {
             const title = document.getElementById('newTestTitle').value;
             const password = document.getElementById('newTestPassword').value;
