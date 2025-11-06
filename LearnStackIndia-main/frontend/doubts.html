@@ -288,7 +288,7 @@
                 container.prepend(newDoubtCard); // Add new doubt to the top
                 document.getElementById('doubtForm').reset();
             } else {
-                errorP.textContent = data.message || 'Failed to post doubt.';
+                errorP.textContent = data?.message || 'Failed to post doubt. (500 Server Error)';
             }
         }
         
