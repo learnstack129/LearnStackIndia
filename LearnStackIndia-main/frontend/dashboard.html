@@ -384,9 +384,14 @@
                 <h2 id="topicListTitle" class="text-3xl sm:text-4xl font-bold text-gray-800 dark:text-white animate-fade-in">
                     Topics
                 </h2>
-                <button id="backToSubjectsBtn" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-300 font-medium self-start sm:self-center">
-                    <i class="fas fa-arrow-left mr-2"></i>Back to Subjects
-                </button>
+                <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 self-start sm:self-center">
+                    <button id="askDoubtBtn" data-subject="" class="bg-blue-500 dark:bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-600 dark:hover:bg-blue-700 transition-colors duration-300 font-medium">
+                        <i class="fas fa-question-circle mr-2"></i>Ask a Doubt
+                    </button>
+                    <button id="backToSubjectsBtn" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-300 font-medium">
+                        <i class="fas fa-arrow-left mr-2"></i>Back to Subjects
+                    </button>
+                </div>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="topicsGrid">
                 <div class="loading-skeleton rounded-xl h-32"></div>
@@ -839,17 +844,27 @@
 
         // --- LEVEL 2: TOPICS ---
 
+        // *** MODIFIED: Added askDoubtBtn logic ***
         function showTopicsList(subjectName, topicsArray) {
             const topicsSection = document.getElementById('topicsSection');
             const subjectsSection = document.getElementById('subjectsSection');
             const algorithmsSection = document.getElementById('algorithmsSection');
             const topicsGrid = document.getElementById('topicsGrid');
             const topicListTitle = document.getElementById('topicListTitle');
+            const testSection = document.getElementById('testSection');
             
-            const testSection = document.getElementById('testSection'); // <-- Get test section
+            // --- NEW: Get the doubt button ---
+            const askDoubtBtn = document.getElementById('askDoubtBtn');
+            // --- END NEW ---
 
             topicListTitle.textContent = `${subjectName} Topics`;
             topicsGrid.innerHTML = ''; 
+
+            // --- NEW: Set the data-subject attribute for the doubt button ---
+            if (askDoubtBtn) {
+                askDoubtBtn.dataset.subject = subjectName;
+            }
+            // --- END NEW ---
 
             if (!topicsArray || topicsArray.length === 0) {
                 topicsGrid.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 col-span-full">No topics found for this subject.</p>';
@@ -861,10 +876,11 @@
             }
 
             subjectsSection.classList.add('hidden');
-            testSection.classList.add('hidden'); // <-- Hide test section
+            testSection.classList.add('hidden');
             algorithmsSection.classList.add('hidden');
             topicsSection.classList.remove('hidden');
         }
+        // *** END MODIFICATION ***
 
         function createTopicCard(topic) {
             const div = document.createElement('div');
@@ -1062,6 +1078,22 @@
             document.getElementById('backToSubjectsBtn').addEventListener('click', showSubjectsView);
             document.getElementById('backToTopicsBtn').addEventListener('click', () => showTopicsList(document.getElementById('topicListTitle').textContent.replace(' Topics', ''), currentTopicsArray));
 
+            // --- NEW: Add click listener for the doubt button ---
+            const askDoubtBtn = document.getElementById('askDoubtBtn');
+            if (askDoubtBtn) {
+                askDoubtBtn.addEventListener('click', (e) => {
+                    const subjectName = e.currentTarget.dataset.subject;
+                    if (subjectName) {
+                        // Redirect to the new doubts page, passing the subject as a URL parameter
+                        window.location.href = `doubts.html?subject=${encodeURIComponent(subjectName)}`;
+                    } else {
+                        console.error('No subject name found on doubt button.');
+                        showAlert('Could not determine the subject for doubts.', 'error');
+                    }
+                });
+            }
+            // --- END NEW ---
+
             // Quick action buttons
             document.getElementById('randomChallenge').addEventListener('click', () => {
                 showAlert('Random challenge feature coming soon!', 'info');
@@ -1076,4 +1108,3 @@
     </script>
 </body>
 </html>
-
