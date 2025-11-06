@@ -5,6 +5,8 @@ const Test = require('../models/Test');
 const Question = require('../models/Question');
 const User = require('../models/User');
 const mongoose = require('mongoose');
+const Topic = require('../models/Topic');
+const SubjectMeta = require('../models/SubjectMeta');
 
 const router = express.Router();
 
@@ -381,6 +383,31 @@ router.post('/attempts/unlock', mentorAuth, async (req, res) => {
     } catch (error) {
          console.error("Error unlocking test:", error);
          res.status(500).json({ message: 'Error unlocking test' });
+    }
+});
+
+// GET: Fetch all unique subjects (for doubt filtering)
+// This is a route mentors need access to, which was previously admin-only
+router.get('/subjects', mentorAuth, async (req, res) => {
+    try {
+        // Find all distinct 'subject' fields from the Topic collection
+        const subjects = await Topic.distinct('subject');
+        res.json({ success: true, subjects: subjects.sort() });
+    } catch (error) {
+        console.error("Error fetching subjects for mentor:", error);
+        res.status(500).json({ message: 'Error fetching subjects' });
+    }
+});
+
+// GET: Fetch all subject metadata (for icons/colors, etc.)
+// This is also needed by admin, so mentors should have it too.
+router.get('/subject-meta', mentorAuth, async (req, res) => {
+     try {
+        const meta = await SubjectMeta.find().lean();
+        res.json({ success: true, meta });
+    } catch (error) {
+        console.error("Error fetching subject meta for mentor:", error);
+        res.status(500).json({ message: 'Error fetching subject metadata' });
     }
 });
 
