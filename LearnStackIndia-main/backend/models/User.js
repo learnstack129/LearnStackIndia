@@ -2,7 +2,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 // Import Topic model to get the total number of algorithms dynamically
-const Topic = require('./Topic'); // Assuming Topic model is in the same directory
+
 
 // --- Sub-schema for Algorithm Progress ---
 const algorithmProgressSchema = new mongoose.Schema({
@@ -528,6 +528,7 @@ userSchema.methods.updateRank = function () {
 // Unlock the next topic if prerequisites are met
 userSchema.methods.unlockNextTopic = async function () {
     console.log(`[User UnlockNext] Checking for ${this.username}...`);
+    const Topic = require('./Topic'); // Assuming Topic model is in the same directory
     const currentTopicId = this.learningPath.currentTopic;
     const topicOrder = this.learningPath.topicOrder;
     const completedTopicsSet = new Set(this.learningPath.completedTopics);
@@ -652,6 +653,7 @@ userSchema.methods.hasAchievement = function (achievementId) {
 
 
 module.exports = mongoose.model('User', userSchema);
+
 
 
 
