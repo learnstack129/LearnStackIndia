@@ -21,6 +21,7 @@ router.get('/', auth, async (req, res) => {
             .populate('postedBy', 'username profile.avatar') // Populate the original poster
             .populate('replies.postedBy', 'username profile.avatar role') // Populate users who replied
             .sort({ isResolved: 1, createdAt: -1 }); // Show unresolved first
+            .lean();
 
         res.json({ success: true, doubts });
     } catch (error) {
