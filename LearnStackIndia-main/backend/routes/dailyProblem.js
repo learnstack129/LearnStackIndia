@@ -1,13 +1,12 @@
 // backend/routes/dailyProblem.js
 const express = require('express');
-const axios = require('axios'); // Make sure you have axios installed (npm install axios)
+const axios = require('axios');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const User = require('../models/User');
 const DailyProblem = require('../models/DailyProblem');
 
 // --- OneCompiler API Config ---
-// The API key is read from your Vercel Environment Variables
 const oneCompilerAxios = axios.create({
     baseURL: 'https://onecompiler-apis.p.rapidapi.com/api/v1/run',
     headers: {
@@ -18,14 +17,14 @@ const oneCompilerAxios = axios.create({
 });
 
 // 1. GET: Fetch the active daily problem for a subject
-// (Called by dashboard.html)
+// ... (no changes to this route) ...
 router.get('/active/:subjectName', auth, async (req, res) => {
     try {
         const subjectName = req.params.subjectName;
         const problem = await DailyProblem.findOne({
             subject: subjectName,
             isActive: true
-        }).select('_id title subject'); // Only send minimal data
+        }).select('_id title subject');
 
         res.json({ success: true, problem: problem || null });
     } catch (error) {
@@ -35,34 +34,32 @@ router.get('/active/:subjectName', auth, async (req, res) => {
 });
 
 // 2. GET: Fetch details of a specific problem
-// (Called by daily_problem.html on load)
+// ... (no changes to this route) ...
 router.get('/details/:problemId', auth, async (req, res) => {
     try {
         const problem = await DailyProblem.findById(req.params.problemId)
-            .select('-testCases -createdBy'); // Hide test cases
+            .select('-testCases -createdBy');
 
         if (!problem) {
             return res.status(404).json({ message: 'Problem not found.' });
         }
         
-        // Find user's attempt to see if we should send the solution
         const user = await User.findById(req.user.id).select('dailyProblemAttempts');
         const attempt = user.dailyProblemAttempts.find(a => a.problemId.equals(problem._id));
 
         let solutionCode = null;
         if (attempt && attempt.isLocked && !attempt.passed) {
-            solutionCode = problem.solutionCode; // Send solution if locked and failed
+            solutionCode = problem.solutionCode;
         }
         if (attempt && attempt.passed) {
-             solutionCode = problem.solutionCode; // Send solution if passed
+             solutionCode = problem.solutionCode;
         }
         
         const problemData = problem.toObject();
-        // Only send the solution if the user is allowed to see it
         if (solutionCode) {
             problemData.solutionCode = solutionCode;
         } else {
-            delete problemData.solutionCode; // Hide solution
+            delete problemData.solutionCode;
         }
 
         res.json({ success: true, problem: problemData });
@@ -73,21 +70,21 @@ router.get('/details/:problemId', auth, async (req, res) => {
 });
 
 // 3. GET: Fetch the user's attempt status for a problem
-// (Called by daily_problem.html on load)
+// ... (no changes to this route) ...
 router.get('/my-attempt/:problemId', auth, async (req, res) => {
     try {
         const user = await User.findById(req.user.id).select('dailyProblemAttempts');
         const attempt = user.dailyProblemAttempts.find(a => a.problemId.equals(req.params.problemId));
 
         if (!attempt) {
-            // No attempt yet, return default state
             return res.json({
                 success: true,
                 attempt: {
                     runCount: 0,
                     isLocked: false,
                     passed: false,
-                    mentorFeedback: null
+                    mentorFeedback: null,
+                    pointsAwarded: 0 // Send 0 instead of false
                 }
             });
         }
@@ -98,8 +95,9 @@ router.get('/my-attempt/:problemId', auth, async (req, res) => {
     }
 });
 
+
 // 4. POST: Submit code (Synchronous Flow)
-// This route contacts OneCompiler, waits for ALL results, and saves.
+// --- *** THIS ENTIRE ROUTE IS MODIFIED *** ---
 router.post('/submit', auth, async (req, res) => {
     try {
         const { problemId, submittedCode } = req.body;
@@ -112,13 +110,14 @@ router.post('/submit', auth, async (req, res) => {
 
         const attempt = user.findOrCreateDailyAttempt(problem._id);
 
-        // Check 1: Locked or Passed
+        // Check 1: Locked or Passed (but allow resubmit if passed? No, let's keep it locked)
         if (attempt.isLocked) return res.status(403).json({ message: 'You have no more attempts for this problem.' });
         if (attempt.passed) return res.status(403).json({ message: 'You have already solved this problem.' });
 
         // Check 2: Run Limit
         if (attempt.runCount >= 2) {
             attempt.isLocked = true;
+            // --- Point logic for failure will be handled below ---
             user.markModified('dailyProblemAttempts');
             await user.save();
             return res.status(403).json({ message: 'Run limit (2) exceeded. Problem is now locked.' });
@@ -129,47 +128,32 @@ router.post('/submit', auth, async (req, res) => {
         let resultsString = "";
         let executionError = null;
 
-        // --- *** ADD THIS BLOCK *** ---
         // FIX: Determine the correct filename based on language
         let fileName;
         switch (problem.language.toLowerCase()) {
-            case 'c':
-                fileName = 'main.c';
-                break;
-            case 'cpp':
-                fileName = 'main.cpp';
-                break;
-            case 'python':
-                fileName = 'main.py';
-                break;
-            case 'java':
-                fileName = 'Main.java'; // Java class name must match filename
-                break;
-            case 'javascript':
-            default:
-                fileName = 'index.js';
+            case 'c': fileName = 'main.c'; break;
+            case 'cpp': fileName = 'main.cpp'; break;
+            case 'python': fileName = 'main.py'; break;
+            case 'java': fileName = 'Main.java'; break;
+            case 'javascript': default: fileName = 'index.js';
         }
-        // --- *** END OF ADDED BLOCK *** ---
 
         for (const [index, testCase] of problem.testCases.entries()) {
             try {
                 const response = await oneCompilerAxios.post('', {
                     language: problem.language,
                     stdin: testCase.input || "",
-                    // --- *** MODIFY THIS LINE *** ---
                     files: [{ name: fileName, content: submittedCode }] // Use dynamic fileName
                 });
 
-                // Check for compilation or runtime errors
                 if (response.data.exception || response.data.stderr) {
-                    // *** MODIFICATION: Handle the specific "same output file" error ***
                     let errorMsg = response.data.exception || response.data.stderr;
                     if (errorMsg.includes('is the same as output file')) {
-                         errorMsg = "Compilation Error: A file naming conflict occurred. (Ensure 'language' in problem matches file type).";
+                         errorMsg = "Compilation Error: A file naming conflict occurred.";
                     }
                     executionError = `Test Case ${index + 1} Error: ${errorMsg}`;
                     resultsString += `${executionError}\n`;
-                    break; // Stop on first error
+                    break;
                 }
                 
                 const output = (response.data.stdout || "").trim();
@@ -180,15 +164,15 @@ router.post('/submit', auth, async (req, res) => {
                     resultsString += `Test Case ${index + 1}: Passed\n`;
                 } else {
                     resultsString += `Test Case ${index + 1}: Failed\n  Expected: "${expected}"\n  Got: "${output}"\n`;
-                    break; // Stop on first failure
+                    break;
                 }
 
             } catch (apiError) {
                 console.error("OneCompiler API Error:", apiError.response ? apiError.response.data : apiError.message);
                 executionError = "Error connecting to code execution service.";
                 resultsString = executionError;
-                break; // Stop if the API fails
-            }
+                break;
+static-top            }
         }
         // --- End Test Case Loop ---
 
@@ -196,30 +180,56 @@ router.post('/submit', auth, async (req, res) => {
         attempt.runCount += 1; // Increment run count
         
         if (executionError) {
-            attempt.lastResults = resultsString; // Save the error message
+            attempt.lastResults = resultsString;
         } else {
             attempt.lastResults = `[${passedCount} / ${problem.testCases.length} Test Cases Passed]\n\n${resultsString}`;
         }
         
         attempt.lastSubmittedCode = submittedCode;
         attempt.passed = (!executionError && passedCount === problem.testCases.length);
-
-        // Check 3: Award Points (on first-ever run)
-        if (attempt.runCount === 1 && !attempt.pointsAwarded) {
-            user.stats.rank.points = (user.stats.rank.points || 0) + problem.pointsForAttempt;
-            attempt.pointsAwarded = true;
-            user.markModified('stats.rank');
-        }
         
         let solutionCode = null;
+        let pointsToAward = 0;
 
-        // Check 4: Lock Logic
+        // --- New Lock and Point Logic ---
         if (attempt.passed) {
-            attempt.isLocked = true;
-            solutionCode = problem.solutionCode; // Send solution on pass
+            attempt.isLocked = true; // Lock on pass
+            solutionCode = problem.solutionCode; // Send solution
+            
+            if (attempt.runCount === 1 && attempt.pointsAwarded === 0) {
+                // Passed on 1st attempt
+                pointsToAward = problem.pointsFirstAttempt || 20;
+            } else if (attempt.runCount === 2 && attempt.pointsAwarded === 0) {
+                // Passed on 2nd attempt
+                pointsToAward = problem.pointsSecondAttempt || 15;
+            }
+
         } else if (attempt.runCount >= 2) {
+            // Failed 2nd attempt, now locked
             attempt.isLocked = true;
             solutionCode = problem.solutionCode; // Send solution on final fail
+
+            if (attempt.pointsAwarded === 0) {
+                // Award failure points
+                pointsToAward = problem.pointsOnFailure || 10;
+            }
+        }
+        
+        // --- Award points if any are due ---
+        if (pointsToAward > 0) {
+            // 1. Add to main rank points
+            user.stats.rank.points = (user.stats.rank.points || 0) + pointsToAward;
+            
+            // 2. Add to new daily problem points total
+            user.stats.dailyProblemPoints = (user.stats.dailyProblemPoints || 0) + pointsToAward;
+            
+            // 3. Store points awarded for this specific attempt
+            attempt.pointsAwarded = pointsToAward;
+            
+            // 4. Mark stats as modified
+            user.markModified('stats.rank');
+            user.markModified('stats.dailyProblemPoints');
+            console.log(`[DailyProblem] Awarded ${pointsToAward} points to ${user.username}`);
         }
         
         user.markModified('dailyProblemAttempts');
@@ -233,8 +243,8 @@ router.post('/submit', auth, async (req, res) => {
                 isLocked: attempt.isLocked,
                 runCount: attempt.runCount,
                 lastResults: attempt.lastResults,
-                // --- *** MODIFIED THIS LINE *** ---
-                solutionCode: solutionCode // Send solution if locked OR passed
+                solutionCode: solutionCode,
+                pointsAwarded: attempt.pointsAwarded // Send back points awarded
             }
         });
 
