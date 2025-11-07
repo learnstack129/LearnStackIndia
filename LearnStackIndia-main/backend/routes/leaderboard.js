@@ -15,10 +15,15 @@ router.get('/', async (req, res) => {
       .populate('rankings.user', 'username profile.avatar stats.rank')
       .sort({ 'period.start': -1 });
     
-    if (!leaderboard) {
-      // Generate leaderboard if doesn't exist
+    // --- MODIFICATION: Regenerate if old ---
+    const isOld = !leaderboard || (Date.now() - new Date(leaderboard.lastUpdated).getTime()) > 15 * 60 * 1000; // 15 minutes
+    if (isOld) {
+      console.log(`[Leaderboard] 'all-time' leaderboard is old or missing. Regenerating...`);
       leaderboard = await generateLeaderboard(type);
+      // Re-populate after generation
+      await leaderboard.populate('rankings.user', 'username profile.avatar stats.rank');
     }
+    // --- END MODIFICATION ---
     
     const rankings = leaderboard.rankings
       .slice(0, parseInt(limit))
@@ -41,6 +46,49 @@ router.get('/', async (req, res) => {
     console.error('❌ Error fetching leaderboard:', error);
     res.status(500).json({ message: 'Error fetching leaderboard' });
   }
+});
+
+router.get('/daily-practice', auth, async (req, res) => {
+    try {
+        const limit = parseInt(req.query.limit) || 100;
+        const type = 'daily-practice';
+
+        let leaderboard = await Leaderboard.findOne({ type })
+            .populate('rankings.user', 'username profile.avatar stats.rank')
+            .sort({ 'period.start': -1 }); // 'period' is not really used, but good to keep
+
+        // Regenerate if it's older than 15 minutes or doesn't exist
+        const isOld = !leaderboard || (Date.now() - new Date(leaderboard.lastUpdated).getTime()) > 15 * 60 * 1000; // 15 minutes
+
+        if (isOld) {
+            console.log(`[Leaderboard] 'daily-practice' leaderboard is old or missing. Regenerating...`);
+            leaderboard = await generateDailyLeaderboard();
+            // Re-populate after generation
+            await leaderboard.populate('rankings.user', 'username profile.avatar stats.rank');
+        }
+
+        const rankings = leaderboard.rankings
+            .slice(0, limit)
+            .map(rank => ({
+                position: rank.position,
+                username: rank.user ? rank.user.username : '[Deleted User]',
+                avatar: rank.user ? rank.user.profile.avatar : null,
+                rank: rank.user ? rank.user.stats.rank.level : 'N/A',
+                score: rank.score, // This is the dailyProblemScore
+                metrics: rank.metrics // This will contain totalDailyProblemsAttempted/Passed
+            }));
+
+        res.json({
+            success: true,
+            type,
+            rankings,
+            lastUpdated: leaderboard.lastUpdated
+        });
+
+    } catch (error) {
+        console.error('❌ Error fetching daily-practice leaderboard:', error);
+        res.status(500).json({ message: 'Error fetching daily-practice leaderboard' });
+    }
 });
 
 // Update user's leaderboard position
@@ -90,6 +138,7 @@ router.get('/my-rank', auth, async (req, res) => {
 
 // Helper function to generate leaderboard
 async function generateLeaderboard(type) {
+  // ... (existing function) ...
   const users = await User.find({})
     .select('username profile stats')
     .sort({ 'stats.rank.points': -1 })
@@ -107,15 +156,64 @@ async function generateLeaderboard(type) {
     }
   }));
   
-  const leaderboard = new Leaderboard({
-    type,
-    period: getPeriod(type),
-    rankings,
-    lastUpdated: new Date()
-  });
+  const period = getPeriod(type);
+  const lastUpdated = new Date();
+
+  // Use updateOne with upsert to create or replace
+  await Leaderboard.updateOne(
+      { type: type },
+      { $set: { period, rankings, lastUpdated } },
+      { upsert: true }
+  );
   
-  await leaderboard.save();
-  return leaderboard;
+  return Leaderboard.findOne({ type: type });
+}
+
+async function generateDailyLeaderboard() {
+    const type = 'daily-practice';
+
+    // Find users who have at least one daily problem attempt
+    // and sort them by the new 'dailyProblemScore'
+    const users = await User.find({
+        'stats.dailyProblemScore': { $gt: 0 } // Only users with a score > 0
+    })
+    .select('username profile stats dailyProblemAttempts') // Need dailyProblemAttempts for metrics
+    .sort({ 'stats.dailyProblemScore': -1 }) // Sort by the new score
+    .limit(100); // Limit to top 100
+
+    const rankings = users.map((user, index) => {
+        let problemsAttempted = 0;
+        let problemsPassed = 0;
+
+        if (user.dailyProblemAttempts) {
+            problemsAttempted = user.dailyProblemAttempts.length;
+            problemsPassed = user.dailyProblemAttempts.filter(a => a.passed).length;
+        }
+
+        return {
+            user: user._id,
+            position: index + 1,
+            score: user.stats.dailyProblemScore, // The new total score
+            metrics: {
+                totalDailyProblemsAttempted: problemsAttempted,
+                totalDailyProblemsPassed: problemsPassed,
+                // Add other metrics if you want
+            }
+        };
+    });
+
+    const period = { start: new Date(0), end: null }; // All-time for this leaderboard
+    const lastUpdated = new Date();
+
+    // Use updateOne with upsert to create or replace
+    await Leaderboard.updateOne(
+        { type: type },
+        { $set: { period, rankings, lastUpdated } },
+        { upsert: true }
+    );
+    
+    // Return the newly created/updated leaderboard document
+    return Leaderboard.findOne({ type: type });
 }
 
 // Helper function to update user's position
@@ -189,5 +287,6 @@ function getPeriod(type) {
   
   return { start, end: now };
 }
+
 
 module.exports = router;
