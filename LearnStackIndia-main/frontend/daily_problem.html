@@ -306,6 +306,17 @@ async function loadPageData() {
         loader.classList.add('hidden');
         content.classList.remove('hidden');
 
+        // --- START OF BUG FIX ---
+        // Refresh CodeMirror instances AFTER their container is visible.
+        // This forces them to calculate their layout and display content.
+        if (codeEditor) {
+            codeEditor.refresh();
+        }
+        if (solutionEditor) {
+            solutionEditor.refresh();
+        }
+        // --- END OF BUG FIX ---
+
     } catch (error) {
         console.error('Error loading page data:', error);
         loader.innerHTML = `<p class="text-center text-red-500 p-8">${error.message}</p>`;
@@ -314,6 +325,7 @@ async function loadPageData() {
 
 // --- UI Update Logic ---
 function updateUIBasedOnAttempt() {
+// ... (This function remains unchanged)
     // 1. Handle Mentor Feedback
     if (currentAttempt.mentorFeedback) {
         mentorFeedbackText.textContent = currentAttempt.mentorFeedback;
