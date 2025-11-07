@@ -2,16 +2,15 @@
 const express = require('express');
 const mongoose = require('mongoose'); // Import mongoose
 const adminAuth = require('../middleware/adminAuth'); // Auth middleware
-const User = require('../models/User');
-const Topic = require('../models/Topic');
-const AchievementTemplate = require('../models/Achievement');
-const Leaderboard = require('../models/Leaderboard'); // Needed for potential leaderboard actions
-const SubjectMeta = require('../models/SubjectMeta');
 
 const router = express.Router();
 
 // --- Stats (No change needed) ---
 router.get('/stats', adminAuth, async (req, res) => {
+    const User = require('../models/User'); // <-- ADD HERE
+    const Topic = require('../models/Topic'); // <-- ADD HERE
+    const AchievementTemplate = require('../models/Achievement'); // <-- ADD HERE
+    const Leaderboard = require('../models/Leaderboard'); // <-- ADD HERE
     try {
         const [totalUsers, activeTopics, totalAchievements, leaderboardEntries] = await Promise.all([
             User.countDocuments(),
@@ -38,6 +37,7 @@ router.get('/stats', adminAuth, async (req, res) => {
 // --- User Management ---
 // Get all users (Lean() handles Maps okay for display)
 router.get('/users', adminAuth, async (req, res) => {
+    const User = require('../models/User'); // <-- ADD HERE
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
@@ -86,6 +86,7 @@ router.get('/users', adminAuth, async (req, res) => {
 
 // Get single user by ID (Lean() handles Maps okay for display)
 router.get('/users/:id', adminAuth, async (req, res) => {
+    const User = require('../models/User'); // <-- ADD HERE
     try {
         const user = await User.findById(req.params.id)
             .select('-password -emailVerificationToken -passwordResetToken')
@@ -104,6 +105,8 @@ router.get('/users/:id', adminAuth, async (req, res) => {
 
 // --- ADJUSTED: Get topic statuses for a specific user, grouped by subject ---
 router.get('/users/:userId/topic-statuses', adminAuth, async (req, res) => {
+    const User = require('../models/User'); // <-- ADD HERE
+    const Topic = require('../models/Topic'); // <-- ADD HERE
     try {
         const userId = req.params.userId;
         const [user, topics] = await Promise.all([
@@ -224,6 +227,7 @@ router.get('/users/:userId/topic-statuses', adminAuth, async (req, res) => {
 
 // Update user (Minor adjustment for $unset)
 router.put('/users/:id', adminAuth, async (req, res) => {
+    const User = require('../models/User'); // <-- ADD HERE
     try {
         const { role, isEmailVerified } = req.body;
         const updateData = {};
@@ -257,6 +261,7 @@ router.put('/users/:id', adminAuth, async (req, res) => {
 
 // Delete user (No change needed)
 router.delete('/users/:id', adminAuth, async (req, res) => {
+    const User = require('../models/User');
     try {
         const deletedUser = await User.findByIdAndDelete(req.params.id);
         if (!deletedUser) return res.status(404).json({ message: 'User not found' });
@@ -274,6 +279,7 @@ router.delete('/users/:id', adminAuth, async (req, res) => {
 
 // MODIFIED: Get all unique subjects (from Topics)
 router.get('/subjects', adminAuth, async (req, res) => {
+    const Topic = require('../models/Topic'); // <-- ADD HERE
     try {
         const subjects = await Topic.distinct('subject');
         res.json({ success: true, subjects: subjects.sort() });
@@ -287,6 +293,7 @@ router.get('/subjects', adminAuth, async (req, res) => {
 
 // GET all subject metadata
 router.get('/subject-meta', adminAuth, async (req, res) => {
+    const SubjectMeta = require('../models/SubjectMeta'); // <-- ADD HERE
     try {
         const meta = await SubjectMeta.find().lean();
         res.json({ success: true, meta });
@@ -298,6 +305,7 @@ router.get('/subject-meta', adminAuth, async (req, res) => {
 
 // CREATE/UPDATE subject metadata (Icon/Color)
 router.post('/subject-meta', adminAuth, async (req, res) => {
+    const SubjectMeta = require('../models/SubjectMeta'); // <-- ADD HERE
     try {
         const { name, icon, color } = req.body;
         if (!name || !icon || !color) {
@@ -324,6 +332,8 @@ router.post('/subject-meta', adminAuth, async (req, res) => {
 
 // NEW: Lock all topics in a subject (Globally or User-Specific)
 router.post('/subjects/:subjectName/lock', adminAuth, async (req, res) => {
+    const Topic = require('../models/Topic'); // <-- ADD HERE
+    const User = require('../models/User'); // <-- ADD HERE
     try {
         const { userId, global } = req.body;
         const subjectName = req.params.subjectName;
@@ -391,6 +401,8 @@ router.post('/subjects/:subjectName/lock', adminAuth, async (req, res) => {
 
 // NEW: Unlock all topics in a subject (Globally or User-Specific)
 router.post('/subjects/:subjectName/unlock', adminAuth, async (req, res) => {
+    const Topic = require('../models/Topic'); // <-- ADD HERE
+    const User = require('../models/User'); // <-- ADD HERE
      try {
         const { userId, global } = req.body;
         const subjectName = req.params.subjectName;
@@ -456,10 +468,11 @@ router.post('/subjects/:subjectName/unlock', adminAuth, async (req, res) => {
 
 
 // --- Topic Management (No changes needed here, but routes moved down) ---
-router.get('/topics', adminAuth, async (req, res) => { /* Keep existing */ try { const topics = await Topic.find().sort({ order: 1 }).lean(); res.json({ success: true, topics }); } catch (error) { console.error("Error fetching topics for admin:", error); res.status(500).json({ message: 'Error fetching topics' }); } });
-router.get('/topics/:id', adminAuth, async (req, res) => { /* Keep existing */ try { const topic = await Topic.findById(req.params.id).lean(); if (!topic) return res.status(404).json({ message: 'Topic not found' }); res.json({ success: true, topic }); } catch (error) { console.error("Error fetching single topic:", error); if (error.kind === 'ObjectId') return res.status(400).json({ message: 'Invalid topic ID format' }); res.status(500).json({ message: 'Error fetching topic' }); } });
+router.get('/topics', adminAuth, async (req, res) => { /* Keep existing */const Topic = require('../models/Topic'); try { const topics = await Topic.find().sort({ order: 1 }).lean(); res.json({ success: true, topics }); } catch (error) { console.error("Error fetching topics for admin:", error); res.status(500).json({ message: 'Error fetching topics' }); } });
+router.get('/topics/:id', adminAuth, async (req, res) => { /* Keep existing */const Topic = require('../models/Topic'); try { const topic = await Topic.findById(req.params.id).lean(); if (!topic) return res.status(404).json({ message: 'Topic not found' }); res.json({ success: true, topic }); } catch (error) { console.error("Error fetching single topic:", error); if (error.kind === 'ObjectId') return res.status(400).json({ message: 'Invalid topic ID format' }); res.status(500).json({ message: 'Error fetching topic' }); } });
 // MODIFIED POST /topics to include 'subject'
 router.post('/topics', adminAuth, async (req, res) => { 
+    const Topic = require('../models/Topic');
     try { 
         const { id, name, subject, description, icon, color, order, estimatedTime, difficulty, isActive, algorithms } = req.body; 
         // Add 'subject' to validation
@@ -482,6 +495,7 @@ router.post('/topics', adminAuth, async (req, res) => {
 });
 // MODIFIED PUT /topics/:id to include 'subject'
 router.put('/topics/:id', adminAuth, async (req, res) => { 
+    const Topic = require('../models/Topic');
     try { 
         const { name, subject, description, icon, color, order, estimatedTime, difficulty, isActive, algorithms } = req.body; 
         // Add 'subject' to updateData
@@ -503,19 +517,22 @@ router.put('/topics/:id', adminAuth, async (req, res) => {
         res.status(500).json({ message: 'Error updating topic' }); 
     } 
 });
-router.delete('/topics/:id', adminAuth, async (req, res) => { /* Keep existing */ try { const deletedTopic = await Topic.findByIdAndDelete(req.params.id); if (!deletedTopic) return res.status(404).json({ message: 'Topic not found' }); res.json({ success: true, message: 'Topic deleted' }); } catch (error) { console.error("Error deleting topic:", error); if (error.kind === 'ObjectId') return res.status(400).json({ message: 'Invalid topic ID format' }); res.status(500).json({ message: 'Error deleting topic' }); } });
+router.delete('/topics/:id', adminAuth, async (req, res) => { /* Keep existing */const Topic = require('../models/Topic'); try { const deletedTopic = await Topic.findByIdAndDelete(req.params.id); if (!deletedTopic) return res.status(404).json({ message: 'Topic not found' }); res.json({ success: true, message: 'Topic deleted' }); } catch (error) { console.error("Error deleting topic:", error); if (error.kind === 'ObjectId') return res.status(400).json({ message: 'Invalid topic ID format' }); res.status(500).json({ message: 'Error deleting topic' }); } });
 
 
 // --- Achievement Management (No changes needed here) ---
-router.get('/achievements', adminAuth, async (req, res) => { /* Keep existing */ try { const achievements = await AchievementTemplate.find().sort({ category: 1, points: 1 }).lean(); res.json({ success: true, achievements }); } catch (error) { console.error("Error fetching achievements for admin:", error); res.status(500).json({ message: 'Error fetching achievements' }); } });
-router.get('/achievements/:id', adminAuth, async (req, res) => { /* Keep existing */ try { const achievement = await AchievementTemplate.findById(req.params.id).lean(); if (!achievement) return res.status(404).json({ message: 'Achievement not found' }); achievement.criteriaJson = JSON.stringify(achievement.criteria || {}, null, 2); res.json({ success: true, achievement }); } catch (error) { console.error("Error fetching single achievement:", error); if (error.kind === 'ObjectId') return res.status(400).json({ message: 'Invalid achievement ID format' }); res.status(500).json({ message: 'Error fetching achievement' }); } });
-router.post('/achievements', adminAuth, async (req, res) => { /* Keep existing */ try { const { id, name, description, icon, category, points, criteriaJson, isActive, rarity } = req.body; if (!id || !name || !description || !icon || !category || points === undefined || !criteriaJson) return res.status(400).json({ message: 'Missing required fields' }); let criteria; try { criteria = JSON.parse(criteriaJson); if (typeof criteria !== 'object' || criteria === null || typeof criteria.type !== 'string' || criteria.value === undefined) throw new Error("Criteria JSON must be object with 'type' and 'value'."); } catch (e) { return res.status(400).json({ message: `Invalid Criteria JSON: ${e.message}` }); } const newAchievement = new AchievementTemplate({ id, name, description, icon, category, points, criteria, isActive: isActive !== undefined ? isActive : true, rarity: rarity || 'common' }); await newAchievement.save(); res.status(201).json({ success: true, message: 'Achievement created', achievement: newAchievement }); } catch (error) { console.error("Error creating achievement:", error); if (error.code === 11000) return res.status(400).json({ message: `Achievement ID '${req.body.id}' already exists.` }); if (error.name === 'ValidationError') return res.status(400).json({ message: `Validation Error: ${error.message}` }); res.status(500).json({ message: 'Error creating achievement' }); } });
-router.put('/achievements/:id', adminAuth, async (req, res) => { /* Keep existing */ try { const { name, description, icon, category, points, criteriaJson, isActive, rarity } = req.body; const updateData = { name, description, icon, category, points, isActive, rarity }; if (criteriaJson !== undefined) { let criteria; try { criteria = JSON.parse(criteriaJson); if (typeof criteria !== 'object' || criteria === null || typeof criteria.type !== 'string' || criteria.value === undefined) throw new Error("Criteria JSON must be object with 'type' and 'value'."); updateData.criteria = criteria; } catch (e) { return res.status(400).json({ message: `Invalid Criteria JSON: ${e.message}` }); } } Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]); const updatedAchievement = await AchievementTemplate.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true }).lean(); if (!updatedAchievement) return res.status(404).json({ message: 'Achievement not found' }); res.json({ success: true, message: 'Achievement updated', achievement: updatedAchievement }); } catch (error) { console.error("Error updating achievement:", error); if (error.kind === 'ObjectId') return res.status(400).json({ message: 'Invalid achievement ID format' }); if (error.name === 'ValidationError') return res.status(400).json({ message: `Validation Error: ${error.message}` }); res.status(500).json({ message: 'Error updating achievement' }); } });
-router.delete('/achievements/:id', adminAuth, async (req, res) => { /* Keep existing */ try { const deletedAchievement = await AchievementTemplate.findByIdAndDelete(req.params.id); if (!deletedAchievement) return res.status(404).json({ message: 'Achievement not found' }); await User.updateMany({}, { $pull: { achievements: { id: deletedAchievement.id } } }); res.json({ success: true, message: 'Achievement deleted' }); } catch (error) { console.error("Error deleting achievement:", error); if (error.kind === 'ObjectId') return res.status(400).json({ message: 'Invalid achievement ID format' }); res.status(500).json({ message: 'Error deleting achievement' }); } });
+router.get('/achievements', adminAuth, async (req, res) => { /* Keep existing */const AchievementTemplate = require('../models/Achievement'); try { const achievements = await AchievementTemplate.find().sort({ category: 1, points: 1 }).lean(); res.json({ success: true, achievements }); } catch (error) { console.error("Error fetching achievements for admin:", error); res.status(500).json({ message: 'Error fetching achievements' }); } });
+router.get('/achievements/:id', adminAuth, async (req, res) => { /* Keep existing */const AchievementTemplate = require('../models/Achievement'); try { const achievement = await AchievementTemplate.findById(req.params.id).lean(); if (!achievement) return res.status(404).json({ message: 'Achievement not found' }); achievement.criteriaJson = JSON.stringify(achievement.criteria || {}, null, 2); res.json({ success: true, achievement }); } catch (error) { console.error("Error fetching single achievement:", error); if (error.kind === 'ObjectId') return res.status(400).json({ message: 'Invalid achievement ID format' }); res.status(500).json({ message: 'Error fetching achievement' }); } });
+router.post('/achievements', adminAuth, async (req, res) => { /* Keep existing */const AchievementTemplate = require('../models/Achievement'); try { const { id, name, description, icon, category, points, criteriaJson, isActive, rarity } = req.body; if (!id || !name || !description || !icon || !category || points === undefined || !criteriaJson) return res.status(400).json({ message: 'Missing required fields' }); let criteria; try { criteria = JSON.parse(criteriaJson); if (typeof criteria !== 'object' || criteria === null || typeof criteria.type !== 'string' || criteria.value === undefined) throw new Error("Criteria JSON must be object with 'type' and 'value'."); } catch (e) { return res.status(400).json({ message: `Invalid Criteria JSON: ${e.message}` }); } const newAchievement = new AchievementTemplate({ id, name, description, icon, category, points, criteria, isActive: isActive !== undefined ? isActive : true, rarity: rarity || 'common' }); await newAchievement.save(); res.status(201).json({ success: true, message: 'Achievement created', achievement: newAchievement }); } catch (error) { console.error("Error creating achievement:", error); if (error.code === 11000) return res.status(400).json({ message: `Achievement ID '${req.body.id}' already exists.` }); if (error.name === 'ValidationError') return res.status(400).json({ message: `Validation Error: ${error.message}` }); res.status(500).json({ message: 'Error creating achievement' }); } });
+router.put('/achievements/:id', adminAuth, async (req, res) => { /* Keep existing */const AchievementTemplate = require('../models/Achievement'); try { const { name, description, icon, category, points, criteriaJson, isActive, rarity } = req.body; const updateData = { name, description, icon, category, points, isActive, rarity }; if (criteriaJson !== undefined) { let criteria; try { criteria = JSON.parse(criteriaJson); if (typeof criteria !== 'object' || criteria === null || typeof criteria.type !== 'string' || criteria.value === undefined) throw new Error("Criteria JSON must be object with 'type' and 'value'."); updateData.criteria = criteria; } catch (e) { return res.status(400).json({ message: `Invalid Criteria JSON: ${e.message}` }); } } Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]); const updatedAchievement = await AchievementTemplate.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true }).lean(); if (!updatedAchievement) return res.status(404).json({ message: 'Achievement not found' }); res.json({ success: true, message: 'Achievement updated', achievement: updatedAchievement }); } catch (error) { console.error("Error updating achievement:", error); if (error.kind === 'ObjectId') return res.status(400).json({ message: 'Invalid achievement ID format' }); if (error.name === 'ValidationError') return res.status(400).json({ message: `Validation Error: ${error.message}` }); res.status(500).json({ message: 'Error updating achievement' }); } });
+router.delete('/achievements/:id', adminAuth, async (req, res) => { /* Keep existing */const AchievementTemplate = require('../models/Achievement'); // <-- ADD HERE
+    const User = require('../models/User'); // <-- ADD HERE try { const deletedAchievement = await AchievementTemplate.findByIdAndDelete(req.params.id); if (!deletedAchievement) return res.status(404).json({ message: 'Achievement not found' }); await User.updateMany({}, { $pull: { achievements: { id: deletedAchievement.id } } }); res.json({ success: true, message: 'Achievement deleted' }); } catch (error) { console.error("Error deleting achievement:", error); if (error.kind === 'ObjectId') return res.status(400).json({ message: 'Invalid achievement ID format' }); res.status(500).json({ message: 'Error deleting achievement' }); } });
 
 
 // --- Leaderboard Management (Utility needs adjustment) ---
 async function generateLeaderboardUtility(type) {
+    const User = require('../models/User'); // <-- ADD HERE
+    const Leaderboard = require('../models/Leaderboard'); // <-- ADD HERE
     console.log(`Generating leaderboard of type: ${type}`);
     let sortCriteria = { 'stats.rank.points': -1 };
     // Add time-based filtering if needed for daily, weekly, monthly based on User.dailyActivity or timestamps
@@ -565,6 +582,8 @@ router.post('/leaderboard/regenerate', adminAuth, async (req, res) => {
 
 // --- ADJUSTED: Lock a topic (Globally or User-Specific) ---
 router.post('/topics/:topicMongoId/lock', adminAuth, async (req, res) => {
+    const Topic = require('../models/Topic'); // <-- ADD HERE
+    const User = require('../models/User'); // <-- ADD HERE
     try {
         const { userId, global } = req.body;
         const topicMongoId = req.params.topicMongoId;
@@ -613,6 +632,8 @@ router.post('/topics/:topicMongoId/lock', adminAuth, async (req, res) => {
 
 // --- ADJUSTED: Unlock a topic (Globally or User-Specific) ---
 router.post('/topics/:topicMongoId/unlock', adminAuth, async (req, res) => {
+    const Topic = require('../models/Topic'); // <-- ADD HERE
+    const User = require('../models/User'); // <-- ADD HERE
     try {
         const { userId, global } = req.body;
         const topicMongoId = req.params.topicMongoId;
@@ -680,6 +701,8 @@ router.post('/topics/:topicMongoId/unlock', adminAuth, async (req, res) => {
 });
 // --- NEW: Lock an Algorithm (Globally or User-Specific) ---
 router.post('/topics/:topicMongoId/algorithms/:algoId/lock', adminAuth, async (req, res) => {
+    const Topic = require('../models/Topic'); // <-- ADD HERE
+    const User = require('../models/User'); // <-- ADD HERE
     try {
         const { userId, global } = req.body;
         const { topicMongoId, algoId } = req.params; // algoId is the string ID like 'bubbleSort'
@@ -741,6 +764,8 @@ router.post('/topics/:topicMongoId/algorithms/:algoId/lock', adminAuth, async (r
 
 // --- NEW: Unlock an Algorithm (Globally or User-Specific) ---
 router.post('/topics/:topicMongoId/algorithms/:algoId/unlock', adminAuth, async (req, res) => {
+    const Topic = require('../models/Topic'); // <-- ADD HERE
+    const User = require('../models/User'); // <-- ADD HERE
      try {
         const { userId, global } = req.body;
         const { topicMongoId, algoId } = req.params;
@@ -815,6 +840,7 @@ router.post('/topics/:topicMongoId/algorithms/:algoId/unlock', adminAuth, async 
 
 
 module.exports = router;
+
 
 
 
