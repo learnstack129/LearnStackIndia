@@ -321,20 +321,33 @@
             </section>
 
             <section id="leaderboard" class="mb-8 mentor-section hidden">
-                <h2 class="text-xl font-semibold mb-4 text-gray-700 dark:text-gray-300">Global Leaderboard (All-Time)</h2>
+                <h2 class="text-xl font-semibold mb-4 text-gray-700 dark:text-gray-300">Test Leaderboard</h2>
+                
+                <div class="mb-4 flex flex-col sm:flex-row sm:items-end sm:gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-sm">
+                    <div class="flex-grow">
+                        <label for="leaderboardTestSelect" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Select a Test:</label>
+                        <select id="leaderboardTestSelect" class="input-field mt-1 w-full md:w-1/2">
+                            <option value="">Loading tests...</option>
+                        </select>
+                    </div>
+                    <button id="loadLeaderboardBtn" class="btn-primary mt-2 sm:mt-0" style="padding: 0.5rem 1rem;">
+                        <i class="fas fa-search mr-1"></i>Load Leaderboard
+                    </button>
+                </div>
+                
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
                     <div class="overflow-x-auto p-4">
                         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                             <thead class="bg-gray-50 dark:bg-gray-700">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Position</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Username</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Rank</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Score</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/6">Position</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-2/6">Username</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/6">Score</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-2/6">Status</th>
                                 </tr>
                             </thead>
                             <tbody id="leaderboardTableBody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                <tr><td colspan="4" class="p-4" data-label="Loading"><div class="loading-skeleton h-8 w-full"></div></td></tr>
+                                <tr><td colspan="4" class="p-4 text-center text-gray-500 dark:text-gray-400" data-label="Info">Please select a test and click "Load Leaderboard".</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -604,7 +617,8 @@
                 // *** END: MODIFICATION ***
             }
             if(sectionIdToShow === 'leaderboard') {
-                loadLeaderboard();
+                populateLeaderboardTestSelect(); // <-- This is new
+                loadLeaderboard(); // This will now show the "Please select" message
             }
         }
         function toggleMobileMenu() {
@@ -621,41 +635,52 @@
         }
 
         // --- LEADERBOARD SECTION ---
+        // --- REPLACED Leaderboard Function ---
         async function loadLeaderboard() {
             const tbody = document.getElementById('leaderboardTableBody');
-            tbody.innerHTML = '<tr><td colspan="4" class="p-4" data-label="Loading"><div class="loading-skeleton h-8 w-full"></div></td></tr>';
-            
-            const token = getAuthToken();
-            if (!token) { redirectToLogin(); return; }
+            const testId = document.getElementById('leaderboardTestSelect').value;
 
-            let data;
-            try {
-                const response = await fetch(`${API_BASE_URL}/leaderboard`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                data = await response.json();
-                if (!response.ok) throw new Error(data.message || 'Failed to fetch');
-            } catch (error) {
-                console.error('Error fetching leaderboard:', error);
-                tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500" data-label="Error">${error.message}</td></tr>`;
+            if (!testId) {
+                tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500 dark:text-gray-400" data-label="Info">Please select a test and click "Load Leaderboard".</td></tr>';
                 return;
             }
+            
+            tbody.innerHTML = '<tr><td colspan="4" class="p-4" data-label="Loading"><div class="loading-skeleton h-8 w-full"></div></td></tr>';
+            
+            // Use the existing mentor API endpoint to get attempts
+            const data = await makeMentorAPICall(`/tests/${testId}/attempts`);
 
             tbody.innerHTML = ''; // Clear loading
-            if (data?.success && data.rankings && data.rankings.length > 0) {
-                data.rankings.forEach(rank => {
+            if (data?.success && data.attempts) {
+                if (data.attempts.length === 0) {
+                     tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500 dark:text-gray-400" data-label="Result">No participants found for this test.</td></tr>';
+                     return;
+                }
+
+                // Sort attempts by score (highest first)
+                const sortedAttempts = data.attempts.sort((a, b) => b.score - a.score);
+
+                sortedAttempts.forEach((attempt, index) => {
                     const tr = document.createElement('tr');
                     tr.className = "hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors";
+                    
+                    let statusClass = 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+                    if (attempt.status === 'locked') {
+                        statusClass = 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+                    } else if (attempt.status === 'completed') {
+                        statusClass = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+                    }
+
                     tr.innerHTML = `
-                        <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white" data-label="Position">${rank.position}</td>
-                        <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300" data-label="Username">${rank.username || 'N/A'}</td>
-                        <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300" data-label="Rank">${rank.rank || 'N/A'}</td>
-                        <td class="px-6 py-4 text-sm font-bold text-blue-600 dark:text-blue-400" data-label="Score">${rank.score}</td>
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white" data-label="Position">${index + 1}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300" data-label="Username">${attempt.username || 'N/A'}</td>
+                        <td class="px-6 py-4 text-sm font-bold text-blue-600 dark:text-blue-400" data-label="Score">${attempt.score}</td>
+                        <td class="px-6 py-4 text-sm" data-label="Status"><span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">${attempt.status}</span></td>
                     `;
                     tbody.appendChild(tr);
                 });
             } else {
-                tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500" data-label="Result">Leaderboard is empty.</td></tr>';
+                tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500" data-label="Error">Failed to load leaderboard.</td></tr>`;
             }
         }
         
@@ -1078,6 +1103,35 @@
                 select.innerHTML = '<option value="">No tests found</option>';
             }
         }
+
+        async function populateLeaderboardTestSelect() {
+            const select = document.getElementById('leaderboardTestSelect');
+            if (!select) return; 
+            
+            const currentVal = select.value; 
+            select.innerHTML = '<option value="">Loading tests...</option>';
+            
+            let testsToUse = allMentorTests;
+            if (testsToUse.length === 0) {
+                const data = await makeMentorAPICall('/tests');
+                if (data?.success && data.tests) {
+                    testsToUse = data.tests;
+                    allMentorTests = data.tests;
+                }
+            }
+            
+            select.innerHTML = '<option value="">Select a test</option>';
+            
+            if (testsToUse.length > 0) {
+                testsToUse.forEach(test => {
+                    const option = new Option(`${test.title} (${test.questions.length}Q) ${test.isActive ? '[Active]' : '[Draft]'}`, test._id);
+                    select.appendChild(option);
+                });
+                select.value = currentVal; 
+            } else {
+                select.innerHTML = '<option value="">No tests found</option>';
+            }
+        }
         
         async function loadTestAttempts() {
             const testId = document.getElementById('monitorTestSelect').value;
@@ -1169,6 +1223,7 @@
             document.getElementById('saveQuestionBtn').addEventListener('click', saveNewQuestion);
             document.getElementById('addQuestionModal').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeAddQuestionModal(); });
             setupQuestionTypeToggle(); 
+            document.getElementById('loadLeaderboardBtn').addEventListener('click', loadLeaderboard); // <-- ADD THIS
             
             // *** START: MODIFICATION ***
             // Monitoring
