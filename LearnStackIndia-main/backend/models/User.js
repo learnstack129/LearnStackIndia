@@ -139,9 +139,10 @@ const dailyProblemAttemptSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    pointsAwarded: { // Tracks if first-attempt points were given
-        type: Boolean,
-        default: false
+    // CHANGED: Renamed 'pointsAwarded' to 'pointsEarnedForProblem' and changed type to Number
+    pointsEarnedForProblem: { // Tracks points earned for this specific problem
+        type: Number,
+        default: 0
     },
     lastSubmittedCode: { // The code for the mentor to review
         type: String
@@ -165,7 +166,7 @@ const dailyProblemAttemptSchema = new mongoose.Schema({
 
 // --- Main User Schema ---
 const userSchema = new mongoose.Schema({
-    // --- Authentication & Identification ---
+    // ... Authentication & Identification ...
     username: {
         type: String, required: [true, 'Username is required'], unique: true, trim: true,
         minlength: [3, 'Username must be at least 3 characters long'], index: true
@@ -174,17 +175,12 @@ const userSchema = new mongoose.Schema({
         type: String, required: [true, 'Email is required'], unique: true, lowercase: true, trim: true,
         match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email'], index: true
     },
-    password: {
-        type: String, required: [true, 'Password is required'],
-        minlength: [6, 'Password must be at least 6 characters long'], select: false // Hide by default
-    },
+    // ... password, role, verification fields ...
     role: { 
         type: String, 
-        enum: ['user', 'mentor', 'admin'], // <-- MODIFIED: Added 'mentor'
+        enum: ['user', 'mentor', 'admin'],
         default: 'user' 
     },
-
-    // --- Verification & Security ---
     isEmailVerified: { type: Boolean, default: false },
     emailVerificationToken: String,
     emailVerificationExpires: Date,
@@ -192,7 +188,7 @@ const userSchema = new mongoose.Schema({
     passwordResetExpires: Date,
     passwordChangedAt: Date,
 
-    // --- Profile ---
+    // ... Profile ...
     profile: {
         avatar: { type: String, default: 'https://placeholder-image-service.onrender.com/image/100x100?prompt=User%20avatar%20profile%20picture%20with%20neutral%20background' },
         firstName: { type: String, trim: true },
@@ -200,15 +196,15 @@ const userSchema = new mongoose.Schema({
         bio: { type: String, trim: true, maxlength: 200 },
         location: { type: String, trim: true },
         website: { type: String, trim: true },
-        socialLinks: { // Dynamic Map for social links
+        socialLinks: {
             type: Map,
             of: String,
             default: () => new Map()
         }
     },
 
-    // --- Progress & Stats ---
-    progress: { // Dynamic Map for topics
+    // ... Progress & Stats ...
+    progress: {
         type: Map,
         of: topicProgressSchema,
         default: () => new Map()
@@ -226,46 +222,38 @@ const userSchema = new mongoose.Schema({
             thisMonth: { type: Number, default: 0 }
         },
         algorithmsCompleted: { type: Number, default: 0 },
-        // Removed totalAlgorithms from stats, will calculate dynamically
         streak: {
             current: { type: Number, default: 0 },
             longest: { type: Number, default: 0 },
             lastActiveDate: Date
         },
-        averageAccuracy: { type: Number, default: 0, min: 0, max: 100 }
-        // Removed averageTime, can be calculated if needed
+        averageAccuracy: { type: Number, default: 0, min: 0, max: 100 },
+        // ADDED: New field for the daily problem leaderboard score
+        dailyProblemScore: { type: Number, default: 0, index: true }
     },
 
-    // --- Achievements ---
-    achievements: { // Single array for all earned achievements
+    // ... achievements, learningPath, testAttempts ...
+    achievements: {
         type: [earnedAchievementSchema],
         default: []
     },
-
-    // --- Learning Path ---
     learningPath: {
-        currentTopic: { type: String, default: null }, // Store topic ID, null if not started
-        // Removed currentAlgorithm, can be derived
-        completedTopics: { type: [String], default: [] }, // Array of topic IDs
-        topicOrder: { type: [String], default: [] }, // Will be populated from Topic model
-        // Removed customPath and preferences from here, moved to main preferences
+        currentTopic: { type: String, default: null },
+        completedTopics: { type: [String], default: [] },
+        topicOrder: { type: [String], default: [] },
     },
-    
-    // --- NEW: Test Attempts ---
     testAttempts: [testAttemptSchema],
+    
+    // ... dailyProblemAttempts, dailyActivity, preferences ...
     dailyProblemAttempts: [dailyProblemAttemptSchema],
-
-    // --- Activity & Preferences ---
     dailyActivity: {
         type: [dailyActivitySchema],
         default: []
-        // Consider limiting the size of this array in production (e.g., keep last 90 days)
     },
     preferences: {
         theme: { type: String, enum: ['light', 'dark', 'auto'], default: 'light' },
         notifications: {
             email: { type: Boolean, default: true },
-            // Removed push notifications for simplicity
             dailyReminder: { type: Boolean, default: false },
             achievementUpdates: { type: Boolean, default: true },
             weeklyReport: { type: Boolean, default: false }
@@ -282,7 +270,7 @@ const userSchema = new mongoose.Schema({
         }
     }
 }, {
-    timestamps: true, // Adds createdAt and updatedAt
+    timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true }
 });
@@ -703,7 +691,7 @@ userSchema.methods.findOrCreateDailyAttempt = function(problemId) {
             runCount: 0,
             isLocked: false,
             passed: false,
-            pointsAwarded: false,
+            pointsEarnedForProblem: 0, // Use new field
             lastAttemptedAt: new Date()
         };
         this.dailyProblemAttempts.push(newAttempt);
@@ -717,6 +705,7 @@ userSchema.methods.findOrCreateDailyAttempt = function(problemId) {
 };
 
 module.exports = mongoose.model('User', userSchema);
+
 
 
 
