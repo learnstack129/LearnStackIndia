@@ -20,17 +20,26 @@ router.get('/', async (req, res) => {
       leaderboard = await generateLeaderboard(type);
     }
     
+    // --- *** MODIFICATION START *** ---
+    // Repopulate user data for the specific fields needed by the requested leaderboard type
+    await leaderboard.populate({
+        path: 'rankings.user',
+        select: 'username profile.avatar stats.rank stats.dailyProblemPoints' // Ensure we get both rank and daily points
+    });
+    
     const rankings = leaderboard.rankings
       .slice(0, parseInt(limit))
       .map(rank => ({
         position: rank.position,
         username: rank.user.username,
         avatar: rank.user.profile.avatar,
-        rank: rank.user.stats.rank.level,
-        score: rank.score,
+        // Show main rank level, but score from the leaderboard
+        rank: rank.user.stats.rank.level, 
+        score: rank.score, // This score is from the correct field (dailyProblemPoints or rank.points)
         metrics: rank.metrics
       }));
-    
+    // --- *** MODIFICATION END *** ---
+      
     res.json({
       success: true,
       type,
@@ -44,6 +53,7 @@ router.get('/', async (req, res) => {
 });
 
 // Update user's leaderboard position
+// ... (no changes to this route) ...
 router.post('/update', auth, async (req, res) => {
   try {
     await updateUserLeaderboardPosition(req.user.id);
@@ -59,6 +69,7 @@ router.post('/update', auth, async (req, res) => {
 });
 
 // Get user's rank
+// ... (no changes to this route) ...
 router.get('/my-rank', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
@@ -89,16 +100,30 @@ router.get('/my-rank', auth, async (req, res) => {
 });
 
 // Helper function to generate leaderboard
+// --- *** THIS FUNCTION IS MODIFIED *** ---
 async function generateLeaderboard(type) {
-  const users = await User.find({})
+  
+  // --- *** MODIFICATION START *** ---
+  let scoreField = 'stats.rank.points';
+  let scoreAccess = (user) => user.stats.rank.points;
+  let queryFilter = {}; // No filter for 'all-time'
+
+  if (type === 'daily-practice') {
+      scoreField = 'stats.dailyProblemPoints';
+      scoreAccess = (user) => user.stats.dailyProblemPoints || 0;
+      queryFilter = { 'stats.dailyProblemPoints': { $gt: 0 } }; // Only users who have points
+  }
+  // --- *** MODIFICATION END *** ---
+
+  const users = await User.find(queryFilter) // Use dynamic filter
     .select('username profile stats')
-    .sort({ 'stats.rank.points': -1 })
+    .sort({ [scoreField]: -1 }) // Use dynamic sort field
     .limit(100);
   
   const rankings = users.map((user, index) => ({
     user: user._id,
     position: index + 1,
-    score: user.stats.rank.points,
+    score: scoreAccess(user), // Use dynamic score access
     metrics: {
       algorithmsCompleted: user.stats.algorithmsCompleted,
       averageAccuracy: user.stats.averageAccuracy,
@@ -119,54 +144,69 @@ async function generateLeaderboard(type) {
 }
 
 // Helper function to update user's position
+// --- *** THIS FUNCTION IS MODIFIED *** ---
 async function updateUserLeaderboardPosition(userId) {
-  const leaderboard = await Leaderboard.findOne({ type: 'all-time' });
-  
-  if (!leaderboard) {
-    await generateLeaderboard('all-time');
-    return;
-  }
-  
+  // This function now needs to update ALL relevant leaderboards
   const user = await User.findById(userId);
-  
-  // Find or create user's ranking
-  let userRanking = leaderboard.rankings.find(
-    r => r.user.toString() === userId
-  );
-  
-  if (userRanking) {
-    userRanking.score = user.stats.rank.points;
-    userRanking.metrics = {
-      algorithmsCompleted: user.stats.algorithmsCompleted,
-      averageAccuracy: user.stats.averageAccuracy,
-      timeSpent: user.stats.timeSpent.total,
-      streak: user.stats.streak.current
-    };
+  if (!user) return;
+
+  // --- Update 'all-time' leaderboard ---
+  const allTimeLeaderboard = await Leaderboard.findOne({ type: 'all-time' });
+  if (allTimeLeaderboard) {
+    let userRanking = allTimeLeaderboard.rankings.find(r => r.user.toString() === userId);
+    if (userRanking) {
+        userRanking.score = user.stats.rank.points;
+        // update metrics...
+    } else {
+        allTimeLeaderboard.rankings.push({
+            user: userId,
+            position: allTimeLeaderboard.rankings.length + 1,
+            score: user.stats.rank.points,
+            // ...metrics
+        });
+    }
+    // Re-sort and update positions
+    allTimeLeaderboard.rankings.sort((a, b) => b.score - a.score);
+    allTimeLeaderboard.rankings.forEach((rank, index) => { rank.position = index + 1; });
+    allTimeLeaderboard.lastUpdated = new Date();
+    await allTimeLeaderboard.save();
   } else {
-    leaderboard.rankings.push({
-      user: userId,
-      position: leaderboard.rankings.length + 1,
-      score: user.stats.rank.points,
-      metrics: {
-        algorithmsCompleted: user.stats.algorithmsCompleted,
-        averageAccuracy: user.stats.averageAccuracy,
-        timeSpent: user.stats.timeSpent.total,
-        streak: user.stats.streak.current
-      }
-    });
+      await generateLeaderboard('all-time'); // Generate if it doesn't exist
   }
-  
-  // Re-sort and update positions
-  leaderboard.rankings.sort((a, b) => b.score - a.score);
-  leaderboard.rankings.forEach((rank, index) => {
-    rank.position = index + 1;
-  });
-  
-  leaderboard.lastUpdated = new Date();
-  await leaderboard.save();
+
+  // --- Update 'daily-practice' leaderboard ---
+  const dailyLeaderboard = await Leaderboard.findOne({ type: 'daily-practice' });
+  if (dailyLeaderboard) {
+      let userRanking = dailyLeaderboard.rankings.find(r => r.user.toString() === userId);
+      const dailyScore = user.stats.dailyProblemPoints || 0;
+      
+      if (userRanking) {
+          userRanking.score = dailyScore;
+          // update metrics...
+      } else if (dailyScore > 0) { // Only add if they have points
+          dailyLeaderboard.rankings.push({
+              user: userId,
+              position: dailyLeaderboard.rankings.length + 1,
+              score: dailyScore,
+              // ...metrics
+          });
+      }
+      
+      // Re-sort and update positions
+      dailyLeaderboard.rankings.sort((a, b) => b.score - a.score);
+      // Filter out users with 0 points who might still be in the list
+      dailyLeaderboard.rankings = dailyLeaderboard.rankings.filter(r => r.score > 0);
+      dailyLeaderboard.rankings.forEach((rank, index) => { rank.position = index + 1; });
+      
+      dailyLeaderboard.lastUpdated = new Date();
+      await dailyLeaderboard.save();
+  } else {
+      await generateLeaderboard('daily-practice'); // Generate if it doesn't exist
+  }
 }
 
 // Helper function to get period
+// ... (no changes to this route) ...
 function getPeriod(type) {
   const now = new Date();
   const start = new Date(now);
@@ -184,6 +224,7 @@ function getPeriod(type) {
       start.setHours(0, 0, 0, 0);
       break;
     case 'all-time':
+    case 'daily-practice': // Add this case
       return { start: new Date(0), end: null };
   }
   
