@@ -9,9 +9,9 @@ const DailyProblem = require('../models/DailyProblem');
 // --- OneCompiler API Config ---
 // The API key is read from your Vercel Environment Variables
 const oneCompilerAxios = axios.create({
-    baseURL: 'https://onecompiler-code-api.p.rapidapi.com/api/v1/run',
+    baseURL: 'https://onecompiler-apis.p.rapidapi.com/api/v1/run',
     headers: {
-        'X-RapidAPI-Host': 'onecompiler-code-api.p.rapidapi.com',
+        'X-RapidAPI-Host': 'onecompiler-apis.p.rapidapi.com',
         'X-RapidAPI-Key': process.env.ONECOMPILER_API_KEY,
         'Content-Type': 'application/json'
     }
