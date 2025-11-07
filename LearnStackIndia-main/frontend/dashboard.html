@@ -47,6 +47,7 @@
         }
     </script>
     <style>
+        /* (All your existing CSS styles) */
         .gradient-bg {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
             background-size: 400% 400%;
@@ -240,7 +241,6 @@
                 <div class="shape w-20 h-20 bg-purple-200 rounded-full"></div>
                 <div class="shape w-28 h-28 bg-pink-200 rounded-lg transform rotate-12"></div>
             </div>
-
             <div class="absolute inset-0 bg-black opacity-10"></div>
             <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                 <h1 class="text-4xl sm:text-6xl font-bold animate-fade-in hero-text" style="padding-bottom: 1.5rem;">
@@ -297,7 +297,6 @@
                             </div>
                         </div>
                     </div>
-
                     <div
                         class="bg-white dark:bg-gray-700 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-600 animate-fade-in">
                         <div class="flex items-center justify-between">
@@ -313,7 +312,6 @@
                             </div>
                         </div>
                     </div>
-
                     <div
                         class="bg-white dark:bg-gray-700 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-600 animate-fade-in">
                         <div class="flex items-center justify-between">
@@ -328,7 +326,6 @@
                             </div>
                         </div>
                     </div>
-
                     <div
                         class="bg-white dark:bg-gray-700 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-600 animate-fade-in">
                         <div class="flex items-center justify-between">
@@ -379,6 +376,7 @@
                 <div class="loading-skeleton rounded-xl h-40 hidden lg:block"></div>
             </div>
         </section>
+
         <section id="topicsSection" class="hidden py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-12 gap-4">
                 <h2 id="topicListTitle" class="text-3xl sm:text-4xl font-bold text-gray-800 dark:text-white animate-fade-in">
@@ -388,13 +386,15 @@
                     <i class="fas fa-arrow-left mr-2"></i>Back to Subjects
                 </button>
             </div>
+            
+            <div id="dailyChallengeContainer" class="mb-8">
+                </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="topicsGrid">
                 <div class="loading-skeleton rounded-xl h-32"></div>
                 <div class="loading-skeleton rounded-xl h-32"></div>
                 <div class="loading-skeleton rounded-xl h-32"></div>
             </div>
         </section>
-
         <section id="algorithmsSection" class="hidden py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-12 gap-4">
                 <h2 id="algorithmListTitle" class="text-3xl sm:text-4xl font-bold text-gray-800 dark:text-white animate-fade-in">
@@ -432,14 +432,15 @@
     </main>
 
     <script>
-        // Application state
+        // (Your existing script block)
         let currentUser = null;
         let dashboardData = null;
-        let currentTopicsArray = []; // Store topics for the "back" button
-
-        // API Configuration
+        let currentTopicsArray = []; 
         const API_BASE_URL = '/api';
 
+        // (Your existing utility functions: getAuthToken, makeAuthenticatedAPICall, initializeTheme, initializeUser, etc.)
+        // ...
+        
         // Utility function to get auth token
         function getAuthToken() {
             return localStorage.getItem('authToken');
@@ -560,7 +561,6 @@
             // Subjects
             showDefaultSubjects();
             
-            // --- ADD THIS ---
             // Tests
             const testGrid = document.getElementById('testsGrid');
             if (testGrid) {
@@ -601,7 +601,7 @@
             // Update subjects grid
             updateSubjectsGrid(subjectsData);
             
-            // --- ADD THIS ---
+            // Load Active Tests
             loadActiveTests(); // Fetch and render active tests
         }
 
@@ -619,7 +619,6 @@
             updateProgressRing(0);
             showDefaultSubjects();
             
-            // --- ADD THIS ---
             const testGrid = document.getElementById('testsGrid');
             if(testGrid) testGrid.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 col-span-full">No active tests are available.</p>';
         }
@@ -645,7 +644,7 @@
             setTimeout(() => { circle.style.strokeDashoffset = offset; }, 50);
         }
 
-        // --- LEVEL 1: SUBJECTS ---
+        // --- LEVEL 1: SUBJECTS (Your existing functions) ---
 
         function showDefaultSubjects() {
             const grid = document.getElementById('subjectsGrid');
@@ -655,21 +654,14 @@
         function updateSubjectsGrid(subjects) {
             const grid = document.getElementById('subjectsGrid');
             grid.innerHTML = '';
-
-            // The 'subjects' object is now { "SubjectName": { icon, color, topics: [...] } }
             const subjectNames = Object.keys(subjects);
-
             if (subjectNames.length === 0) {
                 grid.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 col-span-full">No subjects available.</p>';
                 return;
             }
-
-            // Sort subject names alphabetically
             subjectNames.sort(); 
-
             subjectNames.forEach(subjectName => {
-                const subjectData = subjects[subjectName]; // This is { icon, color, topics }
-                // Pass the whole subjectData object to the card creator
+                const subjectData = subjects[subjectName];
                 const card = createSubjectCard(subjectName, subjectData);
                 grid.appendChild(card);
             });
@@ -677,37 +669,22 @@
 
         function createSubjectCard(subjectName, subjectData) {
             const div = document.createElement('div');
-
-            // --- THIS IS THE NEW LOGIC ---
-            // We get icon, color, and topics from the subjectData object
             const topicsArray = subjectData.topics || [];
             const topicIcon = subjectData.icon || 'book';
             const topicColor = subjectData.color || 'gray';
-            // --- END NEW LOGIC ---
-
             const topicCount = topicsArray.length;
-
             let totalCompletion = 0;
-            topicsArray.forEach(topic => {
-                totalCompletion += (topic.completion || 0);
-            });
-
+            topicsArray.forEach(topic => { totalCompletion += (topic.completion || 0); });
             const subjectCompletion = topicCount > 0 ? Math.round(totalCompletion / topicCount) : 0;
-
             const isSubjectCompleted = topicCount > 0 && topicsArray.every(t => t.status === 'completed');
             const isSubjectInProgress = !isSubjectCompleted && topicsArray.some(t => t.status === 'in-progress' || t.status === 'completed');
-
             let status, statusInfo;
             if (isSubjectCompleted) status = 'completed';
             else if (isSubjectInProgress) status = 'in-progress';
-            else if (topicCount === 0) status = 'available'; // Empty subjects are just 'Available'
+            else if (topicCount === 0) status = 'available';
             else status = 'available';
-
             statusInfo = getStatusInfo(status);
-
             div.className = `card-hover bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 animate-fade-in group cursor-pointer`;
-
-            // The HTML is the same, but now uses the correct variables
             div.innerHTML = `
                 <div class="text-center mb-4 relative">
                     <div class="w-16 h-16 bg-${topicColor}-100 dark:bg-${topicColor}-900 rounded-lg flex items-center justify-center mx-auto mb-3">
@@ -724,26 +701,24 @@
                     </div>
                 </div>
             `;
-
-            // The click handler now just passes the topics array
             div.addEventListener('click', () => handleSubjectClick(subjectName, topicsArray));
             return div;
         }
 
         function handleSubjectClick(subjectName, topicsArray) {
             console.log("Subject clicked:", subjectName);
-            currentTopicsArray = topicsArray; // This is already the correct topics array
+            currentTopicsArray = topicsArray;
             showTopicsList(subjectName, topicsArray);
         }
 
         function showSubjectsView() {
             document.getElementById('subjectsSection').classList.remove('hidden');
-            document.getElementById('testSection').classList.remove('hidden'); // <-- Make sure test section is also visible
+            document.getElementById('testSection').classList.remove('hidden');
             document.getElementById('topicsSection').classList.add('hidden');
             document.getElementById('algorithmsSection').classList.add('hidden');
         }
 
-        // --- NEW: Test Section Functions ---
+        // --- Test Section Functions (Your existing functions) ---
 
         async function loadActiveTests() {
             const grid = document.getElementById('testsGrid');
@@ -751,24 +726,18 @@
                 <div class="loading-skeleton rounded-xl h-40"></div>
                 <div class="loading-skeleton rounded-xl h-40 hidden sm:block"></div>
                 <div class="loading-skeleton rounded-xl h-40 hidden lg:block"></div>`;
-            
             try {
-                // This endpoint was added to backend/routes/test.js
                 const data = await makeAuthenticatedAPICall('/test/active'); 
-                
-                grid.innerHTML = ''; // Clear skeletons
+                grid.innerHTML = '';
                 if (data && data.success && data.tests) {
                     if (data.tests.length === 0) {
                         grid.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 col-span-full">No active tests are available at this time.</p>';
                         return;
                     }
-                    // Get the user's attempts from the main dashboardData object
                     const userAttempts = dashboardData?.user?.testAttempts || [];
-
                     data.tests.forEach(test => {
-                        // Find if the user has an attempt for this test
                         const attempt = userAttempts.find(a => a.testId === test._id);
-                        const card = createTestCard(test, attempt); // <-- Pass the attempt (or undefined)
+                        const card = createTestCard(test, attempt);
                         grid.appendChild(card);
                     });
                 } else {
@@ -780,11 +749,9 @@
             }
         }
         
-        function createTestCard(test, attempt) { // <-- Added 'attempt'
+        function createTestCard(test, attempt) {
             const div = document.createElement('div');
-            
             let statusText, statusClass, statusIcon, isLocked;
-            
             if (attempt?.status === 'completed') {
                 statusText = 'Completed';
                 statusClass = 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300';
@@ -798,18 +765,15 @@
             } else if (attempt?.status === 'inprogress') {
                  statusText = 'In Progress';
                  statusClass = 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300';
-                 statusIcon = 'fa-play-circle'; // Or 'fa-hourglass-half'
-                 isLocked = false; // Allow re-entry
+                 statusIcon = 'fa-play-circle';
+                 isLocked = false;
             } else {
                 statusText = 'Start Test';
-                statusClass = 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 group-hover:bg-green-200 dark:group-hover:bg-green-800'; // Add hover effect
+                statusClass = 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 group-hover:bg-green-200 dark:group-hover:bg-green-800';
                 statusIcon = 'fa-play-circle';
                 isLocked = false;
             }
-
-            // Added flex flex-col justify-between to make footer stick to bottom
             div.className = `card-hover bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 animate-fade-in group flex flex-col justify-between ${isLocked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`;
-            
             div.innerHTML = `
                 <div>
                     <div class="w-12 h-12 bg-indigo-100 dark:bg-indigo-900 rounded-lg flex items-center justify-center mb-4">
@@ -825,10 +789,8 @@
                     </span>
                 </div>
             `;
-            
-            if (!isLocked) { // Only add click listener if not completed or locked
+            if (!isLocked) {
                 div.addEventListener('click', () => {
-                    // Redirect to the test player with the correct testId
                     window.location.href = `test_player.html?testId=${test._id}`;
                 });
             } else {
@@ -837,16 +799,53 @@
             return div;
         }
 
-        // --- LEVEL 2: TOPICS ---
+        // --- LEVEL 2: TOPICS (Modified) ---
 
-        function showTopicsList(subjectName, topicsArray) {
+        // *** THIS IS THE MODIFIED FUNCTION ***
+        async function showTopicsList(subjectName, topicsArray) {
             const topicsSection = document.getElementById('topicsSection');
             const subjectsSection = document.getElementById('subjectsSection');
             const algorithmsSection = document.getElementById('algorithmsSection');
             const topicsGrid = document.getElementById('topicsGrid');
             const topicListTitle = document.getElementById('topicListTitle');
+            const testSection = document.getElementById('testSection');
             
-            const testSection = document.getElementById('testSection'); // <-- Get test section
+            // --- ** NEW: Daily Challenge Logic ** ---
+            const dailyChallengeContainer = document.getElementById('dailyChallengeContainer');
+            dailyChallengeContainer.innerHTML = `<div class="loading-skeleton h-24 rounded-xl"></div>`; // Show loader
+            
+            async function loadDailyChallenge() {
+                try {
+                    // This API call is defined in our new dailyProblem.js route
+                    const data = await makeAuthenticatedAPICall(`/daily-problem/active/${encodeURIComponent(subjectName)}`);
+                    if (data?.success && data.problem) {
+                        dailyChallengeContainer.innerHTML = `
+                            <div class="card-hover bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border-2 border-blue-500 dark:border-blue-400 animate-fade-in group cursor-pointer"
+                                 onclick="window.location.href='daily_problem.html?problemId=${data.problem._id}'">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <span class="block text-sm font-medium text-blue-600 dark:text-blue-400">Today's Challenge</span>
+                                        <h3 class="text-xl font-semibold text-gray-800 dark:text-white mt-1">${data.problem.title}</h3>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-blue-600 text-white group-hover:bg-blue-700 transition-colors">
+                                            <i class="fas fa-pen-alt mr-2"></i> Start
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        dailyChallengeContainer.innerHTML = ''; // Hide if no problem
+                    }
+                } catch (error) {
+                    console.error("Error fetching daily challenge:", error);
+                    dailyChallengeContainer.innerHTML = ``; // Hide on error
+                }
+            }
+            
+            loadDailyChallenge(); // Start fetching the challenge
+            // --- ** END NEW LOGIC ** ---
 
             topicListTitle.textContent = `${subjectName} Topics`;
             topicsGrid.innerHTML = ''; 
@@ -861,20 +860,18 @@
             }
 
             subjectsSection.classList.add('hidden');
-            testSection.classList.add('hidden'); // <-- Hide test section
+            testSection.classList.add('hidden');
             algorithmsSection.classList.add('hidden');
             topicsSection.classList.remove('hidden');
         }
 
+        // (Your existing createTopicCard, handleTopicClick, showTopicsView functions)
         function createTopicCard(topic) {
             const div = document.createElement('div');
             const isLocked = topic.status === 'locked';
-
             div.className = `algorithm-card bg-white dark:bg-gray-800 rounded-xl p-4 shadow-md border border-gray-200 dark:border-gray-700 flex items-center justify-between animate-fade-in ${isLocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-600'}`;
-
             const statusInfo = getStatusInfo(topic.status);
             const algoCount = topic.algorithms.length;
-
             div.innerHTML = `
                 <div>
                     <h4 class="text-lg font-semibold text-gray-800 dark:text-white">${topic.name}</h4>
@@ -888,7 +885,6 @@
                     ${topic.completion > 0 ? `<span class="text-xs text-blue-600 dark:text-blue-400 block mt-1">${topic.completion}%</span>` : ''}
                 </div>
             `;
-
             if (!isLocked) {
                 div.addEventListener('click', () => handleTopicClick(topic));
             } else {
@@ -896,7 +892,6 @@
             }
             return div;
         }
-        
         function handleTopicClick(topic) {
             console.log("Topic clicked:", topic.id, "Status:", topic.status);
             if (topic.status === 'locked') {
@@ -905,25 +900,23 @@
                 showAlgorithmList(topic);
             }
         }
-
         function showTopicsView() {
             document.getElementById('subjectsSection').classList.add('hidden');
-            document.getElementById('testSection').classList.add('hidden'); // <-- Hide test section
+            document.getElementById('testSection').classList.add('hidden');
             document.getElementById('topicsSection').classList.remove('hidden');
             document.getElementById('algorithmsSection').classList.add('hidden');
         }
 
-        // --- LEVEL 3: ALGORITHMS ---
+
+        // --- LEVEL 3: ALGORITHMS (Your existing functions) ---
 
         function showAlgorithmList(topic) {
             const topicsSection = document.getElementById('topicsSection');
             const algorithmsSection = document.getElementById('algorithmsSection');
             const algorithmsGrid = document.getElementById('algorithmsGrid');
             const algorithmListTitle = document.getElementById('algorithmListTitle');
-
             algorithmListTitle.textContent = `${topic.name} Algorithms`;
             algorithmsGrid.innerHTML = '';
-
             if (!topic.algorithms || topic.algorithms.length === 0) {
                 algorithmsGrid.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 col-span-full">No algorithms found for this topic.</p>';
             } else {
@@ -933,7 +926,6 @@
                     algorithmsGrid.appendChild(card);
                 });
             }
-
             topicsSection.classList.add('hidden');
             algorithmsSection.classList.remove('hidden');
         }
@@ -942,20 +934,16 @@
             const div = document.createElement('div');
             const effectiveStatus = algoProgress.effectiveStatus || 'available';
             const isLocked = effectiveStatus === 'locked';
-
             div.className = `algorithm-card bg-white dark:bg-gray-800 rounded-xl p-4 shadow-md border border-gray-200 dark:border-gray-700 flex items-center justify-between animate-fade-in ${isLocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-600'}`;
-
             const isCompleted = algoProgress.completed === true;
             const statusIcon = isLocked
                 ? '<i class="fas fa-lock text-red-500 ml-2" title="Locked"></i>'
                 : (isCompleted
                     ? '<i class="fas fa-check-circle text-green-500 ml-2" title="Completed"></i>'
                     : '<i class="far fa-circle text-gray-400 ml-2" title="Not Completed"></i>');
-
             const attemptsPractice = algoProgress.attemptsPractice || 0;
             const accuracyPractice = algoProgress.accuracyPractice || 0;
             const accuracyText = attemptsPractice > 0 ? `<span class="text-xs text-blue-600 dark:text-blue-400">${accuracyPractice.toFixed(0)}%</span>` : '';
-
             div.innerHTML = `
                 <div>
                     <h4 class="text-lg font-semibold text-gray-800 dark:text-white">${algoDef.name} ${statusIcon}</h4>
@@ -966,7 +954,6 @@
                     ${accuracyText}
                 </div>
             `;
-
             if (!isLocked) {
                 div.addEventListener('click', () => handleAlgorithmClick(topicId, algoDef.id));
             } else {
@@ -982,7 +969,7 @@
         }
 
 
-        // --- SHARED HELPER FUNCTIONS ---
+        // --- SHARED HELPER FUNCTIONS (Your existing functions) ---
 
         function getStatusInfo(status) {
             switch (status) {
@@ -1004,29 +991,19 @@
                 default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
             }
         }
-
-        // --- REMOVED LEARNING PATH & ACHIEVEMENT FUNCTIONS ---
-
-        // Show alert
         function showAlert(message, type = 'info') {
-            alert(message); // Simple alert
+            alert(message);
         }
-
-        // Redirect to auth page
         function redirectToAuth() {
             localStorage.removeItem('authToken');
             localStorage.removeItem('currentUser');
             window.location.href = 'auth.html';
         }
-
-        // Handle logout
         function handleLogout() {
             if (confirm('Are you sure you want to logout?')) {
                 redirectToAuth();
             }
         }
-
-        // Create floating particles
         function createParticles() {
             const particleContainer = document.querySelector('.floating-particles');
             for (let i = 0; i < 15; i++) {
@@ -1043,7 +1020,7 @@
             }
         }
 
-        // Initialize everything when page loads
+        // --- Initialize (Your existing function) ---
         document.addEventListener('DOMContentLoaded', async function () {
             window.addEventListener('pageshow', function(event) {
                 if (!getAuthToken()) { redirectToAuth(); }
@@ -1061,12 +1038,9 @@
             document.getElementById('logoutBtn').addEventListener('click', handleLogout);
             document.getElementById('backToSubjectsBtn').addEventListener('click', showSubjectsView);
             document.getElementById('backToTopicsBtn').addEventListener('click', () => showTopicsList(document.getElementById('topicListTitle').textContent.replace(' Topics', ''), currentTopicsArray));
-
-            // Quick action buttons
             document.getElementById('randomChallenge').addEventListener('click', () => {
                 showAlert('Random challenge feature coming soon!', 'info');
             });
-
             document.getElementById('viewProgress').addEventListener('click', () => {
                 showAlert('Detailed progress overview coming soon!', 'info');
             });
@@ -1076,4 +1050,3 @@
     </script>
 </body>
 </html>
-
