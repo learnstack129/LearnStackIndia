@@ -121,6 +121,48 @@ const testAttemptSchema = new mongoose.Schema({
     completedAt: Date
 }, { _id: true }); // Enable _id for test attempts to allow direct updates
 
+const dailyProblemAttemptSchema = new mongoose.Schema({
+    problemId: { // Reference to the DailyProblem
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'DailyProblem',
+        required: true
+    },
+    runCount: { // Tracks the 2-run limit
+        type: Number,
+        default: 0
+    },
+    isLocked: { // Locks after 2 failed runs or 1 pass
+        type: Boolean,
+        default: false
+    },
+    passed: { // Did they ever pass?
+        type: Boolean,
+        default: false
+    },
+    pointsAwarded: { // Tracks if first-attempt points were given
+        type: Boolean,
+        default: false
+    },
+    lastSubmittedCode: { // The code for the mentor to review
+        type: String
+    },
+    lastResults: { // e.g., "Passed 3/5 test cases"
+        type: String
+    },
+    mentorFeedback: { // The mentor's suggestion
+        type: String,
+        default: null
+    },
+    feedbackRead: {
+        type: Boolean,
+        default: false
+    },
+    lastAttemptedAt: { 
+        type: Date, 
+        default: Date.now 
+    }
+}, { timestamps: true });
+
 // --- Main User Schema ---
 const userSchema = new mongoose.Schema({
     // --- Authentication & Identification ---
@@ -211,6 +253,7 @@ const userSchema = new mongoose.Schema({
     
     // --- NEW: Test Attempts ---
     testAttempts: [testAttemptSchema],
+    dailyProblemAttempts: [dailyProblemAttemptSchema],
 
     // --- Activity & Preferences ---
     dailyActivity: {
@@ -646,9 +689,35 @@ userSchema.methods.hasAchievement = function (achievementId) {
     return this.achievements.some(ach => ach.id === achievementId);
 };
 
+// --- *** ADD THIS NEW METHOD *** ---
+userSchema.methods.findOrCreateDailyAttempt = function(problemId) {
+    if (!this.dailyProblemAttempts) {
+        this.dailyProblemAttempts = [];
+    }
+    let attempt = this.dailyProblemAttempts.find(a => a.problemId.equals(problemId));
 
+    if (!attempt) {
+        // Create a new one
+        const newAttempt = {
+            problemId: problemId,
+            runCount: 0,
+            isLocked: false,
+            passed: false,
+            pointsAwarded: false,
+            lastAttemptedAt: new Date()
+        };
+        this.dailyProblemAttempts.push(newAttempt);
+        // Get the Mongoose-managed sub-document
+        attempt = this.dailyProblemAttempts[this.dailyProblemAttempts.length - 1];
+    } else {
+        // Update timestamp on existing attempt
+        attempt.lastAttemptedAt = new Date();
+    }
+    return attempt;
+};
 
 module.exports = mongoose.model('User', userSchema);
+
 
 
 
