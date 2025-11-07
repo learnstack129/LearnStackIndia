@@ -33,11 +33,26 @@ const dailyProblemSchema = new mongoose.Schema({
         input: { type: String, default: "" }, // stdin
         expectedOutput: { type: String, required: true, trim: true }
     }],
-    pointsForAttempt: { // Points for the *first* run (pass or fail)
+    
+    // --- *** MODIFICATION START *** ---
+    // Replaced pointsForAttempt with a tiered system
+    pointsFirstAttempt: { // Points for getting it right on the 1st run
         type: Number,
         default: 20,
         min: 0
     },
+    pointsSecondAttempt: { // Points for getting it right on the 2nd run
+        type: Number,
+        default: 15,
+        min: 0
+    },
+    pointsOnFailure: { // Points for failing both attempts
+        type: Number,
+        default: 10,
+        min: 0
+    },
+    // --- *** MODIFICATION END *** ---
+
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
