@@ -1261,7 +1261,7 @@ async function loadDoubtsForMentor() {
     container.innerHTML = '<div class="loading-skeleton h-32 rounded-lg"></div>';
     
     // Use the new /api/doubts endpoint
-    const data = await makeMentorAPICall(`/../doubts?subject=${encodeURIComponent(subject)}`);
+    const data = await makeMentorAPICall(`/doubts?subject=${encodeURIComponent(subject)}`);
 
     if (data && data.success && data.doubts) {
         container.innerHTML = '';
@@ -1290,10 +1290,10 @@ function createMentorDoubtCard(doubt) {
     card.innerHTML = `
         <div class="flex justify-between items-start mb-2">
             <div>
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">${doubt.title}</h3>
-                <p class="text-xs text-gray-500 dark:text-gray-400">
-                    Asked by ${doubt.postedBy.username} on ${postedDate}
-                </p>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">${doubt.title}</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                        Asked by ${doubt.postedBy?.username || '[Deleted User]'} on ${postedDate}
+                    </p>
             </div>
             <div class="flex items-center gap-2">
                 ${isResolved ? `<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"><i class="fas fa-check mr-1"></i>Resolved</span>` : ''}
@@ -1318,8 +1318,8 @@ function createMentorDoubtCard(doubt) {
 
 function createMentorReplyCard(reply) {
     const postedDate = new Date(reply.createdAt).toLocaleString();
-    const isThisMentor = reply.postedBy._id === JSON.parse(localStorage.getItem('currentUser')).id;
-    const isMentor = reply.postedBy.role !== 'user';
+    const isThisMentor = reply.postedBy?._id === JSON.parse(localStorage.getItem('currentUser')).id;
+    const isMentor = reply.postedBy?.role !== 'user';
     
     let mentorLabel = '(Mentor)';
     if (isThisMentor) mentorLabel = '(You)';
@@ -1327,14 +1327,14 @@ function createMentorReplyCard(reply) {
 
     return `
         <div class="flex gap-3 p-3 rounded-lg border-l-4 ${isMentor ? 'bg-yellow-50 dark:bg-yellow-900/30 border-yellow-400' : 'bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-500'}">
-            <img src="${reply.postedBy.profile?.avatar || 'https://placeholder-image-service.onrender.com/image/40x40'}" alt="${reply.postedBy.username}" class="w-10 h-10 rounded-full flex-shrink-0">
-            <div class="flex-grow">
-                <p class="font-semibold text-sm text-gray-800 dark:text-white">
-                    ${reply.postedBy.username} ${isMentor ? `<span class="text-xs font-medium text-yellow-600 dark:text-yellow-400">${mentorLabel}</span>` : ''}
-                </p>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">${postedDate}</p>
-                <p class="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-wrap">${reply.text}</p>
-            </div>
+                <img src="${reply.postedBy?.profile?.avatar || 'https://placeholder-image-service.onrender.com/image/40x40'}" alt="${reply.postedBy?.username || 'User'}" class="w-10 h-10 rounded-full flex-shrink-0">
+                <div class="flex-grow">
+                    <p class="font-semibold text-sm text-gray-800 dark:text-white">
+                        ${reply.postedBy?.username || '[Deleted User]'} ${isMentor ? `<span class="text-xs font-medium text-yellow-600 dark:text-yellow-400">${mentorLabel}</span>` : ''}
+                    </p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">${postedDate}</p>
+                    <p class="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-wrap">${reply.text}</p>
+                </div>
         </div>
     `;
 }
