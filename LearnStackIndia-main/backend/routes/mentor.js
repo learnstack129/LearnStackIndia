@@ -342,6 +342,52 @@ router.get('/tests/:testId/attempts', mentorAuth, async (req, res) => {
     }
 });
 
+// --- NEW ROUTE: Get leaderboard for a specific test ---
+router.get('/tests/:testId/leaderboard', mentorAuth, async (req, res) => {
+    try {
+        const { testId } = req.params;
+        
+        // 1. Ensure mentor owns this test
+        const test = await Test.findOne({ _id: testId, createdBy: req.user.id });
+        if (!test) {
+            return res.status(404).json({ message: 'Test not found or you do not own this test' });
+        }
+        
+        // 2. Find users who have a *completed* attempt for this test
+        const usersWithAttempts = await User.find({ 
+                'testAttempts.testId': testId,
+                'testAttempts.status': 'completed' // Only show completed attempts
+            })
+            .select('username profile.avatar testAttempts'); // Select necessary fields
+
+        // 3. Map, filter, and sort the attempts
+        const leaderboard = usersWithAttempts.map(user => {
+            const attempt = user.testAttempts.find(a => a.testId.toString() === testId);
+            return {
+                userId: user._id,
+                username: user.username,
+                avatar: user.profile.avatar,
+                score: attempt.score,
+                status: attempt.status,
+                completedAt: attempt.completedAt
+            };
+        }).filter(Boolean) // Filter out any nulls
+          .sort((a, b) => b.score - a.score); // Sort by score descending
+
+        // 4. Add position
+        const rankedLeaderboard = leaderboard.map((entry, index) => ({
+            ...entry,
+            position: index + 1
+        }));
+            
+        res.json({ success: true, leaderboard: rankedLeaderboard, testTitle: test.title });
+        
+    } catch (error) {
+        console.error("Error fetching test leaderboard:", error);
+        res.status(500).json({ message: 'Error fetching test leaderboard' });
+    }
+});
+// --- END NEW ROUTE ---
 // POST: Unlock a user's test attempt (3-strike reset)
 router.post('/attempts/unlock', mentorAuth, async (req, res) => {
     try {
