@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Selection Sort Visualization - Enhanced Design</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>
+  (function() {
+    // Get saved theme, but DEFAULT to 'light'
+    const savedTheme = localStorage.getItem('theme') || 'light'; 
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  })();
+</script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+  <div class="theme-toggle">
+    <button id="theme-toggle-btn" aria-label="Toggle theme">
+      <span class="theme-icon">🌙</span>
+    </button>
+  </div>
+
+  <div class="logout-container">
+    <button id="logout-btn" aria-label="Logout">
+        <i class="fas fa-sign-out-alt"></i> </button>
+  </div>
+
+  <div class="container">
+    <header class="main-header">
+      <h1>Selection Sort Visualization</h1>
+      <p class="subtitle">Interactive step-by-step sorting algorithm demonstration</p>
+    </header>
+
+    <section class="explanation-section">
+      <div class="explanation-header">
+        <div class="explanation-title-wrapper">
+          <span class="explanation-emoji">🎯</span>
+          <div class="explanation-title-content">
+            <h3 class="explanation-title">Selection Sort: An In-Depth Look</h3>
+            <p class="explanation-subtitle">Understanding the Mechanics of Selection</p>
+          </div>
+        </div>
+        <div class="explanation-badge">
+          <span class="badge-dot"></span>
+          <span class="badge-text">Beginner Friendly</span>
+        </div>
+      </div>
+
+      <div class="explanation-card card-featured">
+        <div class="card-header">
+          <div class="card-icon icon-blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5z" />
+              <path d="M2 17l10 5 10-5M2 12l10 5 10-5" />
+            </svg>
+          </div>
+          <h4 class="card-title">💡 Fundamental Principle</h4>
+        </div>
+        <p class="card-text">
+          Selection Sort works by dividing the input list into two parts: a <strong>sorted sublist</strong> at the beginning and an <strong>unsorted sublist</strong> at the end. Initially, the sorted sublist is empty. The algorithm repeatedly <strong>finds the minimum element</strong> (for ascending order) from the unsorted sublist and swaps it with the first element of the unsorted sublist. This moves the boundary between the sorted and unsorted sublists one element to the right.
+        </p>
+         <div class="card-visual">
+          <div class="selection-demo">
+            <span class="selection-item">64</span>
+            <span class="selection-item">34</span>
+            <span class="selection-item min">12</span>
+            <span class="selection-item">22</span>
+            <span class="selection-arrow">→ Swap with 1st unsorted (64) →</span>
+            <span class="selection-item sorted">12</span>
+            <span class="selection-item">34</span>
+            <span class="selection-item">64</span>
+            <span class="selection-item">22</span>
+          </div>
+          <div class="text-center text-xs text-muted-light mt-2">Pass 1: Find minimum (12) → Swap with first element (64)</div>
+        </div>
+      </div>
+
+      <div class="explanation-card">
+        <div class="card-header">
+          <div class="card-icon icon-purple">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+              <line x1="9" y1="9" x2="15" y2="9" />
+              <line x1="9" y1="15" x2="15" y2="15" />
+            </svg>
+          </div>
+          <h4 class="card-title">🔄 Algorithm Flow</h4>
+        </div>
+        <div class="algorithm-steps">
+          <div class="algo-step">
+            <span class="algo-number">1</span>
+            <span class="algo-text">Assume the first element of the unsorted part is the minimum.</span>
+          </div>
+          <div class="algo-step">
+            <span class="algo-number">2</span>
+            <span class="algo-text">Iterate through the rest of the unsorted part, comparing each element with the current minimum.</span>
+          </div>
+          <div class="algo-step">
+            <span class="algo-number">3</span>
+            <span class="algo-text">If a smaller element is found, update the index of the minimum.</span>
+          </div>
+          <div class="algo-step">
+            <span class="algo-number">4</span>
+            <span class="algo-text">After scanning the unsorted part, swap the found minimum with the first element of the unsorted part.</span>
+          </div>
+          <div class="algo-step">
+            <span class="algo-number">5</span>
+            <span class="algo-text">Repeat until the entire list is sorted.</span>
+          </div>
+        </div>
+      </div>
+
+       <div class="explanation-card card-large">
+        <div class="card-header">
+          <div class="card-icon icon-green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+            </svg>
+          </div>
+          <h4 class="card-title">⚙️ Algorithmic Walkthrough (Ascending)</h4>
+        </div>
+        <div class="example-container">
+          <div class="example-initial">
+            <span class="example-label">Input Array:</span>
+            <code class="example-array">[64, 25, 12, 22, 11]</code>
+          </div>
+          <div class="example-steps">
+            <h5 class="font-semibold text-sm mb-2 text-primary-light">Pass 1 (i=0):</h5>
+             <div class="example-step"> <span class="step-number">1a</span> <div class="step-content"> <span class="step-label">Find min in [64, 25, 12, 22, 11]:</span> <code class="inline-code">Min is 11 at index 4</code></div></div>
+             <div class="example-step"> <span class="step-number">1b</span> <div class="step-content"> <span class="step-label">Swap arr[0] (64) with arr[4] (11):</span> <code class="result-array">[11, 25, 12, 22, 64]</code> <span class="sorted-badge">✨ 11 Sorted</span></div></div>
+             <h5 class="font-semibold text-sm mb-2 mt-3 text-primary-light">Pass 2 (i=1):</h5>
+             <div class="example-step"> <span class="step-number">2a</span> <div class="step-content"> <span class="step-label">Find min in [25, 12, 22, 64]:</span> <code class="inline-code">Min is 12 at index 2</code></div></div>
+             <div class="example-step"> <span class="step-number">2b</span> <div class="step-content"> <span class="step-label">Swap arr[1] (25) with arr[2] (12):</span> <code class="result-array">[11, 12, 25, 22, 64]</code> <span class="sorted-badge">✨ 12 Sorted</span></div></div>
+             <h5 class="font-semibold text-sm mb-2 mt-3 text-primary-light">Pass 3 (i=2):</h5>
+             <div class="example-step"> <span class="step-number">3a</span> <div class="step-content"> <span class="step-label">Find min in [25, 22, 64]:</span> <code class="inline-code">Min is 22 at index 3</code></div></div>
+             <div class="example-step"> <span class="step-number">3b</span> <div class="step-content"> <span class="step-label">Swap arr[2] (25) with arr[3] (22):</span> <code class="result-array">[11, 12, 22, 25, 64]</code> <span class="sorted-badge">✨ 22 Sorted</span></div></div>
+             <p class="text-xs text-center text-muted-light mt-2">... (Passes continue until fully sorted)</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="explanation-card">
+        <div class="card-header">
+          <div class="card-icon icon-orange">
+             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+          </div>
+          <h4 class="card-title">📊 Performance Analysis</h4>
+        </div>
+        <p class="card-text mb-2">Selection Sort's time complexity is consistent regardless of the initial order:</p>
+        <div class="complexity-items">
+           <div class="complexity-item"> <div class="complexity-row"> <span class="complexity-label">Best Case Time</span> <span class="complexity-badge badge-error">O(n²)</span> </div> <span class="complexity-note">Still requires nested loops even if sorted.</span> </div>
+           <div class="complexity-item"> <div class="complexity-row"> <span class="complexity-label">Average Case Time</span> <span class="complexity-badge badge-error">O(n²)</span> </div> <span class="complexity-note">Typical quadratic performance.</span> </div>
+           <div class="complexity-item"> <div class="complexity-row"> <span class="complexity-label">Worst Case Time</span> <span class="complexity-badge badge-error">O(n²)</span> </div> <span class="complexity-note">Occurs for any input order.</span> </div>
+           <div class="complexity-item"> <div class="complexity-row"> <span class="complexity-label">Space Complexity</span> <span class="complexity-badge badge-info">O(1)</span> </div> <span class="complexity-note">It's an <strong>in-place</strong> algorithm.</span> </div>
+           <div class="complexity-item"> <div class="complexity-row"> <span class="complexity-label">Swaps</span> <span class="complexity-badge badge-success">O(n)</span> </div> <span class="complexity-note">Performs at most n-1 swaps, useful when swaps are costly.</span> </div>
+        </div>
+         <br>
+         <div class="card-header">
+           <div class="card-icon icon-orange">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+           </div>
+           <h4 class="card-title">📈 Time Complexity Growth</h4>
+         </div>
+         <div class="chart-container">
+           <canvas id="complexityChart"></canvas>
+         </div>
+         <p class="text-xs text-muted-light mt-2 text-center">Visualizing O(n²) growth as input size (n) increases.</p>
+         <br>
+          <div class="card-header">
+            <div class="card-icon icon-blue"> <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            </div>
+            <h4 class="card-title">💾 Space Complexity Growth</h4>
+          </div>
+          <div class="chart-container">
+            <canvas id="spaceComplexityChart"></canvas>
+          </div>
+          <p class="text-xs text-muted-light mt-2 text-center">Visualizing O(1) - Constant space usage.</p>
+      </div>
+
+       <div class="explanation-card code-snippet-card">
+        <div class="card-header">
+          <div class="card-icon icon-purple">
+             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+          </div>
+          <h4 class="card-title">💻 Code Implementation</h4>
+           <button id="copyCodeBtn" class="copy-code-button" title="Copy Code">
+              <i class="far fa-copy"></i> </button>
+        </div>
+        <div class="code-tabs">
+          <button class="code-tab active" data-lang="javascript">JavaScript</button>
+          <button class="code-tab" data-lang="python">Python</button>
+          <button class="code-tab" data-lang="java">Java</button>
+          <button class="code-tab" data-lang="c">C</button>
+          <button class="code-tab" data-lang="cpp">C++</button>
+        </div>
+        <div class="code-content-container">
+          <pre id="code-snippet-javascript" class="code-snippet active"><code class="language-javascript">// Selection Sort in JavaScript
+function selectionSort(arr) {
+  const n = arr.length;
+  for (let i = 0; i < n - 1; i++) {
+    let minIndex = i;
+    for (let j = i + 1; j < n; j++) {
+      if (arr[j] < arr[minIndex]) {
+        minIndex = j;
+      }
+    }
+    if (minIndex !== i) {
+      [arr[i], arr[minIndex]] = [arr[minIndex], arr[i]]; // Swap
+    }
+  }
+  return arr;
+}
+
+const arr = [64, 25, 12, 22, 11];
+console.log(selectionSort(arr));
+
+</code></pre>
+          <pre id="code-snippet-python" class="code-snippet"><code class="language-python"># Selection Sort in Python
+def selection_sort(arr):
+  n = len(arr)
+  for i in range(n - 1):
+    min_index = i
+    for j in range(i + 1, n):
+      if arr[j] < arr[min_index]:
+        min_index = j
+    if min_index != i:
+      arr[i], arr[min_index] = arr[min_index], arr[i] # Swap
+
+arr = [64, 25, 12, 22, 11]
+selection_sort(arr)
+print(arr)
+
+</code></pre>
+          <pre id="code-snippet-java" class="code-snippet"><code class="language-java">// Selection Sort in Java
+public class SelectionSort {
+  static void selectionSort(int[] arr) {
+    int n = arr.length;
+    for (int i = 0; i < n - 1; i++) {
+      int minIndex = i;
+      for (int j = i + 1; j < n; j++) {
+        if (arr[j] < arr[minIndex]) {
+          minIndex = j;
+        }
+      }
+      if (minIndex != i) {
+        int temp = arr[i];
+        arr[i] = arr[minIndex];
+        arr[minIndex] = temp; // Swap
+      }
+    }
+  }
+
+  public static void main(String[] args) {
+    int[] arr = {64, 25, 12, 22, 11};
+    selectionSort(arr);
+    for (int x : arr) System.out.print(x + " ");
+    System.out.println();
+  }
+}
+
+</code></pre>
+            <pre id="code-snippet-c" class="code-snippet"><code class="language-c">// Selection Sort in C
+#include &lt;stdio.h&gt;
+
+void swap(int *xp, int *yp) {
+    int temp = *xp;
+    *xp = *yp;
+    *yp = temp;
+}
+
+void selectionSort(int arr[], int n) {
+    int i, j, min_idx;
+    for (i = 0; i < n-1; i++) {
+        min_idx = i;
+        for (j = i+1; j < n; j++)
+          if (arr[j] < arr[min_idx])
+            min_idx = j;
+
+        if(min_idx != i)
+            swap(&arr[min_idx], &arr[i]);
+    }
+}
+
+void printArray(int arr[], int size) {
+    for (int i=0; i < size; i++) printf("%d ", arr[i]);
+    printf("\n");
+}
+
+int main() {
+    int arr[] = {64, 25, 12, 22, 11};
+    int n = sizeof(arr)/sizeof(arr[0]);
+    selectionSort(arr, n);
+    printArray(arr, n);
+    return 0;
+}
+
+</code></pre>
+            <pre id="code-snippet-cpp" class="code-snippet"><code class="language-cpp">// Selection Sort in C++
+#include &lt;iostream&gt;
+#include &lt;vector&gt;
+#include &lt;algorithm&gt; // For std::swap
+using namespace std;
+
+void selectionSort(vector&lt;int&gt;&amp; arr) {
+    int n = arr.size();
+    for (int i = 0; i < n - 1; i++) {
+        int min_idx = i;
+        for (int j = i + 1; j < n; j++) {
+            if (arr[j] < arr[min_idx]) {
+                min_idx = j;
+            }
+        }
+        if (min_idx != i) {
+            swap(arr[i], arr[min_idx]);
+        }
+    }
+}
+
+int main() {
+    vector&lt;int&gt; arr = {64, 25, 12, 22, 11};
+    selectionSort(arr);
+    for (int x : arr) cout << x << " ";
+    cout << "\n";
+    return 0;
+}
+
+</code></pre>
+        </div>
+      </div>
+
+      <div class="explanation-card">
+        <div class="card-header">
+          <div class="card-icon icon-cyan">
+             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/><path d="M12 2L2 7l10 5 10-5z"/></svg>
+          </div>
+          <h4 class="card-title">↔️ Stability</h4>
+        </div>
+        <p class="card-text">
+          Standard implementations of Selection Sort are generally <strong>not stable</strong>. This means that if there are elements with equal values, their relative order might change after sorting. For example, if you have `[5a, 3, 5b, 1]` (where `5a` and `5b` are equal but distinct), Selection Sort might result in `[1, 3, 5b, 5a]`, changing the original order of the 5s. While stable versions exist, they often require extra space or complexity.
+        </p>
+      </div>
+
+       <div class="explanation-card">
+        <div class="card-header">
+          <div class="card-icon icon-pink">
+             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          </div>
+          <h4 class="card-title">🔑 Key Characteristics</h4>
+        </div>
+        <ul class="list-disc pl-5 space-y-1 text-sm text-secondary-light">
+          <li><strong>Simplicity:</strong> Easy to understand and implement.</li>
+          <li><strong>In-Place:</strong> Requires minimal extra memory (O(1) space).</li>
+          <li><strong>Minimal Swaps:</strong> Performs O(n) swaps, which can be advantageous if writing to memory is expensive.</li>
+          <li><strong>Inefficient Time:</strong> O(n²) time complexity makes it unsuitable for large datasets.</li>
+          <li><strong>Not Adaptive:</strong> Performance doesn't improve significantly for already sorted or nearly sorted data.</li>
+          <li><strong>Not Stable:</strong> Standard implementation doesn't preserve the relative order of equal elements.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="input-section">
+      <div class="input-container">
+        <div class="input-group">
+          <label for="array-input">Enter Array:</label>
+          <input type="text" id="array-input" placeholder="e.g. 64, 25, 12, 22, 11" />
+        </div>
+        <div class="controls-group">
+          <div class="select-group">
+            <label for="order-select">Sort Order:</label>
+            <select id="order-select">
+              <option value="asc" selected>Ascending ↑</option>
+              <option value="desc">Descending ↓</option>
+            </select>
+          </div>
+          <button id="start-btn" class="start-button">
+            <span>🚀 Start Sorting</span>
+          </button>
+        </div>
+        <div class="input-hint">
+          <span id="number-count">Numbers in Array: 0</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="main-content">
+      <div class="left-panel">
+        <section class="visualization-section">
+          <div class="section-header">
+            <h3>Array Visualization</h3>
+            <div class="section-subtitle">Live array representation</div>
+          </div>
+          <div class="array-container">
+            <div id="array-view"></div>
+             <div class="integrated-legend">
+              <div class="legend-item-mini">
+                <span class="legend-box-mini compare"></span>
+                <span class="legend-text-mini">Comparing</span>
+              </div>
+              <div class="legend-item-mini">
+                <span class="legend-box-mini current-min"></span>
+                <span class="legend-text-mini">Current Min</span>
+              </div>
+              <div class="legend-item-mini">
+                <span class="legend-box-mini swap"></span>
+                <span class="legend-text-mini">Swapping</span>
+              </div>
+              <div class="legend-item-mini">
+                <span class="legend-box-mini sorted"></span>
+                <span class="legend-text-mini">Sorted</span>
+              </div>
+               <div class="legend-item-mini">
+                <span class="legend-box-mini pass-complete"></span>
+                <span class="legend-text-mini">Pass Complete</span>
+              </div>
+            </div>
+          </div>
+          <div class="visualization-controls">
+             <div class="speed-control">
+              <div class="slider-container">
+                <label for="speed-slider">Speed:</label>
+                <input id="speed-slider" type="range" min="1" max="100" value="60" />
+                <span id="speed-value" class="speed-display">60</span>
+              </div>
+              <div id="result" class="result-display"></div>
+            </div>
+            <div class="playback-controls">
+              <button id="prev-step" class="control-btn" disabled>
+                <span>⏮ Previous</span>
+              </button>
+              <button id="pause-play-btn" class="control-btn play-btn" disabled>
+                <span>▶ Play</span>
+              </button>
+              <button id="next-step" class="control-btn" disabled>
+                <span>Next ⏭</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section class="state-section">
+          <div class="section-header">
+            <h3>Algorithm State</h3>
+          </div>
+          <div class="state-content">
+            <div id="variable-state" class="variables-display">Initializing...</div>
+            <div id="step-desc" class="step-description">
+              <p>Enter an array and click 'Start Sorting'.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="info-section">
+          <div class="section-header">
+            <h3>Algorithm Complexity</h3>
+          </div>
+          <div class="complexity-grid">
+            <div class="complexity-card">
+              <div class="complexity-label">Time Complexity</div>
+              <div class="complexity-value" id="time-complexity">O(n²)</div>
+              <div class="complexity-note">All Cases</div>
+            </div>
+            <div class="complexity-card">
+              <div class="complexity-label">Space Complexity</div>
+              <div class="complexity-value" id="space-complexity">O(1)</div>
+              <div class="complexity-note">Constant Space</div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="right-panel">
+        <section class="code-section">
+          <div class="section-header">
+            <h3>Selection Sort Algorithm (Code)</h3>
+          </div>
+          <div class="code-container">
+            <pre id="code-display"><code id="code-block" class="code-content"></code></pre>
+          </div>
+        </section>
+
+         <section class="quiz-section">
+          <div class="quiz-box">
+            <h1>Practice Quiz</h1>
+          </div>
+          <div class="quiz-button">
+            <span style="color: var(--text-muted-light);">Apply what you've learned</span>
+            <button id="quiz-button" onclick="quiz_btn()">⚡Start Quiz</button>
+          </div>
+        </section>
+      </div>
+    </div>
+
+  </div>
+  <script src="index.js"></script> </body>
+
+
+</html>
+
