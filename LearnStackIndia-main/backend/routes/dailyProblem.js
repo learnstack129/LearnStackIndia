@@ -129,17 +129,45 @@ router.post('/submit', auth, async (req, res) => {
         let resultsString = "";
         let executionError = null;
 
+        // --- *** ADD THIS BLOCK *** ---
+        // FIX: Determine the correct filename based on language
+        let fileName;
+        switch (problem.language.toLowerCase()) {
+            case 'c':
+                fileName = 'main.c';
+                break;
+            case 'cpp':
+                fileName = 'main.cpp';
+                break;
+            case 'python':
+                fileName = 'main.py';
+                break;
+            case 'java':
+                fileName = 'Main.java'; // Java class name must match filename
+                break;
+            case 'javascript':
+            default:
+                fileName = 'index.js';
+        }
+        // --- *** END OF ADDED BLOCK *** ---
+
         for (const [index, testCase] of problem.testCases.entries()) {
             try {
                 const response = await oneCompilerAxios.post('', {
                     language: problem.language,
                     stdin: testCase.input || "",
-                    files: [{ name: "index.js", content: submittedCode }] // Use a standard name
+                    // --- *** MODIFY THIS LINE *** ---
+                    files: [{ name: fileName, content: submittedCode }] // Use dynamic fileName
                 });
 
                 // Check for compilation or runtime errors
                 if (response.data.exception || response.data.stderr) {
-                    executionError = `Test Case ${index + 1} Error: ${response.data.exception || response.data.stderr}`;
+                    // *** MODIFICATION: Handle the specific "same output file" error ***
+                    let errorMsg = response.data.exception || response.data.stderr;
+                    if (errorMsg.includes('is the same as output file')) {
+                         errorMsg = "Compilation Error: A file naming conflict occurred. (Ensure 'language' in problem matches file type).";
+                    }
+                    executionError = `Test Case ${index + 1} Error: ${errorMsg}`;
                     resultsString += `${executionError}\n`;
                     break; // Stop on first error
                 }
@@ -188,6 +216,7 @@ router.post('/submit', auth, async (req, res) => {
         // Check 4: Lock Logic
         if (attempt.passed) {
             attempt.isLocked = true;
+            solutionCode = problem.solutionCode; // Send solution on pass
         } else if (attempt.runCount >= 2) {
             attempt.isLocked = true;
             solutionCode = problem.solutionCode; // Send solution on final fail
@@ -204,7 +233,8 @@ router.post('/submit', auth, async (req, res) => {
                 isLocked: attempt.isLocked,
                 runCount: attempt.runCount,
                 lastResults: attempt.lastResults,
-                solutionCode: solutionCode // Only non-null if locked & failed
+                // --- *** MODIFIED THIS LINE *** ---
+                solutionCode: solutionCode // Send solution if locked OR passed
             }
         });
 
