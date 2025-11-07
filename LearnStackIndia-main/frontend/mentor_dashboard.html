@@ -67,7 +67,7 @@
         
         /* Loading Skeleton */
         .loading-skeleton {
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0f0 50%, #f0f0f0 75%);
             background-size: 200% 100%;
             animation: loading 1.5s infinite;
             border-radius: 0.5rem;
@@ -331,15 +331,15 @@
             </div>
             <nav class="flex-grow">
                 <ul>
-                    <li class="mb-2"><a href="#my-tests" class="nav-link ...">...My Tests</a></li>
+                    <li class="mb-2"><a href="#my-tests" class="nav-link block p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 active"><i class="fas fa-file-alt mr-2 w-4 inline-block text-center"></i>My Tests</a></li>
                     
-                    <li class="mb-2"><a href="#daily-challenges" class="nav-link ...">...Daily Challenges</a></li>
-                    <li class="mb-2"><a href="#review-submissions" class="nav-link ...">...Review Submissions</a></li>
-                    <li class="mb-2"><a href="#leaderboard" class="nav-link ...">...Test Leaderboard</a></li>
+                    <li class="mb-2"><a href="#daily-challenges" class="nav-link block p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700"><i class="fas fa-calendar-day mr-2 w-4 inline-block text-center"></i>Daily Challenges</a></li>
+                    <li class="mb-2"><a href="#review-submissions" class="nav-link block p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700"><i class="fas fa-user-check mr-2 w-4 inline-block text-center"></i>Review Submissions</a></li>
+                    <li class="mb-2"><a href="#leaderboard" class="nav-link block p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700"><i class="fas fa-trophy mr-2 w-4 inline-block text-center"></i>Test Leaderboard</a></li>
                     
                     <li class="mb-2"><a href="#daily-leaderboard" class="nav-link block p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700"><i class="fas fa-trophy mr-2 w-4 inline-block text-center"></i>Daily Leaderboard</a></li>
                     
-                    <li class="mb-2"><a href="#monitoring" class="nav-link ...">...Live Monitoring</a></li>
+                    <li class="mb-2"><a href="#monitoring" class="nav-link block p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700"><i class="fas fa-eye mr-2 w-4 inline-block text-center"></i>Live Monitoring</a></li>
                 </ul>
             </nav>
             <div>
@@ -464,7 +464,7 @@
                     </div>
                 </div>
             </section>
-
+            
             <section id="daily-leaderboard" class="mb-8 mentor-section hidden">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl font-semibold text-gray-700 dark:text-gray-300">Daily Problem Leaderboard</h2>
@@ -835,21 +835,19 @@
             document.querySelectorAll('.nav-link').forEach(link => { link.classList.remove('active'); if (link.getAttribute('href') === `#${sectionIdToShow}`) link.classList.add('active'); });
             closeMobileMenu();
             
-            // --- *** MODIFIED: Load data for the shown section *** ---
+            // --- *** MODIFICATION 3: Load data for the shown section *** ---
             if(sectionIdToShow === 'my-tests') {
                 loadMentorTests();
             }
-            // --- *** ADDED THIS *** ---
             if(sectionIdToShow === 'daily-challenges') {
                 loadDailyChallenges();
             }
             if(sectionIdToShow === 'review-submissions') {
                 loadSubmissionsForReview();
             }
-            if(sectionIdToShow === 'daily-leaderboard') {
+            if(sectionIdToShow === 'daily-leaderboard') { // <-- ADD THIS
                 loadDailyLeaderboard();
             }
-            // --- *** END ADDITION *** ---
             if(sectionIdToShow === 'monitoring') {
                 populateMonitorTestSelect();
                 loadTestAttempts(); 
@@ -1601,12 +1599,13 @@
                 errorP.textContent = result?.message || 'Failed to send feedback.';
             }
         }
-
+        
+        // --- *** MODIFICATION 4: ADD NEW FUNCTION *** ---
         async function loadDailyLeaderboard() {
             const tbody = document.getElementById('dailyLeaderboardTableBody');
             tbody.innerHTML = '<tr><td colspan="5" class="p-4" data-label="Loading"><div class="loading-skeleton h-8 w-full"></div></td></tr>';
             
-            // Use the new '/daily-practice' route
+            // Use the new '/daily-practice' route. Note: The API call is to '/mentor' but the route is '/leaderboard/daily-practice'
             const data = await makeMentorAPICall(`/leaderboard/daily-practice`);
             tbody.innerHTML = '';
             
