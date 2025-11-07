@@ -969,7 +969,7 @@
             } else {
                 topic.algorithms.forEach(algoDef => {
                     const algoProgress = topic.userAlgoProgress[algoDef.id] || { completed: false, accuracyPractice: 0, attemptsPractice: 0 };
-                    const card = createAlgorithmCard(topic.id, algoDef, algoProgress);
+                    const card = createAlgorithmCard(topic, algoDef, algoProgress); // Pass the whole topic object
                     algorithmsGrid.appendChild(card);
                 });
             }
@@ -978,7 +978,7 @@
             algorithmsSection.classList.remove('hidden');
         }
 
-        function createAlgorithmCard(topicId, algoDef, algoProgress) {
+        function createAlgorithmCard(topic, algoDef, algoProgress) {
             const div = document.createElement('div');
             const effectiveStatus = algoProgress.effectiveStatus || 'available';
             const isLocked = effectiveStatus === 'locked';
@@ -1008,15 +1008,27 @@
             `;
 
             if (!isLocked) {
-                div.addEventListener('click', () => handleAlgorithmClick(topicId, algoDef.id));
+                // Pass subject name, topic ID, and algorithm ID
+                div.addEventListener('click', () => handleAlgorithmClick(topic.subject, topic.id, algoDef.id));
             } else {
                 div.setAttribute('title', 'This algorithm is currently locked.');
             }
             return div;
         }
 
-        function handleAlgorithmClick(topicId, algorithmId) {
-            const filePath = `topics/${algorithmId}/index.html`;
+        function handleAlgorithmClick(subjectName, topicId, algorithmId) {
+    
+            const sanitize = (name) => {
+                if (!name) return 'Uncategorized';
+                return name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_.-]/g, '');
+            };
+        
+            const subjectFolder = sanitize(subjectName);
+            const topicFolder = sanitize(topicId); // topicId is usually clean (e.g., "sorting")
+        
+            // Build the new path: e.g., "DSA_Visualizer/sorting/bubbleSort.html"
+            const filePath = `${subjectFolder}/${topicFolder}/${algorithmId}.html`;
+        
             console.log(`Navigating to: ${filePath}`);
             window.location.href = filePath;
         }
@@ -1116,3 +1128,4 @@
     </script>
 </body>
 </html>
+
