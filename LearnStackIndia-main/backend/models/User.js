@@ -307,6 +307,7 @@ userSchema.pre('save', async function (next) {
         // --- END FIX 1 ---
 
         try {
+            const Topic = require('./Topic');
             // --- FIX 2: Move Topic import inside the function ---
             // This avoids a Mongoose model race condition on Vercel
             const Topic = require('./Topic'); 
@@ -653,6 +654,7 @@ userSchema.methods.hasAchievement = function (achievementId) {
 
 
 module.exports = mongoose.model('User', userSchema);
+
 
 
 
