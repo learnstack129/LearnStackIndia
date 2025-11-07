@@ -5,6 +5,7 @@ const Test = require('../models/Test');
 const Question = require('../models/Question');
 const User = require('../models/User');
 const mongoose = require('mongoose');
+const Doubt = require('../models/Doubt');
 const Topic = require('../models/Topic');
 const SubjectMeta = require('../models/SubjectMeta');
 
@@ -454,6 +455,26 @@ router.get('/subject-meta', mentorAuth, async (req, res) => {
     } catch (error) {
         console.error("Error fetching subject meta for mentor:", error);
         res.status(500).json({ message: 'Error fetching subject metadata' });
+    }
+});
+
+router.get('/doubts', mentorAuth, async (req, res) => {
+    try {
+        const { subject } = req.query;
+        if (!subject) {
+            return res.status(400).json({ message: 'Subject query parameter is required' });
+        }
+
+        const doubts = await Doubt.find({ subject: subject })
+            .populate('postedBy', 'username profile.avatar') // Populate the original poster
+            .populate('replies.postedBy', 'username profile.avatar role') // Populate users who replied
+            .sort({ isResolved: 1, createdAt: -1 })
+            .lean(); // Use lean for safety
+
+        res.json({ success: true, doubts });
+    } catch (error) {
+        console.error("Error fetching doubts for mentor:", error);
+        res.status(500).json({ message: "Error fetching doubts" });
     }
 });
 
