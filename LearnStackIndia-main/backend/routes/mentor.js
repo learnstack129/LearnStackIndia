@@ -1,13 +1,9 @@
 // backend/routes/mentor.js
 const express = require('express');
 const mentorAuth = require('../middleware/mentorAuth');
-const Test = require('../models/Test');
-const Question = require('../models/Question');
-const User = require('../models/User');
+
 const mongoose = require('mongoose');
 const Doubt = require('../models/Doubt');
-const Topic = require('../models/Topic');
-const SubjectMeta = require('../models/SubjectMeta');
 
 const router = express.Router();
 
@@ -15,6 +11,7 @@ const router = express.Router();
 
 // GET: Fetch all tests created by the logged-in mentor
 router.get('/tests', mentorAuth, async (req, res) => {
+    const Test = require('../models/Test');
     try {
         const tests = await Test.find({ createdBy: req.user.id })
             .populate('questions', 'text timeLimit') // Populates text/timeLimit for the list
@@ -29,6 +26,7 @@ router.get('/tests', mentorAuth, async (req, res) => {
 
 // POST: Create a new test
 router.post('/tests', mentorAuth, async (req, res) => {
+    const Test = require('../models/Test');
     try {
         const { title, password } = req.body;
         if (!title || !password) {
@@ -51,6 +49,9 @@ router.post('/tests', mentorAuth, async (req, res) => {
 
 // DELETE: Delete a test and all associated data
 router.delete('/tests/:testId', mentorAuth, async (req, res) => {
+    const Test = require('../models/Test'); // <-- ADD HERE
+    const Question = require('../models/Question'); // <-- ADD HERE
+    const User = require('../models/User'); // <-- ADD HERE
     try {
         const { testId } = req.params;
 
@@ -87,6 +88,8 @@ router.delete('/tests/:testId', mentorAuth, async (req, res) => {
 
 // POST: Add a new question (MCQ or Short Answer) and link it to a test
 router.post('/tests/:testId/questions', mentorAuth, async (req, res) => {
+    const Test = require('../models/Test'); // <-- ADD HERE
+    const Question = require('../models/Question'); // <-- ADD HERE
     try {
         const { testId } = req.params;
         const {
@@ -150,6 +153,7 @@ router.post('/tests/:testId/questions', mentorAuth, async (req, res) => {
 
 // --- NEW ROUTE: GET a single question's full details for editing ---
 router.get('/questions/:questionId', mentorAuth, async (req, res) => {
+    const Question = require('../models/Question');
     try {
         const { questionId } = req.params;
         
@@ -172,6 +176,7 @@ router.get('/questions/:questionId', mentorAuth, async (req, res) => {
 
 // --- NEW ROUTE: UPDATE a single question ---
 router.put('/questions/:questionId', mentorAuth, async (req, res) => {
+    const Question = require('../models/Question');
     try {
         const { questionId } = req.params;
         const {
@@ -235,6 +240,8 @@ router.put('/questions/:questionId', mentorAuth, async (req, res) => {
 
 // --- NEW ROUTE: DELETE a single question (from Test and Question collection) ---
 router.delete('/tests/:testId/questions/:questionId', mentorAuth, async (req, res) => {
+    const Test = require('../models/Test'); // <-- ADD HERE
+    const Question = require('../models/Question'); // <-- ADD HERE
     try {
         const { testId, questionId } = req.params;
 
@@ -276,6 +283,7 @@ router.delete('/tests/:testId/questions/:questionId', mentorAuth, async (req, re
 
 // POST: Toggle a test's active status
 router.post('/tests/:testId/toggle', mentorAuth, async (req, res) => {
+    const Test = require('../models/Test'); // <-- ADD HERE
     try {
         const { testId } = req.params;
 
@@ -307,6 +315,8 @@ router.post('/tests/:testId/toggle', mentorAuth, async (req, res) => {
 
 // GET: Get all user attempts for a specific test (for monitoring)
 router.get('/tests/:testId/attempts', mentorAuth, async (req, res) => {
+    const Test = require('../models/Test'); // <-- ADD HERE
+    const User = require('../models/User'); // <-- ADD HERE
      try {
         const { testId } = req.params;
         
@@ -345,6 +355,8 @@ router.get('/tests/:testId/attempts', mentorAuth, async (req, res) => {
 
 // --- NEW ROUTE: Get leaderboard for a specific test ---
 router.get('/tests/:testId/leaderboard', mentorAuth, async (req, res) => {
+    const Test = require('../models/Test'); // <-- ADD HERE
+    const User = require('../models/User'); // <-- ADD HERE
     try {
         const { testId } = req.params;
         
@@ -391,6 +403,8 @@ router.get('/tests/:testId/leaderboard', mentorAuth, async (req, res) => {
 // --- END NEW ROUTE ---
 // POST: Unlock a user's test attempt (3-strike reset)
 router.post('/attempts/unlock', mentorAuth, async (req, res) => {
+    const Test = require('../models/Test'); // <-- ADD HERE
+    const User = require('../models/User'); // <-- ADD HERE
     try {
         const { userId, attemptId } = req.body;
         
@@ -436,6 +450,7 @@ router.post('/attempts/unlock', mentorAuth, async (req, res) => {
 // GET: Fetch all unique subjects (for doubt filtering)
 // This is a route mentors need access to, which was previously admin-only
 router.get('/subjects', mentorAuth, async (req, res) => {
+    const Topic = require('../models/Topic'); // <-- ADD HERE
     try {
         // Find all distinct 'subject' fields from the Topic collection
         const subjects = await Topic.distinct('subject');
@@ -449,6 +464,7 @@ router.get('/subjects', mentorAuth, async (req, res) => {
 // GET: Fetch all subject metadata (for icons/colors, etc.)
 // This is also needed by admin, so mentors should have it too.
 router.get('/subject-meta', mentorAuth, async (req, res) => {
+    const SubjectMeta = require('../models/SubjectMeta'); // <-- ADD HERE
      try {
         const meta = await SubjectMeta.find().lean();
         res.json({ success: true, meta });
@@ -459,6 +475,7 @@ router.get('/subject-meta', mentorAuth, async (req, res) => {
 });
 
 router.get('/doubts', mentorAuth, async (req, res) => {
+    const Doubt = require('../models/Doubt'); // <-- ADD HERE
     try {
         const { subject } = req.query;
         if (!subject) {
