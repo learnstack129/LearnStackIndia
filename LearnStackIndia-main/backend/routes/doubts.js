@@ -2,8 +2,7 @@
 const express = require('express');
 const auth = require('../middleware/auth');
 const mentorAuth = require('../middleware/mentorAuth');
-const User = require('../models/User'); // To get user role for replies
-const Doubt = require('../models/Doubt');
+
 const mongoose = require('mongoose');
 
 const router = express.Router();
@@ -11,6 +10,7 @@ const router = express.Router();
 // GET: Fetch all doubts for a specific subject
 // GET /api/doubts?subject=DSA%20Visualizer
 router.get('/', auth, async (req, res) => {
+    const Doubt = require('../models/Doubt');
     try {
         const { subject } = req.query;
         if (!subject) {
@@ -33,6 +33,8 @@ router.get('/', auth, async (req, res) => {
 // POST: Create a new doubt
 // POST /api/doubts
 router.post('/', auth, async (req, res) => {
+    const Doubt = require('../models/Doubt'); // <-- ADD HERE
+    const User = require('../models/User'); // <-- ADD HERE
     try {
         const { title, questionText, subject } = req.body;
         if (!title || !questionText || !subject) {
@@ -68,6 +70,8 @@ router.post('/', auth, async (req, res) => {
 // POST: Add a reply to a doubt (Mentor only)
 // POST /api/doubts/:doubtId/reply
 router.post('/:doubtId/reply', mentorAuth, async (req, res) => {
+    const Doubt = require('../models/Doubt'); // <-- ADD HERE
+    const User = require('../models/User'); // <-- ADD HERE
     try {
         const { doubtId } = req.params;
         const { text } = req.body;
@@ -109,6 +113,8 @@ router.post('/:doubtId/reply', mentorAuth, async (req, res) => {
 // PUT: Mark a doubt as resolved (Mentor or Original Poster)
 // PUT /api/doubts/:doubtId/resolve
 router.put('/:doubtId/resolve', auth, async (req, res) => {
+    const Doubt = require('../models/Doubt'); // <-- ADD HERE
+    const User = require('../models/User'); // <-- ADD HERE
     try {
         const { doubtId } = req.params;
         const doubt = await Doubt.findById(doubtId);
