@@ -112,11 +112,10 @@ router.post('/submit', auth, async (req, res) => {
 
         const attempt = user.findOrCreateDailyAttempt(problem._id);
 
-        // Check 1: Locked or Passed
+        // Check 1: Locked
         if (attempt.isLocked) return res.status(403).json({ message: 'You have no more attempts for this problem.' });
-        if (attempt.passed) return res.status(403).json({ message: 'You have already solved this problem.' });
-
-        // Check 2: Run Limit
+        
+        // Check 2: Run Limit (Check if already >= 2)
         if (attempt.runCount >= 2) {
             attempt.isLocked = true;
             user.markModified('dailyProblemAttempts');
@@ -128,9 +127,6 @@ router.post('/submit', auth, async (req, res) => {
         let passedCount = 0;
         let resultsString = "";
         let executionError = null;
-
-        // --- *** ADD THIS BLOCK *** ---
-        // FIX: Determine the correct filename based on language
         let fileName;
         switch (problem.language.toLowerCase()) {
             case 'c':
@@ -149,20 +145,16 @@ router.post('/submit', auth, async (req, res) => {
             default:
                 fileName = 'index.js';
         }
-        // --- *** END OF ADDED BLOCK *** ---
 
         for (const [index, testCase] of problem.testCases.entries()) {
             try {
                 const response = await oneCompilerAxios.post('', {
                     language: problem.language,
                     stdin: testCase.input || "",
-                    // --- *** MODIFY THIS LINE *** ---
-                    files: [{ name: fileName, content: submittedCode }] // Use dynamic fileName
+                    files: [{ name: fileName, content: submittedCode }]
                 });
 
-                // Check for compilation or runtime errors
                 if (response.data.exception || response.data.stderr) {
-                    // *** MODIFICATION: Handle the specific "same output file" error ***
                     let errorMsg = response.data.exception || response.data.stderr;
                     if (errorMsg.includes('is the same as output file')) {
                          errorMsg = "Compilation Error: A file naming conflict occurred. (Ensure 'language' in problem matches file type).";
@@ -204,12 +196,26 @@ router.post('/submit', auth, async (req, res) => {
         attempt.lastSubmittedCode = submittedCode;
         attempt.passed = (!executionError && passedCount === problem.testCases.length);
 
-        // Check 3: Award Points (on first-ever run)
-        if (attempt.runCount === 1 && !attempt.pointsAwarded) {
-            user.stats.rank.points = (user.stats.rank.points || 0) + problem.pointsForAttempt;
-            attempt.pointsAwarded = true;
-            user.markModified('stats.rank');
+        // --- *** NEW POINTS LOGIC *** ---
+        let pointsToAward = 0;
+        if (attempt.pointsEarnedForProblem > 0) {
+            // Points already awarded for this problem, do nothing
+        } else if (attempt.passed && attempt.runCount === 1) {
+            pointsToAward = 20; // 20 points for 1st attempt pass
+        } else if (attempt.passed && attempt.runCount === 2) {
+            pointsToAward = 15; // 15 points for 2nd attempt pass
+        } else if (!attempt.passed && attempt.runCount >= 2) {
+            pointsToAward = 10; // 10 points for failing both attempts
         }
+        // If runCount is 1 and failed, pointsToAward remains 0 (wait for 2nd attempt)
+
+        if (pointsToAward > 0) {
+            attempt.pointsEarnedForProblem = pointsToAward;
+            user.stats.dailyProblemScore = (user.stats.dailyProblemScore || 0) + pointsToAward;
+            user.markModified('stats.dailyProblemScore');
+            console.log(`[Daily Problem] Awarded ${pointsToAward} points to ${user.username} for problem ${problemId}. New daily score: ${user.stats.dailyProblemScore}`);
+        }
+        // --- *** END NEW POINTS LOGIC *** ---
         
         let solutionCode = null;
 
@@ -223,6 +229,14 @@ router.post('/submit', auth, async (req, res) => {
         }
         
         user.markModified('dailyProblemAttempts');
+        
+        // --- ADDED: Update main rank points as well ---
+        // We'll use the 'pointsEarnedForProblem' for the main rank points too
+        if (pointsToAward > 0) {
+             user.stats.rank.points = (user.stats.rank.points || 0) + pointsToAward;
+             user.markModified('stats.rank');
+        }
+        
         await user.save();
         
         // Return the final state
@@ -233,8 +247,9 @@ router.post('/submit', auth, async (req, res) => {
                 isLocked: attempt.isLocked,
                 runCount: attempt.runCount,
                 lastResults: attempt.lastResults,
-                // --- *** MODIFIED THIS LINE *** ---
-                solutionCode: solutionCode // Send solution if locked OR passed
+                solutionCode: solutionCode,
+                pointsEarned: attempt.pointsEarnedForProblem, // Send points earned
+                mentorFeedback: attempt.mentorFeedback // Send existing feedback
             }
         });
 
@@ -243,6 +258,5 @@ router.post('/submit', auth, async (req, res) => {
         res.status(500).json({ message: error.message || 'Error running code.' });
     }
 });
-
 
 module.exports = router;
