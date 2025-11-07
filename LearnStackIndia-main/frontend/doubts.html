@@ -180,14 +180,14 @@
             card.id = `doubt-${doubt._id}`;
 
             const postedDate = new Date(doubt.createdAt).toLocaleString();
-            const canResolve = !isResolved && (currentUser.role !== 'user' || currentUser.id === doubt.postedBy._id);
+            const canResolve = !isResolved && (currentUser.role !== 'user' || currentUser.id === doubt.postedBy?._id); // <-- *** ADD ? ***
 
             card.innerHTML = `
                 <div class="flex justify-between items-start mb-2">
                     <div>
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">${doubt.title}</h3>
                         <p class="text-xs text-gray-500 dark:text-gray-400">
-                            Asked by ${doubt.postedBy.username} on ${postedDate}
+                            Asked by ${doubt.postedBy?.username || '[Deleted User]'} on ${postedDate}
                         </p>
                     </div>
                     <div class="flex items-center gap-2">
@@ -206,13 +206,13 @@
 
         function createReplyCard(reply) {
             const postedDate = new Date(reply.createdAt).toLocaleString();
-            const isMentor = reply.postedBy.role !== 'user';
+            const isMentor = reply.postedBy?.role !== 'user';
             return `
                 <div class="reply-card flex gap-3 p-3 rounded-lg border-l-4 ${isMentor ? 'mentor bg-yellow-50 dark:bg-yellow-900/30 border-yellow-400' : 'bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-500'}">
-                    <img src="${reply.postedBy.profile?.avatar || 'https://placeholder-image-service.onrender.com/image/40x40'}" alt="${reply.postedBy.username}" class="w-10 h-10 rounded-full flex-shrink-0">
+                    <img src="${reply.postedBy?.profile?.avatar || 'https://placeholder-image-service.onrender.com/image/40x40'}" alt="${reply.postedBy?.username || 'User'}" class="w-10 h-10 rounded-full flex-shrink-0">
                     <div class="flex-grow">
                         <p class="font-semibold text-sm text-gray-800 dark:text-white">
-                            ${reply.postedBy.username} ${isMentor ? '<span class="text-xs font-medium text-yellow-600 dark:text-yellow-400">(Mentor)</span>' : ''}
+                            ${reply.postedBy?.username || '[Deleted User]'} ${isMentor ? '<span class="text-xs font-medium text-yellow-600 dark:text-yellow-400">(Mentor)</span>' : ''}
                         </p>
                         <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">${postedDate}</p>
                         <p class="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-wrap">${reply.text}</p>
