@@ -3,7 +3,7 @@ const express = require('express');
 const mentorAuth = require('../middleware/mentorAuth');
 
 const mongoose = require('mongoose');
-const Doubt = require('../models/Doubt');
+
 
 const router = express.Router();
 
@@ -447,52 +447,6 @@ router.post('/attempts/unlock', mentorAuth, async (req, res) => {
     }
 });
 
-// GET: Fetch all unique subjects (for doubt filtering)
-// This is a route mentors need access to, which was previously admin-only
-router.get('/subjects', mentorAuth, async (req, res) => {
-    const Topic = require('../models/Topic'); // <-- ADD HERE
-    try {
-        // Find all distinct 'subject' fields from the Topic collection
-        const subjects = await Topic.distinct('subject');
-        res.json({ success: true, subjects: subjects.sort() });
-    } catch (error) {
-        console.error("Error fetching subjects for mentor:", error);
-        res.status(500).json({ message: 'Error fetching subjects' });
-    }
-});
 
-// GET: Fetch all subject metadata (for icons/colors, etc.)
-// This is also needed by admin, so mentors should have it too.
-router.get('/subject-meta', mentorAuth, async (req, res) => {
-    const SubjectMeta = require('../models/SubjectMeta'); // <-- ADD HERE
-     try {
-        const meta = await SubjectMeta.find().lean();
-        res.json({ success: true, meta });
-    } catch (error) {
-        console.error("Error fetching subject meta for mentor:", error);
-        res.status(500).json({ message: 'Error fetching subject metadata' });
-    }
-});
-
-router.get('/doubts', mentorAuth, async (req, res) => {
-    const Doubt = require('../models/Doubt'); // <-- ADD HERE
-    try {
-        const { subject } = req.query;
-        if (!subject) {
-            return res.status(400).json({ message: 'Subject query parameter is required' });
-        }
-
-        const doubts = await Doubt.find({ subject: subject })
-            .populate('postedBy', 'username profile.avatar') // Populate the original poster
-            .populate('replies.postedBy', 'username profile.avatar role') // Populate users who replied
-            .sort({ isResolved: 1, createdAt: -1 })
-            .lean(); // Use lean for safety
-
-        res.json({ success: true, doubts });
-    } catch (error) {
-        console.error("Error fetching doubts for mentor:", error);
-        res.status(500).json({ message: "Error fetching doubts" });
-    }
-});
 
 module.exports = router;
