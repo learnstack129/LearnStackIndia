@@ -2,7 +2,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 // Import Topic model to get the total number of algorithms dynamically
-
+const Topic = require('./Topic'); // Assuming Topic model is in the same directory
 
 // --- Sub-schema for Algorithm Progress ---
 const algorithmProgressSchema = new mongoose.Schema({
@@ -152,19 +152,20 @@ const userSchema = new mongoose.Schema({
 
     // --- Profile ---
     profile: {
-        avatar: { type: String, default: 'https://placeholder-image-service.onrender.com/image/100x100?prompt=User%20avatar%20profile%20picture%20with%20neutral%20background' },
-        firstName: { type: String, trim: true },
-        lastName: { type: String, trim: true },
-        bio: { type: String, trim: true, maxlength: 200 },
-        location: { type: String, trim: true },
-        website: { type: String, trim: true },
-        socialLinks: {
-            type: Map,
-            of: String,
-            default: () => new Map()
-        }
-    },
-        
+        type: { // <-- This 'type' wrapper is new
+            avatar: { type: String, default: 'https://placeholder-image-service.onrender.com/image/100x100?prompt=User%20avatar%20profile%20picture%20with%20neutral%20background' },
+            firstName: { type: String, trim: true },
+            lastName: { type: String, trim: true },
+            bio: { type: String, trim: true, maxlength: 200 },
+            location: { type: String, trim: true },
+            website: { type: String, trim: true },
+            socialLinks: {
+                type: Map,
+                of: String,
+                default: () => new Map()
+            }
+        },
+        default: () => ({}) // <-- This default value is the fix
     },
 
     // --- Progress & Stats ---
@@ -352,10 +353,7 @@ userSchema.pre('save', async function (next) {
         if (!this.stats.streak) { this.stats.streak = { current: 0, longest: 0, lastActiveDate: null }; }
         if (!this.stats.timeSpent) { this.stats.timeSpent = { total: 0, today: 0, thisWeek: 0, thisMonth: 0 }; }
         if (!this.learningPath) { this.learningPath = { completedTopics: [] }; }
-        
-        // --- THIS IS THE CRITICAL FIX for the pre-save crash ---
-        if (!this.progress) { this.progress = new Map(); } 
-        // --- END CRITICAL FIX ---
+        // --- END FIX 3 ---
 
         let totalCompleted = 0;
         let totalTrackedAlgos = 0;
@@ -431,16 +429,6 @@ userSchema.methods.correctPassword = async function (candidatePassword) {
 // backend/models/User.js
 
 userSchema.methods.updateDailyActivity = function (activityData = {}) {
-    // --- START OF FIX: Add all safety checks here ---
-    // This block ensures stats objects exist before they are accessed.
-    if (!this.stats) { this.stats = {}; }
-    if (!this.stats.rank) { this.stats.rank = { level: 'Bronze', points: 0 }; }
-    if (!this.stats.streak) { this.stats.streak = { current: 0, longest: 0, lastActiveDate: null }; }
-    if (!this.stats.timeSpent) { this.stats.timeSpent = { total: 0, today: 0, thisWeek: 0, thisMonth: 0 }; }
-    if (!this.learningPath) { this.learningPath = { completedTopics: [] }; }
-    if (!this.progress) { this.progress = new Map(); }
-    // --- END OF FIX ---
-
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Normalize to start of day UTC
 
@@ -469,7 +457,13 @@ userSchema.methods.updateDailyActivity = function (activityData = {}) {
     if (activityData.session) {
         todayActivity.sessions.push(activityData.session);
     }
-    
+
+    // --- FIX: Ensure stats and sub-objects exist ---
+    if (!this.stats) { this.stats = {}; }
+    if (!this.stats.timeSpent) { this.stats.timeSpent = { total: 0, today: 0, thisWeek: 0, thisMonth: 0 }; }
+    if (!this.stats.streak) { this.stats.streak = { current: 0, longest: 0, lastActiveDate: null }; }
+    // --- END FIX ---
+
     // --- Update timeSpent stats ---
     this.stats.timeSpent.today = todayActivity.timeSpent; // Update today's total
     this.stats.timeSpent.total = (this.stats.timeSpent.total || 0) + timeIncrementMinutes; // Increment overall total
@@ -533,7 +527,6 @@ userSchema.methods.updateRank = function () {
 
 // Unlock the next topic if prerequisites are met
 userSchema.methods.unlockNextTopic = async function () {
-    const Topic = require('./Topic');
     console.log(`[User UnlockNext] Checking for ${this.username}...`);
     const currentTopicId = this.learningPath.currentTopic;
     const topicOrder = this.learningPath.topicOrder;
@@ -659,3 +652,8 @@ userSchema.methods.hasAchievement = function (achievementId) {
 
 
 module.exports = mongoose.model('User', userSchema);
+
+
+
+
+
