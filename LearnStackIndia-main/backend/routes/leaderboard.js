@@ -1,13 +1,12 @@
 // routes/leaderboard.js - Leaderboard routes
 const express = require('express');
-const Leaderboard = require('../models/Leaderboard');
-const User = require('../models/User');
 const auth = require('../middleware/auth');
 
 const router = express.Router();
 
 // Get leaderboard
 router.get('/', async (req, res) => {
+  const Leaderboard = require('../models/Leaderboard');
   try {
     const { type = 'all-time', limit = 10 } = req.query;
     
@@ -60,6 +59,8 @@ router.post('/update', auth, async (req, res) => {
 
 // Get user's rank
 router.get('/my-rank', auth, async (req, res) => {
+  const User = require('../models/User'); // <-- ADD HERE
+  const Leaderboard = require('../models/Leaderboard'); // <-- ADD HERE
   try {
     const user = await User.findById(req.user.id);
     
@@ -90,6 +91,8 @@ router.get('/my-rank', auth, async (req, res) => {
 
 // Helper function to generate leaderboard
 async function generateLeaderboard(type) {
+  const Leaderboard = require('../models/Leaderboard'); // <-- ADD HERE
+  const User = require('../models/User'); // <-- ADD HERE
   const users = await User.find({})
     .select('username profile stats')
     .sort({ 'stats.rank.points': -1 })
@@ -120,6 +123,8 @@ async function generateLeaderboard(type) {
 
 // Helper function to update user's position
 async function updateUserLeaderboardPosition(userId) {
+  const Leaderboard = require('../models/Leaderboard'); // <-- ADD HERE
+  const User = require('../models/User'); // <-- ADD HERE
   const leaderboard = await Leaderboard.findOne({ type: 'all-time' });
   
   if (!leaderboard) {
@@ -189,5 +194,6 @@ function getPeriod(type) {
   
   return { start, end: now };
 }
+
 
 module.exports = router;
