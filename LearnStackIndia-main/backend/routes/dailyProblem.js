@@ -203,7 +203,7 @@ router.post('/submit', auth, async (req, res) => {
                 passed: attempt.passed,
                 isLocked: attempt.isLocked,
                 runCount: attempt.runCount,
-                resultsString: attempt.lastResults,
+                lastResults: attempt.lastResults,
                 solutionCode: solutionCode // Only non-null if locked & failed
             }
         });
