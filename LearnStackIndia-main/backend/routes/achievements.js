@@ -1,13 +1,12 @@
 // routes/achievements.js - Achievement routes (Adjusted for consolidated array)
 const express = require('express');
-const AchievementTemplate = require('../models/Achievement');
-const User = require('../models/User');
 const auth = require('../middleware/auth');
 
 const router = express.Router();
 
 // Get all achievement templates (No change needed)
 router.get('/', async (req, res) => {
+    const AchievementTemplate = require('../models/Achievement');
     try {
         const achievements = await AchievementTemplate.find({ isActive: true }).lean(); // Use lean
         res.json({ success: true, achievements });
@@ -19,6 +18,7 @@ router.get('/', async (req, res) => {
 
 // --- ADJUSTED: Get user's achievements ---
 router.get('/user', auth, async (req, res) => {
+    const User = require('../models/User'); // <-- ADD HERE
     try {
         // Select the single 'achievements' array
         const user = await User.findById(req.user.id).select('achievements').lean(); // Use lean
@@ -42,6 +42,7 @@ router.get('/user', auth, async (req, res) => {
 
 // --- ADJUSTED: Check and award achievements ---
 router.post('/check', auth, async (req, res) => {
+    const User = require('../models/User'); // <-- ADD HERE
     try {
         const user = await User.findById(req.user.id); // Get full user document
         if (!user) return res.status(404).json({ message: 'User not found' });
@@ -197,5 +198,6 @@ function checkAchievementCriteria(user, template) {
          return false;
     }
 }
+
 
 module.exports = router;
