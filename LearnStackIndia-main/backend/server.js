@@ -87,7 +87,7 @@ app.use('/api/leaderboard', require('./routes/leaderboard'));
 app.use('/api/admin', require('./routes/admin')); // Mount admin routes under /api/admin
 app.use('/api/mentor', require('./routes/mentor')); // <-- ADD THIS NEW MENTOR ROUTE
 app.use('/api/test', require('./routes/test'));
-app.use('/api/doubts', require('./routes/doubts'));
+//app.use('/api/doubts', require('./routes/doubts'));
 
 // --- END ADJUSTED Route Imports ---
 
@@ -157,6 +157,7 @@ process.on('uncaughtException', (err) => {
 
 
 module.exports = app; // Export app for potential testing
+
 
 
 
