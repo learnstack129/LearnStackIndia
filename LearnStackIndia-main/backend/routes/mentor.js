@@ -5,6 +5,7 @@ const Test = require('../models/Test');
 const Question = require('../models/Question');
 const User = require('../models/User');
 const mongoose = require('mongoose');
+const DailyProblem = require('../models/DailyProblem');
 
 const router = express.Router();
 
@@ -381,6 +382,154 @@ router.post('/attempts/unlock', mentorAuth, async (req, res) => {
     } catch (error) {
          console.error("Error unlocking test:", error);
          res.status(500).json({ message: 'Error unlocking test' });
+    }
+});
+
+router.post('/daily-problem', mentorAuth, async (req, res) => {
+    try {
+        const { 
+            subject, title, description, boilerplateCode, 
+            solutionCode, testCases, pointsForAttempt, language
+        } = req.body;
+
+        if (!subject || !title || !description || !solutionCode || !testCases || !language) {
+            return res.status(400).json({ message: 'Missing required fields for daily problem.' });
+        }
+        
+        const newProblem = new DailyProblem({
+            subject, title, description, boilerplateCode, 
+            solutionCode, testCases, pointsForAttempt, language,
+            createdBy: req.user.id,
+            isActive: false // Always created as draft
+        });
+
+        await newProblem.save();
+        res.status(201).json({ success: true, message: 'Daily Problem created successfully.', problem: newProblem });
+    } catch (error) {
+        console.error("Error creating daily problem:", error);
+        if (error.name === 'ValidationError') {
+            return res.status(400).json({ message: `Validation Error: ${error.message}` });
+        }
+        res.status(500).json({ message: 'Error creating daily problem' });
+    }
+});
+
+// GET: Fetch all daily problems created by this mentor
+router.get('/daily-problems', mentorAuth, async (req, res) => {
+    try {
+        const problems = await DailyProblem.find({ createdBy: req.user.id })
+            .sort({ subject: 1, createdAt: -1 });
+        res.json({ success: true, problems });
+    } catch (error) {
+        console.error("Error fetching mentor's daily problems:", error);
+        res.status(500).json({ message: "Error fetching daily problems" });
+    }
+});
+
+// POST: Activate a daily problem (and deactivate others for that subject)
+router.post('/daily-problem/:problemId/activate', mentorAuth, async (req, res) => {
+    try {
+        const { problemId } = req.params;
+        const problem = await DailyProblem.findOne({ _id: problemId, createdBy: req.user.id });
+
+        if (!problem) {
+            return res.status(404).json({ message: 'Problem not found or access denied.' });
+        }
+
+        // 1. Deactivate all other problems for this subject
+        await DailyProblem.updateMany(
+            { subject: problem.subject, _id: { $ne: problem._id } },
+            { $set: { isActive: false } }
+        );
+
+        // 2. Activate this problem
+        problem.isActive = true;
+        await problem.save();
+        
+        res.json({ success: true, message: `Problem "${problem.title}" is now active for ${problem.subject}.` });
+    } catch (error) {
+        console.error("Error activating daily problem:", error);
+        res.status(500).json({ message: 'Error activating problem' });
+    }
+});
+
+// GET: Get all user submissions that need review
+// (Locked, Failed, No Feedback Yet)
+router.get('/submissions-for-review', mentorAuth, async (req, res) => {
+    try {
+        // Find users who have at least one attempt matching the criteria
+        const usersWithSubmissions = await User.find({
+            'dailyProblemAttempts.isLocked': true,
+            'dailyProblemAttempts.passed': false,
+            'dailyProblemAttempts.mentorFeedback': null
+        })
+        .populate('dailyProblemAttempts.problemId', 'title subject') // Populate problem title/subject
+        .select('username dailyProblemAttempts'); // Select only username and attempts
+
+        if (!usersWithSubmissions) {
+            return res.json({ success: true, submissions: [] });
+        }
+
+        // Filter out the specific submissions that need review
+        const submissionsForReview = [];
+        usersWithSubmissions.forEach(user => {
+            user.dailyProblemAttempts.forEach(attempt => {
+                // Check if problemId is populated before accessing it
+                if (attempt.isLocked && !attempt.passed && !attempt.mentorFeedback && attempt.problemId) {
+                    submissionsForReview.push({
+                        userId: user._id,
+                        username: user.username,
+                        problemId: attempt.problemId._id,
+                        problemTitle: attempt.problemId.title,
+                        problemSubject: attempt.problemId.subject,
+                        lastSubmittedCode: attempt.lastSubmittedCode,
+                        lastResults: attempt.lastResults,
+                        submittedAt: attempt.lastAttemptedAt || attempt.updatedAt
+                    });
+                }
+            });
+        });
+        
+        // Sort by most recent
+        submissionsForReview.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+
+        res.json({ success: true, submissions: submissionsForReview });
+    } catch (error) {
+        console.error("Error fetching submissions for review:", error);
+        res.status(500).json({ message: 'Error fetching submissions' });
+    }
+});
+
+// POST: Submit feedback for a submission
+router.post('/feedback', mentorAuth, async (req, res) => {
+    try {
+        const { userId, problemId, feedbackText } = req.body;
+        if (!userId || !problemId || !feedbackText) {
+            return res.status(400).json({ message: 'userId, problemId, and feedbackText are required.' });
+        }
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+
+        // Use the instance method we created
+        const attempt = user.findOrCreateDailyAttempt(problemId);
+        if (!attempt) {
+             // This should theoretically not happen due to findOrCreate
+            return res.status(404).json({ message: 'Submission attempt not found.' });
+        }
+        
+        attempt.mentorFeedback = feedbackText;
+        attempt.feedbackRead = false; // Mark as unread
+        user.markModified('dailyProblemAttempts'); // Mark the array as modified
+        
+        await user.save();
+        
+        res.json({ success: true, message: 'Feedback submitted successfully.' });
+    } catch (error) {
+        console.error("Error submitting feedback:", error);
+        res.status(500).json({ message: 'Error submitting feedback' });
     }
 });
 
