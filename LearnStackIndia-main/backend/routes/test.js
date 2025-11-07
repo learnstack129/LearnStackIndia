@@ -1,15 +1,13 @@
 // backend/routes/test.js
 const express = require('express');
 const auth = require('../middleware/auth'); // Standard user auth
-const Test = require('../models/Test');
-const Question = require('../models/Question');
-const User = require('../models/User');
 const mongoose = require('mongoose');
 
 const router = express.Router();
 
 // --- Helper: Get or Create Test Attempt ---
 async function getOrCreateAttempt(userId, testId) {
+    const User = require('../models/User');
     const user = await User.findById(userId);
     if (!user) throw new Error('User not found');
 
@@ -37,6 +35,7 @@ async function getOrCreateAttempt(userId, testId) {
 // --- NEW ROUTE: Get all active tests for the dashboard list ---
 // GET /api/test/active
 router.get('/active', auth, async (req, res) => {
+    const Test = require('../models/Test');
     try {
         // --- NEW FIX #2 ---
         // The screenshot confirms 'createdBy' is a valid ObjectId, not null.
@@ -66,6 +65,7 @@ router.get('/active', auth, async (req, res) => {
 // POST /api/test/start/:testId
 // User starts a test, provides password
 router.post('/start/:testId', auth, async (req, res) => {
+    const Test = require('../models/Test'); // <-- ADD HERE
     try {
         const { testId } = req.params;
         const { password } = req.body;
@@ -134,6 +134,7 @@ router.post('/start/:testId', auth, async (req, res) => {
 // POST /api/test/violation
 // Logs a proctoring violation (tab switch, fullscreen exit)
 router.post('/violation', auth, async (req, res) => {
+    const User = require('../models/User'); // <-- ADD HERE
     try {
         const { attemptId } = req.body;
         const userId = req.user.id;
@@ -180,6 +181,9 @@ router.post('/violation', auth, async (req, res) => {
 // POST /api/test/submit
 // User submits an answer for a question
 router.post('/submit', auth, async (req, res) => {
+    const User = require('../models/User'); // <-- ADD HERE
+    const Question = require('../models/Question'); // <-- ADD HERE
+    const Test = require('../models/Test'); // <-- ADD HERE
      try {
         const { attemptId, questionId, answer } = req.body; // answer is index (0-3) or string
         const userId = req.user.id;
