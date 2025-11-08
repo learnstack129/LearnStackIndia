@@ -1,11 +1,10 @@
 // backend/routes/test.js
 const express = require('express');
 const auth = require('../middleware/auth'); // Standard user auth
+const User = require('../models/User'); // <-- MOVED UP
 const Test = require('../models/Test');
 const Question = require('../models/Question');
-const User = require('../models/User');
 const mongoose = require('mongoose');
-
 const router = express.Router();
 
 // --- Helper: Get or Create Test Attempt ---
