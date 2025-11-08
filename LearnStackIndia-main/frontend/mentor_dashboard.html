@@ -2359,7 +2359,7 @@
         }
 
         async function resolveDoubtThread() {
-            const threadId = document.getElementById('currentChatThreadId')..value;
+            const threadId = document.getElementById('currentChatThreadId').value;
             if (!threadId) return;
             
             if (!confirm('Are you sure you want to resolve this thread?\nThe user can reopen it by replying. The thread will be deleted 24 hours after resolution.')) {
