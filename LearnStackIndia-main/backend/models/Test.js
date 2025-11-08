@@ -1,6 +1,8 @@
 // backend/models/Test.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+require('./User'); // <-- ADD THIS LINE
+require('./Question');
 
 const testSchema = new mongoose.Schema({
     title: {
