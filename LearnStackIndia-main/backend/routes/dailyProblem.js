@@ -5,9 +5,10 @@ const router = express.Router();
 const auth = require('../middleware/auth');
 const User = require('../models/User');
 const DailyProblem = require('../models/DailyProblem');
+const Topic = require('../models/Topic'); // <-- 1. ADD THIS IMPORT
 
 // --- OneCompiler API Config ---
-// The API key is read from your Vercel Environment Variables
+// (This section remains unchanged)
 const oneCompilerAxios = axios.create({
     baseURL: 'https://onecompiler-apis.p.rapidapi.com/api/v1/run',
     headers: {
@@ -19,9 +20,22 @@ const oneCompilerAxios = axios.create({
 
 // 1. GET: Fetch the active daily problem for a subject
 // (Called by dashboard.html)
+// --- MODIFIED ---
 router.get('/active/:subjectName', auth, async (req, res) => {
     try {
         const subjectName = req.params.subjectName;
+        const userId = req.user.id;
+
+        // --- START OF NEW LOGIC ---
+        // 3. Add the access check
+        const hasAccess = await checkSubjectAccess(userId, subjectName);
+        if (!hasAccess) {
+            console.log(`[Daily Problem] User ${userId} access denied for subject "${subjectName}". Subject is locked.`);
+            // Return null, so the frontend shows no problem
+            return res.json({ success: true, problem: null }); 
+        }
+        // --- END OF NEW LOGIC ---
+
         const problem = await DailyProblem.findOne({
             subject: subjectName,
             isActive: true
@@ -36,6 +50,7 @@ router.get('/active/:subjectName', auth, async (req, res) => {
 
 // 2. GET: Fetch details of a specific problem
 // (Called by daily_problem.html on load)
+// --- MODIFIED ---
 router.get('/details/:problemId', auth, async (req, res) => {
     try {
         const problem = await DailyProblem.findById(req.params.problemId)
@@ -45,7 +60,15 @@ router.get('/details/:problemId', auth, async (req, res) => {
             return res.status(404).json({ message: 'Problem not found.' });
         }
         
-        // Find user's attempt to see if we should send the solution
+        // --- START OF NEW LOGIC ---
+        // 3. Add the access check
+        const hasAccess = await checkSubjectAccess(req.user.id, problem.subject);
+        if (!hasAccess) {
+            return res.status(403).json({ message: 'Access denied. You must unlock this subject to view its daily problems.' });
+        }
+        // --- END OF NEW LOGIC ---
+        
+        // (Original logic continues)
         const user = await User.findById(req.user.id).select('dailyProblemAttempts');
         const attempt = user.dailyProblemAttempts.find(a => a.problemId.equals(problem._id));
 
@@ -73,7 +96,7 @@ router.get('/details/:problemId', auth, async (req, res) => {
 });
 
 // 3. GET: Fetch the user's attempt status for a problem
-// (Called by daily_problem.html on load)
+// (No change needed here, this route doesn't grant access, just info)
 router.get('/my-attempt/:problemId', auth, async (req, res) => {
     try {
         const user = await User.findById(req.user.id).select('dailyProblemAttempts');
@@ -99,7 +122,7 @@ router.get('/my-attempt/:problemId', auth, async (req, res) => {
 });
 
 // 4. POST: Submit code (Synchronous Flow)
-// This route contacts OneCompiler, waits for ALL results, and saves.
+// --- MODIFIED ---
 router.post('/submit', auth, async (req, res) => {
     try {
         const { problemId, submittedCode } = req.body;
@@ -110,8 +133,17 @@ router.post('/submit', auth, async (req, res) => {
             return res.status(404).json({ message: 'User or problem not found.' });
         }
 
+        // --- START OF NEW LOGIC ---
+        // 3. Add the access check
+        const hasAccess = await checkSubjectAccess(req.user.id, problem.subject);
+        if (!hasAccess) {
+            return res.status(403).json({ message: 'Access denied. You must unlock this subject to submit answers.' });
+        }
+        // --- END OF NEW LOGIC ---
+
         const attempt = user.findOrCreateDailyAttempt(problem._id);
 
+        // (Original logic continues)
         // Check 1: Locked or Passed
         if (attempt.isLocked) return res.status(403).json({ message: 'You have no more attempts for this problem.' });
         if (attempt.passed) return res.status(403).json({ message: 'You have already solved this problem.' });
@@ -128,9 +160,7 @@ router.post('/submit', auth, async (req, res) => {
         let passedCount = 0;
         let resultsString = "";
         let executionError = null;
-
-        // --- *** ADD THIS BLOCK *** ---
-        // FIX: Determine the correct filename based on language
+        
         let fileName;
         switch (problem.language.toLowerCase()) {
             case 'c':
@@ -143,26 +173,22 @@ router.post('/submit', auth, async (req, res) => {
                 fileName = 'main.py';
                 break;
             case 'java':
-                fileName = 'Main.java'; // Java class name must match filename
+                fileName = 'Main.java'; 
                 break;
             case 'javascript':
             default:
                 fileName = 'index.js';
         }
-        // --- *** END OF ADDED BLOCK *** ---
 
         for (const [index, testCase] of problem.testCases.entries()) {
             try {
                 const response = await oneCompilerAxios.post('', {
                     language: problem.language,
                     stdin: testCase.input || "",
-                    // --- *** MODIFY THIS LINE *** ---
-                    files: [{ name: fileName, content: submittedCode }] // Use dynamic fileName
+                    files: [{ name: fileName, content: submittedCode }]
                 });
 
-                // Check for compilation or runtime errors
                 if (response.data.exception || response.data.stderr) {
-                    // *** MODIFICATION: Handle the specific "same output file" error ***
                     let errorMsg = response.data.exception || response.data.stderr;
                     if (errorMsg.includes('is the same as output file')) {
                          errorMsg = "Compilation Error: A file naming conflict occurred. (Ensure 'language' in problem matches file type).";
@@ -233,8 +259,7 @@ router.post('/submit', auth, async (req, res) => {
                 isLocked: attempt.isLocked,
                 runCount: attempt.runCount,
                 lastResults: attempt.lastResults,
-                // --- *** MODIFIED THIS LINE *** ---
-                solutionCode: solutionCode // Send solution if locked OR passed
+                solutionCode: solutionCode 
             }
         });
 
@@ -243,6 +268,82 @@ router.post('/submit', auth, async (req, res) => {
         res.status(500).json({ message: error.message || 'Error running code.' });
     }
 });
+
+
+// --- 2. ADD THIS HELPER FUNCTION AT THE END ---
+/**
+ * Checks if a user has access to a given subject.
+ * A subject is considered "accessible" if at least one topic
+ * within that subject is not in a 'locked' state for the user.
+ * @param {string} userId - The MongoDB ObjectId of the user.
+ * @param {string} subjectName - The name of the subject (e.g., "DSA Visualizer").
+ * @returns {boolean} - True if accessible, false if not.
+ */
+async function checkSubjectAccess(userId, subjectName) {
+    try {
+        // 1. Fetch user progress and all topics for this subject
+        const [user, topicsInSubject] = await Promise.all([
+            User.findById(userId).select('progress learningPath').lean(),
+            Topic.find({ subject: subjectName }).select('id isGloballyLocked prerequisites').lean()
+        ]);
+
+        if (!user) {
+            throw new Error('User not found in checkSubjectAccess');
+        }
+
+        // 2. If subject has no topics, it's not accessible
+        if (topicsInSubject.length === 0) {
+            return false;
+        }
+
+        const userProgressMap = new Map(Object.entries(user.progress || {}));
+        const completedTopicsSet = new Set(user.learningPath?.completedTopics || []);
+
+        // 3. Check if *any* topic in this subject is NOT 'locked'
+        const isSubjectAccessible = topicsInSubject.some(topic => {
+            const userProgressForTopic = userProgressMap.get(topic.id);
+            
+            // Check prerequisites
+            let prereqsMet = true;
+            if (topic.prerequisites && topic.prerequisites.length > 0) {
+                prereqsMet = topic.prerequisites.every(prereqId => completedTopicsSet.has(prereqId));
+            }
+
+            // Get user-specific status from their progress map
+            let userSpecificStatus;
+            if (userProgressForTopic?.status) {
+                userSpecificStatus = userProgressForTopic.status;
+            } else {
+                // If no entry, default status depends on global lock
+                userSpecificStatus = topic.isGloballyLocked ? 'locked' : 'available';
+            }
+            
+            // Determine final effective status
+            let finalEffectiveStatus = 'available'; // Start optimistic
+            
+            if (topic.isGloballyLocked) {
+                // If globally locked, only a user-specific 'available' (admin override) unlocks it
+                finalEffectiveStatus = (userSpecificStatus !== 'locked') ? userSpecificStatus : 'locked';
+            } else if (!prereqsMet) {
+                // If prereqs not met, it's locked (unless admin unlocked it)
+                finalEffectiveStatus = (userSpecificStatus !== 'locked') ? userSpecificStatus : 'locked';
+            } else {
+                // Not globally locked, prereqs met. Status is the user's status.
+                finalEffectiveStatus = userSpecificStatus;
+            }
+
+            // If this topic is not locked, the subject is accessible
+            return finalEffectiveStatus !== 'locked';
+        });
+        
+        return isSubjectAccessible;
+
+    } catch (error) {
+        console.error(`Error in checkSubjectAccess for user ${userId}, subject ${subjectName}:`, error);
+        return false; // Default to not accessible on error
+    }
+}
+// --- END HELPER FUNCTION ---
 
 
 module.exports = router;
