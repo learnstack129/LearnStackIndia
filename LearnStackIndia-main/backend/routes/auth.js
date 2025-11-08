@@ -717,13 +717,20 @@ router.post('/progress', auth, async (req, res) => { //
             timeIncrementSeconds += data.timeSpentViz; //
         }
 
+        // --- *** THIS BLOCK IS MOVED *** ---
+        // Standalone Completion Check (for conceptual lessons OR practice quizzes)
+        if (data.completed === true && algorithmProgress.completed !== true) { 
+            algorithmProgress.completed = true; 
+            completedPractice = true; // Mark completion occurred now
+            console.log(`[Progress Update] Marked ${category}.${algorithm} as COMPLETED.`);
+        }
+        // --- *** END MOVED BLOCK *** ---
+
         // Practice Data Update
         if (data.timeSpentPractice !== undefined && typeof data.timeSpentPractice === 'number') { //
             attemptedPractice = true; //
-            if (data.completed === true && algorithmProgress.completed !== true) { //
-                algorithmProgress.completed = true; //
-                completedPractice = true; // Mark completion occurred now
-            }
+            
+            // The 'completed' check was here, but is now moved above
 
             algorithmProgress.accuracyPractice = data.accuracyPractice ?? algorithmProgress.accuracyPractice ?? 0; //
             algorithmProgress.timeSpentPractice = (algorithmProgress.timeSpentPractice || 0) + data.timeSpentPractice; //
@@ -922,6 +929,7 @@ router.get('/me', auth, async (req, res) => { //
 
 
 module.exports = router;
+
 
 
 
