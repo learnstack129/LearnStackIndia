@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ask a Doubt - LearnStackIndia</title>
+    <script>
+      (function() {
+        // Set theme from local storage
+        const savedTheme = localStorage.getItem('theme') || 'light'; 
+        if (savedTheme === 'dark') document.documentElement.classList.add('dark');
+      })();
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = { darkMode: 'class', theme: { extend: {} } };
+    </script>
+    <style>
+        /* Base styles from other pages for consistency */
+        :root {
+            --bg-primary-light: #f8fafc; --bg-secondary-light: #ffffff;
+            --bg-tertiary-light: #f1f5f9; --text-primary-light: #1e293b;
+            --text-secondary-light: #475569; --text-muted-light: #64748b;
+            --accent-primary: #3b82f6; --accent-hover: #2563eb;
+            --accent-light: #dbeafe; --accent-gradient: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            --error: #ef4444; --error-light: #fee2e2;
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --border-color: #e2e8f0; --border-radius-lg: 0.5rem;
+            --border-radius-xl: 0.75rem; --spacing-lg: 1.5rem; --spacing-xl: 2rem;
+            --transition-normal: 0.3s ease-in-out; --font-family: 'Inter', sans-serif;
+            --font-size-3xl: 1.875rem; --font-size-base: 1rem;
+        }
+        [data-theme="dark"] {
+            --bg-primary-light: #0f172a; --bg-secondary-light: #1e293b;
+            --bg-tertiary-light: #334155; --text-primary-light: #f1f5f9;
+            --text-secondary-light: #cbd5e1; --text-muted-light: #94a3b8;
+            --border-color: #475569;
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
+        }
+        body {
+            background: var(--bg-primary-light); color: var(--text-primary-light);
+            font-family: var(--font-family); line-height: 1.6;
+            transition: background-color var(--transition-normal), color var(--transition-normal);
+            min-height: 100vh;
+        }
+        /* Page container */
+        .container { max-width: 900px; margin: 0 auto; padding: var(--spacing-xl); }
+
+        /* Form Container (borrowed from C pages) */
+        .form-section {
+            background: var(--bg-secondary-light); border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-xl); padding: var(--spacing-xl);
+            margin-top: var(--spacing-xl); box-shadow: var(--shadow-lg);
+        }
+        .form-header {
+            display: flex; align-items: center; gap: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+        }
+        .form-icon {
+            font-size: 2.5rem; color: var(--accent-primary);
+        }
+        .form-title {
+            font-size: var(--font-size-3xl); font-weight: 700;
+            color: var(--text-primary-light); margin: 0;
+        }
+        .form-card {
+            background: var(--bg-tertiary-light); border-radius: var(--border-radius-lg);
+            border: 1px solid var(--border-color); padding: var(--spacing-xl);
+        }
+
+        /* Input Fields */
+        .input-field {
+            padding: 0.75rem 1rem; border: 1px solid var(--border-color);
+            border-radius: 0.375rem; background-color: var(--bg-secondary-light);
+            color: var(--text-primary-light); box-shadow: var(--shadow-sm);
+            transition: border-color 0.2s; width: 100%;
+        }
+        [data-theme="dark"] .input-field {
+            background-color: var(--bg-primary-light);
+            border-color: #4b5563;
+        }
+        .input-field:focus {
+            outline: none; border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+        }
+        .input-field:disabled {
+            background-color: var(--bg-tertiary-light);
+            opacity: 0.6; cursor: not-allowed;
+        }
+        .code-textarea { /* For the message box */
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.875rem; line-height: 1.6; min-height: 200px;
+        }
+
+        /* Buttons */
+        .btn-primary {
+            padding: 0.75rem 1.5rem; background-color: var(--accent-primary);
+            color: white; font-weight: 500; border-radius: 0.375rem;
+            box-shadow: var(--shadow-sm); transition: background-color 0.2s;
+            display: inline-flex; align-items: center; justify-content: center;
+        }
+        .btn-primary:hover { background-color: var(--accent-hover); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-secondary {
+            padding: 0.5rem 1rem; background-color: var(--bg-tertiary-light);
+            color: var(--text-secondary-light); border: 1px solid var(--border-color);
+            font-weight: 500; border-radius: 0.375rem;
+            transition: all 0.2s;
+        }
+        [data-theme="dark"] .btn-secondary { background-color: var(--bg-tertiary-light); }
+        .btn-secondary:hover {
+            transform: translateY(-2px); box-shadow: var(--shadow-md);
+            border-color: var(--accent-primary); color: var(--accent-primary);
+        }
+        
+        /* Spinner */
+        .loading-spinner {
+            display: inline-block; width: 20px; height: 20px;
+            border: 3px solid #f3f3f3; border-top: 3px solid #3498db;
+            border-radius: 50%; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Global Alert */
+        #globalAlert {
+            transition-property: opacity, transform;
+            transition-duration: 0.3s;
+        }
+        #globalAlert button {
+            background: none; border: none; color: inherit;
+            font-size: 1.2em; cursor: pointer;
+        }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body class="dark:bg-gray-900">
+
+    <nav class="bg-white dark:bg-gray-800 shadow-lg relative z-10 border-b border-gray-200 dark:border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <a href="dashboard.html" class="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">
+                    <i class="fas fa-arrow-left"></i>
+                    <span class="text-lg font-bold">Back to Dashboard</span>
+                </a>
+                <div class="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    <i class="fas fa-code mr-2 text-blue-600"></i> LearnStackIndia
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <main class="container">
+        <section class="form-section">
+            <div class="form-header">
+                <span class="form-icon"><i class="fas fa-question-circle"></i></span>
+                <h1 class="form-title">Ask a New Doubt</h1>
+            </div>
+
+            <div class="form-card">
+                <form id="doubtForm" class="space-y-6">
+                    <div>
+                        <label for="subjectSelect" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                            Select a Subject
+                        </label>
+                        <select id="subjectSelect" class="input-field" disabled>
+                            <option value="">Loading your subjects...</option>
+                        </select>
+                        <p id="subjectError" class="text-red-500 text-sm h-4 mt-1"></p>
+                    </div>
+
+                    <div>
+                        <label for="doubtTitle" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                            Doubt Title
+                        </label>
+                        <input type="text" id="doubtTitle" class="input-field" placeholder="e.g., 'Problem with pointers in cHelloWorld'" required disabled>
+                    </div>
+
+                    <div>
+                        <label for="doubtMessage" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                            Describe your doubt
+                        </label>
+                        <textarea id="doubtMessage" rows="8" class="input-field code-textarea" placeholder="Please be as detailed as possible. You can paste code snippets here." required disabled></textarea>
+                    </div>
+
+                    <p id="formError" class="text-red-500 text-sm h-4"></p>
+
+                    <div class="text-right">
+                        <button type="submit" id="submitDoubtBtn" class="btn-primary" disabled>
+                            <span id="submitBtnText">
+                                <i class="fas fa-paper-plane mr-2"></i>Submit Doubt
+                            </span>
+                            <span id="submitBtnSpinner" class="hidden">
+                                <div class="loading-spinner inline-block mr-2"></div>
+                                Submitting...
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <div id="globalAlert" class="fixed bottom-5 right-5 z-50 hidden max-w-sm rounded-md p-4 shadow-lg flex items-center justify-between opacity-0 transform translate-y-10">
+        <p id="globalAlertMessage" class="mr-4"></p>
+        <button onclick="hideGlobalAlert()" aria-label="Close alert">&times;</button>
+    </div>
+
+    <script>
+        // --- Globals ---
+        const API_BASE_URL = '/api';
+        
+        // --- DOM Elements ---
+        const doubtForm = document.getElementById('doubtForm');
+        const subjectSelect = document.getElementById('subjectSelect');
+        const doubtTitle = document.getElementById('doubtTitle');
+        const doubtMessage = document.getElementById('doubtMessage');
+        const submitDoubtBtn = document.getElementById('submitDoubtBtn');
+        const submitBtnText = document.getElementById('submitBtnText');
+        const submitBtnSpinner = document.getElementById('submitBtnSpinner');
+        const formError = document.getElementById('formError');
+        const subjectError = document.getElementById('subjectError');
+
+        // --- Auth & API ---
+        function getAuthToken() {
+            return localStorage.getItem('authToken');
+        }
+
+        function redirectToAuth() {
+            window.location.href = 'auth.html';
+        }
+
+        async function makeAuthenticatedAPICall(endpoint, options = {}) {
+            const token = getAuthToken();
+            if (!token) {
+                redirectToAuth();
+                throw new Error("Authentication token not found.");
+            }
+            try {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                        ...options.headers
+                    },
+                    ...options
+                });
+                const data = await response.json();
+                if (response.status === 401) {
+                    redirectToAuth();
+                    throw new Error("Authentication failed (401).");
+                }
+                if (!response.ok) {
+                    throw new Error(data.message || `HTTP error! status: ${response.status}`);
+                }
+                return data;
+            } catch (error) {
+                console.error(`API Error (${endpoint}):`, error);
+                throw error;
+            }
+        }
+
+        // --- Theme Management ---
+        class ThemeManager {
+            constructor() {
+                this.theme = localStorage.getItem('theme') || 'light';
+                // No toggle button on this page, just apply
+                this.applyTheme();
+            }
+            applyTheme() {
+                document.documentElement.classList.toggle('dark', this.theme === 'dark');
+            }
+        }
+
+        // --- Form Logic ---
+        async function loadAccessibleSubjects() {
+            try {
+                const data = await makeAuthenticatedAPICall('/doubt/subjects');
+                
+                subjectSelect.innerHTML = ''; // Clear "loading"
+                
+                if (data.success && data.subjects.length > 0) {
+                    subjectSelect.add(new Option('Please select a subject...', ''));
+                    data.subjects.forEach(subjectName => {
+                        subjectSelect.add(new Option(subjectName, subjectName));
+                    });
+                    // Enable the form
+                    subjectSelect.disabled = false;
+                    doubtTitle.disabled = false;
+                    doubtMessage.disabled = false;
+                    submitDoubtBtn.disabled = false;
+                } else {
+                    subjectError.textContent = 'You must unlock a subject to ask a doubt.';
+                    subjectSelect.add(new Option('No accessible subjects found', ''));
+                }
+            } catch (error) {
+                subjectError.textContent = `Error: ${error.message}`;
+            }
+        }
+
+        function setButtonLoading(isLoading) {
+            if (isLoading) {
+                submitDoubtBtn.disabled = true;
+                submitBtnText.classList.add('hidden');
+                submitBtnSpinner.classList.remove('hidden');
+            } else {
+                submitDoubtBtn.disabled = false;
+                submitBtnText.classList.remove('hidden');
+                submitBtnSpinner.classList.add('hidden');
+            }
+        }
+
+        async function handleSubmit(e) {
+            e.preventDefault();
+            formError.textContent = '';
+            
+            const subject = subjectSelect.value;
+            const title = doubtTitle.value.trim();
+            const message = doubtMessage.value.trim();
+
+            if (!subject) {
+                formError.textContent = 'Please select a subject.';
+                return;
+            }
+            if (!title) {
+                formError.textContent = 'Please enter a title for your doubt.';
+                return;
+            }
+            if (!message) {
+                formError.textContent = 'Please describe your doubt.';
+                return;
+            }
+
+            setButtonLoading(true);
+
+            try {
+                const data = await makeAuthenticatedAPICall('/doubt/ask', {
+                    method: 'POST',
+                    body: JSON.stringify({ subject, title, message })
+                });
+
+                if (data.success) {
+                    showGlobalAlert('Doubt submitted successfully! Redirecting...', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'my_doubts.html'; // Redirect to the "my doubts" list
+                    }, 2000);
+                }
+            } catch (error) {
+                formError.textContent = `Error: ${error.message}`;
+                setButtonLoading(false);
+            }
+            // On success, we redirect, so no need to set loading false here
+        }
+
+        // --- Alert Functions ---
+        function showGlobalAlert(message, type = 'info') {
+            const alertDiv = document.getElementById('globalAlert');
+            const messageP = document.getElementById('globalAlertMessage');
+            if (!alertDiv || !messageP) return;
+            
+            alertDiv.className = 'fixed bottom-5 right-5 z-50 max-w-sm rounded-md p-4 shadow-lg flex items-center justify-between opacity-0 transform translate-y-10'; // Reset classes
+            messageP.textContent = message;
+            
+            const colors = { success: 'bg-green-500', error: 'bg-red-500', info: 'bg-blue-500' };
+            alertDiv.classList.add(colors[type] || colors.info, 'text-white');
+            
+            alertDiv.classList.remove('hidden');
+            setTimeout(() => { // Force reflow for transition
+                alertDiv.classList.remove('opacity-0', 'translate-y-10');
+            }, 10);
+
+            if (alertDiv.alertTimeout) clearTimeout(alertDiv.alertTimeout);
+            alertDiv.alertTimeout = setTimeout(hideGlobalAlert, 5000);
+        }
+
+        function hideGlobalAlert() {
+            const alertDiv = document.getElementById('globalAlert');
+            if (!alertDiv) return;
+            alertDiv.classList.add('opacity-0', 'translate-y-10');
+            setTimeout(() => {
+                alertDiv.classList.add('hidden');
+                if (alertDiv.alertTimeout) { clearTimeout(alertDiv.alertTimeout); alertDiv.alertTimeout = null; }
+            }, 300); // Match CSS transition duration
+        }
+
+        // --- Page Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!getAuthToken()) {
+                redirectToAuth();
+                return;
+            }
+            
+            new ThemeManager();
+            doubtForm.addEventListener('submit', handleSubmit);
+            loadAccessibleSubjects();
+        });
+    </script>
+</body>
+</html>
