@@ -542,7 +542,7 @@ router.post('/feedback', mentorAuth, async (req, res) => {
 router.get('/doubts/queue', mentorAuth, async (req, res) => {
     try {
         const newDoubts = await DoubtThread.find({ status: 'new' })
-            .populate({ path: 'userId', select: 'username' })
+            .populate('userId', 'username')
             .sort({ createdAt: 1 }); // Oldest first
         res.json({ success: true, doubts: newDoubts });
     } catch (error) {
@@ -558,7 +558,7 @@ router.get('/doubts/active', mentorAuth, async (req, res) => {
             mentorId: req.user.id,
             status: 'in-progress'
         })
-        .populate({ path: 'userId', select: 'username' })
+        .populate('userId', 'username')
         .sort({ updatedAt: -1 }); // Most recently active first
 
         res.json({ success: true, doubts: myDoubts });
@@ -613,9 +613,8 @@ router.get('/doubts/thread/:threadId', mentorAuth, async (req, res) => {
 
         // Fetch all messages
         const messages = await DoubtMessage.find({ threadId: threadId })
-            .populate({ path: 'senderId', select: 'username profile.avatar' })
+            .populate('senderId', 'username profile.avatar')
             .sort({ createdAt: 1 });
-
         res.json({ success: true, thread, messages });
 
     } catch (error) {
@@ -659,7 +658,7 @@ router.post('/doubts/thread/:threadId/reply', mentorAuth, async (req, res) => {
         
         // Populate the sender info to send back to the chat UI
         const populatedMessage = await DoubtMessage.findById(newMessage._id)
-            .populate({ path: 'senderId', select: 'username profile.avatar' })
+            .populate('senderId', 'username profile.avatar')
 
         res.status(201).json({ success: true, message: 'Reply sent.', newMessage: populatedMessage });
 
