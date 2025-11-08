@@ -1,86 +1,97 @@
 // backend/models/Doubt.js
 const mongoose = require('mongoose');
 
-// Sub-schema for individual messages in the thread
-const messageSchema = new mongoose.Schema({
+// This sub-schema represents a single message in the chat
+const doubtMessageSchema = new mongoose.Schema({
     sender: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
     },
-    // To easily show "by Mentor" or "by [username]"
+    // We store the role at the time of sending to easily style the chat
     senderRole: {
         type: String,
-        enum: ['user', 'mentor'],
+        enum: ['user', 'mentor', 'admin'],
         required: true
     },
     message: {
         type: String,
         required: true,
-        trim: true
+        trim: true,
+        minlength: 1
     }
 }, {
-    timestamps: true // Adds createdAt for each message
+    timestamps: true // Adds createdAt to each message
 });
 
 const doubtSchema = new mongoose.Schema({
-    // --- Core Info ---
-    user: { // The student who asked
+    // --- Key Information ---
+    subject: {
+        type: String,
+        required: [true, 'Subject is required'],
+        index: true
+    },
+    title: { // The user's initial question/title
+        type: String,
+        required: [true, 'Title is required'],
+        trim: true,
+        maxlength: 200
+    },
+    status: {
+        type: String,
+        enum: ['open', 'answered', 'closed'], // open (user sent), answered (mentor replied), closed (resolved)
+        default: 'open',
+        index: true
+    },
+    
+    // --- Participants ---
+    student: { // The user who created the doubt
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true,
         index: true
     },
-    subject: { // The subject it's related to (e.g., "DSA Visualizer")
-        type: String,
-        required: true,
-        index: true
-    },
-    title: { // The initial question/subject line
-        type: String,
-        required: [true, 'A title for the doubt is required.'],
-        trim: true
-    },
-    
-    // --- Conversation Thread ---
-    messages: [messageSchema], // The array of back-and-forth messages
-
-    // --- State Management ---
-    status: {
-        type: String,
-        enum: ['open', 'finished'],
-        default: 'open',
-        index: true
-    },
-    lastReplier: { // To track who last replied (for UI notifications)
+    mentor: { // The mentor who is assigned (e.g., first to reply)
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
+        ref: 'User',
+        index: true,
+        default: null
     },
-    
-    // --- TTL / Auto-Delete ---
-    finishedAt: {
-        type: Date
-    },
-    // This index will automatically delete documents 24 hours (86400s)
-    // after the 'finishedAt' field is set.
-    expireAt: {
+
+    // --- Conversation ---
+    messages: [doubtMessageSchema], // The chat history
+
+    // --- Auto-Deletion Logic ---
+    closedAt: {
         type: Date,
-        // Create a TTL index. MongoDB will automatically delete documents
-        // where 'expireAt' is in the past.
-        index: { expires: '24h' }
+        default: null
+    },
+    // This TTL index will automatically delete documents 24 hours
+    // AFTER the 'autoDeleteAt' field is set.
+    autoDeleteAt: {
+        type: Date,
+        default: null,
+        expires: 86400 // 86400 seconds = 24 hours
     }
 }, {
-    timestamps: true // Adds createdAt and updatedAt for the whole thread
+    timestamps: true // Adds createdAt/updatedAt for the whole thread
 });
 
-// When 'status' is set to 'finished', set the 'expireAt' field.
+// --- pre-save hook for Auto-Deletion ---
+// This logic automatically sets the 24-hour deletion timer
+// when the status is changed to 'closed'.
 doubtSchema.pre('save', function(next) {
-    if (this.isModified('status') && this.status === 'finished') {
-        const twentyFourHoursFromNow = new Date(Date.now() + 24 * 60 * 60 * 1000);
-        this.finishedAt = new Date();
-        // Set the expireAt field. MongoDB's TTL index will handle the deletion.
-        this.expireAt = twentyFourHoursFromNow;
-        console.log(`[Doubt Model] Marking doubt ${this._id} as 'finished'. It will expire at ${this.expireAt}.`);
+    if (this.isModified('status')) {
+        if (this.status === 'closed') {
+            const now = new Date();
+            this.closedAt = now;
+            this.autoDeleteAt = now; // Start the 24-hour timer
+        } else {
+            // If it's re-opened (e.g., 'open' or 'answered'),
+            // clear the deletion timer.
+            this.closedAt = null;
+            this.autoDeleteAt = null;
+        }
     }
     next();
 });
