@@ -1,6 +1,6 @@
 // backend/models/DailyProblem.js
 const mongoose = require('mongoose');
-
+require('./User');
 const dailyProblemSchema = new mongoose.Schema({
     subject: { // e.g., "DSA Visualizer", "C Programming"
         type: String,
