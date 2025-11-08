@@ -1,6 +1,6 @@
 // backend/models/Question.js
 const mongoose = require('mongoose');
-
+require('./User');
 const questionSchema = new mongoose.Schema({
     questionType: {
         type: String,
