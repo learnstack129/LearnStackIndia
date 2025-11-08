@@ -1,5 +1,7 @@
 // backend/models/DoubtMessage.js
 const mongoose = require('mongoose');
+require('./User'); // <-- ADD THIS LINE
+require('./DoubtThread');
 
 const doubtMessageSchema = new mongoose.Schema({
     threadId: {
