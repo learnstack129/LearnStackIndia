@@ -1196,9 +1196,11 @@
 
         function showSubjectsView() {
             document.getElementById('subjectsSection').classList.remove('hidden');
-            document.getElementById('testSection').classList.remove('hidden'); // <-- Make sure test section is also visible
+            document.getElementById('testSection').classList.remove('hidden'); // <-- CORRECTED ID
             document.getElementById('topicsSection').classList.add('hidden');
             document.getElementById('algorithmsSection').classList.add('hidden');
+            
+            // --- NEW: Hide doubt button ---
             document.getElementById('askDoubtBtn').classList.add('hidden');
         }
 
@@ -1305,21 +1307,21 @@
             const algorithmsSection = document.getElementById('algorithmsSection');
             const topicsGrid = document.getElementById('topicsGrid');
             const topicListTitle = document.getElementById('topicListTitle');
-            const testSection = document.getElementById('actionsSection'); // <-- Corrected ID
-
+            const testSection = document.getElementById('testSection'); // <-- CORRECTED ID
+            
             const dailyChallengeContainer = document.getElementById('dailyChallengeContainer');
-            dailyChallengeContainer.innerHTML = `<div class="loading-skeleton h-24 rounded-xl"></div>`;
+            dailyChallengeContainer.innerHTML = `<div class="loading-skeleton h-24 rounded-xl"></div>`; 
 
             // --- NEW: Subject Access Check & Button Toggle ---
             const askDoubtBtn = document.getElementById('askDoubtBtn');
             // Check if *any* topic in the array is not locked
             const isSubjectAccessible = topicsArray.some(topic => topic.status !== 'locked');
-
+            
             if (isSubjectAccessible) {
                 askDoubtBtn.classList.remove('hidden');
                 // Store current subject/topics for the modal
-                askDoubtBtn.dataset.subjectName = subjectName;
-                askDoubtBtn.dataset.topics = JSON.stringify(topicsArray.map(t => ({ id: t.id, name: t.name })));
+                askDoubtBtn.dataset.subjectName = subjectName; 
+                askDoubtBtn.dataset.topics = JSON.stringify(topicsArray.map(t => ({id: t.id, name: t.name})));
             } else {
                 askDoubtBtn.classList.add('hidden');
             }
@@ -1330,21 +1332,21 @@
                     const data = await makeAuthenticatedAPICall(`/daily-problem/active/${encodeURIComponent(subjectName)}`);
                     if (data?.success && data.problem) {
                         dailyChallengeContainer.innerHTML = `
-                        <div class="card-hover bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border-2 border-blue-500 dark:border-blue-400 animate-fade-in group cursor-pointer"
-                             onclick="window.location.href='daily_problem.html?problemId=${data.problem._id}'">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <span class="block text-sm font-medium text-blue-600 dark:text-blue-400">Today's Challenge</span>
-                                    <h3 class="text-xl font-semibold text-gray-800 dark:text-white mt-1">${data.problem.title}</h3>
-                                </div>
-                                <div class="text-right">
-                                    <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-blue-600 text-white group-hover:bg-blue-700 transition-colors">
-                                        <i class="fas fa-pen-alt mr-2"></i> Start
-                                    </span>
+                            <div class="card-hover bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border-2 border-blue-500 dark:border-blue-400 animate-fade-in group cursor-pointer"
+                                 onclick="window.location.href='daily_problem.html?problemId=${data.problem._id}'">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <span class="block text-sm font-medium text-blue-600 dark:text-blue-400">Today's Challenge</span>
+                                        <h3 class="text-xl font-semibold text-gray-800 dark:text-white mt-1">${data.problem.title}</h3>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-blue-600 text-white group-hover:bg-blue-700 transition-colors">
+                                            <i class="fas fa-pen-alt mr-2"></i> Start
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    `;
+                        `;
                     } else {
                         dailyChallengeContainer.innerHTML = ''; // Hide if no problem
                     }
@@ -1353,11 +1355,11 @@
                     dailyChallengeContainer.innerHTML = ``; // Hide on error
                 }
             }
-
-            loadDailyChallenge();
+            
+            loadDailyChallenge(); 
 
             topicListTitle.textContent = `${subjectName} Topics`;
-            topicsGrid.innerHTML = '';
+            topicsGrid.innerHTML = ''; 
 
             if (!topicsArray || topicsArray.length === 0) {
                 topicsGrid.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 col-span-full">No topics found for this subject.</p>';
@@ -1369,7 +1371,7 @@
             }
 
             subjectsSection.classList.add('hidden');
-            testSection.classList.add('hidden'); // <-- Hide test/doubt actions section
+            testSection.classList.add('hidden'); // <-- CORRECTED ID
             algorithmsSection.classList.add('hidden');
             topicsSection.classList.remove('hidden');
         }
