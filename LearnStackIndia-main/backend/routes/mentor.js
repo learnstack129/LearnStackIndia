@@ -1,9 +1,9 @@
 // backend/routes/mentor.js
 const express = require('express');
 const mentorAuth = require('../middleware/mentorAuth');
+const User = require('../models/User'); // <-- MOVED UP
 const Test = require('../models/Test');
 const Question = require('../models/Question');
-const User = require('../models/User');
 const mongoose = require('mongoose');
 const DailyProblem = require('../models/DailyProblem');
 const DoubtThread = require('../models/DoubtThread'); 
