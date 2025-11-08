@@ -479,6 +479,12 @@ router.get('/dashboard', auth, async (req, res) => {
             // --- Process Algorithms (remains the same) ---
             const algorithmsProgressObject = {};
             const algorithmDefinitions = topic.algorithms || []; 
+            
+            // --- *** ADD THESE *** ---
+            let topicCompletedAlgos = 0; // Numerator
+            let topicTotalAlgos = algorithmDefinitions.length; // Denominator
+            // --- *** END ADD *** ---
+
             algorithmDefinitions.forEach(algoDef => {
                 const userAlgoProgress = userProgressForTopic?.algorithms?.get(algoDef.id);
                 const algoUserSpecificStatus = userAlgoProgress?.status || 'available';
@@ -495,12 +501,25 @@ router.get('/dashboard', auth, async (req, res) => {
                     algoEffectiveStatus = 'locked';
                 }
 
+                // --- *** ADD THIS *** ---
+                if (userAlgoProgress?.completed) {
+                    topicCompletedAlgos++;
+                }
+                // --- *** END ADD *** ---
+
                 algorithmsProgressObject[algoDef.id] = {
                     ...(userAlgoProgress?.toObject ? userAlgoProgress.toObject() : userAlgoProgress),
                     effectiveStatus: algoEffectiveStatus 
                 };
             });
             // --- End Process Algorithms ---
+
+            // --- *** NEW: Real-time Topic Completion Calculation *** ---
+            const realTimeTopicCompletion = topicTotalAlgos > 0 
+                ? Math.round((topicCompletedAlgos / topicTotalAlgos) * 100)
+                : 0;
+            // --- *** END NEW CALCULATION *** ---
+
 
             // --- Create the combined topic object ---
             const combinedTopicData = {
@@ -511,7 +530,9 @@ router.get('/dashboard', auth, async (req, res) => {
                 algorithms: topic.algorithms || [], 
                 // User progress data:
                 status: topicEffectiveStatus,
-                completion: userProgressForTopic?.completion ?? 0,
+                // --- *** THE FIX *** ---
+                completion: realTimeTopicCompletion, // <-- Use the real-time value
+                // --- *** END FIX *** ---
                 userAlgoProgress: algorithmsProgressObject
             };
 
@@ -582,7 +603,6 @@ router.get('/dashboard', auth, async (req, res) => {
         });
     }
 });
-
 
 // --- ADJUSTED Route: Check Algorithm Access ---
 router.get('/check-access/:topicId/:algorithmId', auth, async (req, res) => { //
@@ -932,6 +952,7 @@ router.get('/me', auth, async (req, res) => { //
 
 
 module.exports = router;
+
 
 
 
