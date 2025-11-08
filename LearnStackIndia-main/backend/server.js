@@ -88,6 +88,7 @@ app.use('/api/admin', require('./routes/admin')); // Mount admin routes under /a
 app.use('/api/mentor', require('./routes/mentor')); // <-- ADD THIS NEW MENTOR ROUTE
 app.use('/api/test', require('./routes/test'));
 app.use('/api/daily-problem', require('./routes/dailyProblem'));
+app.use('/api/doubts', require('./routes/doubts'));
 // --- END ADJUSTED Route Imports ---
 
 // Error handling middleware
@@ -130,7 +131,8 @@ app.use('*', (req, res) => {
       '/api/leaderboard/...',
       '/api/admin/...',
       '/api/mentor/...', 
-      '/api/test/...'
+      '/api/test/...',
+      '/api/doubts/...'
     ]
   });
 });
@@ -156,6 +158,7 @@ process.on('uncaughtException', (err) => {
 
 
 module.exports = app; // Export app for potential testing
+
 
 
 
