@@ -379,9 +379,10 @@ userSchema.pre('save', async function (next) {
         }
     }
 
-    // --- Recalculate derived stats if progress is modified ---
-    if (!this.isNew) {
-        console.log('[User Pre-Save] Recalculating derived stats...');
+    // --- Recalculate derived stats ONLY IF progress is modified ---
+    // --- *** THIS IS THE FIX FOR PROBLEM 2 *** ---
+    if (!this.isNew && this.isModified('progress')) {
+        console.log('[User Pre-Save] Recalculating derived stats because progress was modified...');
         
         // Safety checks for existing users who might have null stats
         if (!this.stats) { this.stats = {}; } 
@@ -488,6 +489,9 @@ userSchema.pre('save', async function (next) {
         console.log(`[User Pre-Save] Rank updated: Level=${this.stats.rank.level}, Points=${this.stats.rank.points}`);
 
         this.markModified('progress');
+        
+    } else if (!this.isNew) {
+        console.log('[User Pre-Save] Skipping stats recalculation (progress not modified).');
     }
 
     next();
@@ -756,10 +760,3 @@ userSchema.methods.findOrCreateDailyAttempt = function(problemId) {
 };
 
 module.exports = mongoose.model('User', userSchema);
-
-
-
-
-
-
-
