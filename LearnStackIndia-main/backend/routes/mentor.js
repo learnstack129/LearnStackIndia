@@ -6,6 +6,7 @@ const Question = require('../models/Question');
 const User = require('../models/User');
 const mongoose = require('mongoose');
 const DailyProblem = require('../models/DailyProblem');
+const Doubt = require('../models/Doubt');
 
 const router = express.Router();
 
@@ -530,6 +531,170 @@ router.post('/feedback', mentorAuth, async (req, res) => {
     } catch (error) {
         console.error("Error submitting feedback:", error);
         res.status(500).json({ message: 'Error submitting feedback' });
+    }
+});
+
+// Get all doubts (open or answered) for the mentor dashboard
+router.get('/doubts', mentorAuth, async (req, res) => {
+    try {
+        const mentorId = req.user.id;
+        
+        // Find doubts that are:
+        // 1. 'open' and unassigned (mentor is null)
+        // 2. 'open' and assigned to THIS mentor
+        // 3. 'answered' and assigned to THIS mentor
+        const doubts = await Doubt.find({
+            status: { $in: ['open', 'answered'] }, // Only active doubts
+            $or: [
+                { mentor: null }, // Unassigned
+                { mentor: mentorId } // Assigned to this mentor
+            ]
+        })
+        .populate('student', 'username profile.avatar')
+        .select('-messages') // Exclude full history for the list view
+        .sort({ status: 1, updatedAt: -1 }); // 'answered' then 'open', newest first
+
+        res.json({ success: true, doubts });
+    } catch (error) {
+        console.error("Error fetching doubts for mentor:", error);
+        res.status(500).json({ message: 'Error fetching doubts' });
+    }
+});
+
+// GET /api/mentor/doubts/history
+// Get mentor's recently closed doubts (for history tab)
+router.get('/doubts/history', mentorAuth, async (req, res) => {
+    try {
+        const mentorId = req.user.id;
+        
+        const doubts = await Doubt.find({
+            status: 'closed',
+            mentor: mentorId // Only show history for doubts they handled
+        })
+        .populate('student', 'username profile.avatar')
+        .select('-messages')
+        .sort({ closedAt: -1 }) // Show most recently closed
+        .limit(25); // Limit to recent 25
+
+        res.json({ success: true, doubts });
+    } catch (error) {
+        console.error("Error fetching mentor's doubt history:", error);
+        res.status(500).json({ message: 'Error fetching doubt history' });
+    }
+});
+
+
+// GET /api/mentor/thread/:doubtId
+// Get the full conversation for one doubt (mentor version).
+router.get('/thread/:doubtId', mentorAuth, async (req, res) => {
+    try {
+        const doubt = await Doubt.findById(req.params.doubtId)
+            .populate('student', 'username profile.avatar')
+            .populate('mentor', 'username profile.avatar')
+            .populate('messages.sender', 'username profile.avatar');
+        
+        if (!doubt) {
+            return res.status(404).json({ message: 'Doubt thread not found.' });
+        }
+        
+        // Auto-assign mentor if it's unassigned and this mentor views it
+        if (!doubt.mentor) {
+            doubt.mentor = req.user.id;
+            await doubt.save();
+        }
+        
+        // Security check: Only the *assigned* mentor can view it
+        // (Admins can also view via mentorAuth, which is fine)
+        if (doubt.mentor && doubt.mentor._id.toString() !== req.user.id) {
+             return res.status(403).json({ message: 'This doubt is assigned to another mentor.' });
+        }
+
+        res.json({ success: true, doubt });
+    } catch (error) {
+        console.error("Error fetching doubt thread:", error);
+        res.status(500).json({ message: 'Error fetching thread' });
+    }
+});
+
+// POST /api/mentor/reply/:doubtId
+// Add a new message (reply) to a doubt thread (as a mentor).
+router.post('/reply/:doubtId', mentorAuth, async (req, res) => {
+    try {
+        const { message } = req.body;
+        if (!message) {
+            return res.status(400).json({ message: 'Message is required.' });
+        }
+
+        const doubt = await Doubt.findById(req.params.doubtId);
+        if (!doubt) {
+            return res.status(404).json({ message: 'Doubt thread not found.' });
+        }
+        if (doubt.status === 'closed') {
+             return res.status(400).json({ message: 'This doubt is closed and cannot be replied to.' });
+        }
+        
+        const mentor = await User.findById(req.user.id).select('role');
+
+        // Assign mentor if not already assigned
+        if (!doubt.mentor) {
+            doubt.mentor = req.user.id;
+        }
+        
+        // Security check: Only assigned mentor can reply
+        if (doubt.mentor.toString() !== req.user.id) {
+            return res.status(403).json({ message: 'You are not assigned to this doubt thread.' });
+        }
+
+        const newMessage = {
+            sender: req.user.id,
+            senderRole: mentor.role, // 'mentor' or 'admin'
+            message: message
+        };
+        
+        doubt.messages.push(newMessage);
+        doubt.status = 'answered'; // Mark as answered by mentor
+        
+        await doubt.save();
+        
+        // Populate the new message to send back to the client
+        const populatedDoubt = await Doubt.findById(doubt._id)
+            .populate('messages.sender', 'username profile.avatar');
+        const populatedMessage = populatedDoubt.messages[populatedDoubt.messages.length - 1];
+        
+        res.status(201).json({ success: true, message: 'Reply sent.', new_message: populatedMessage });
+    } catch (error) {
+        console.error("Error replying to doubt:", error);
+        res.status(500).json({ message: 'Error sending reply' });
+    }
+});
+
+// POST /api/mentor/close/:doubtId
+// Mark a doubt as "closed" (by the mentor).
+router.post('/close/:doubtId', mentorAuth, async (req, res) => {
+    try {
+        const doubt = await Doubt.findById(req.params.doubtId);
+        if (!doubt) {
+            return res.status(404).json({ message: 'Doubt thread not found.' });
+        }
+
+        // Only assigned mentor can close
+        if (doubt.mentor && doubt.mentor.toString() !== req.user.id) {
+            return res.status(403).json({ message: 'Access denied. You are not the assigned mentor.' });
+        }
+        
+        // Assign mentor if closing an unassigned (and presumably resolved) thread
+        if (!doubt.mentor) {
+            doubt.mentor = req.user.id;
+        }
+
+        doubt.status = 'closed';
+        // pre-save hook will set 'closedAt' and 'autoDeleteAt'
+        await doubt.save(); 
+        
+        res.json({ success: true, message: 'Doubt thread closed.' });
+    } catch (error) {
+        console.error("Error closing doubt:", error);
+        res.status(500).json({ message: 'Error closing doubt' });
     }
 });
 
