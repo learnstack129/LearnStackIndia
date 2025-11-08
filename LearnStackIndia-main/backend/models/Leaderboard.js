@@ -1,6 +1,6 @@
 // models/Leaderboard.js - Global Leaderboard
 const mongoose = require('mongoose');
-
+require('./User');
 const leaderboardSchema = new mongoose.Schema({
   type: {
     type: String,
@@ -42,5 +42,6 @@ const leaderboardSchema = new mongoose.Schema({
 
 leaderboardSchema.index({ type: 1, 'period.start': -1 });
 leaderboardSchema.index({ 'rankings.position': 1 });
+
 
 module.exports = mongoose.model('Leaderboard', leaderboardSchema);
