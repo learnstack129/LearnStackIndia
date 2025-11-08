@@ -544,9 +544,14 @@
             const timeSpentSeconds = activeSeconds;
             if (timeSpentSeconds < 5) { // Don't send trivial updates
                 console.log(`Time spent (${timeSpentSeconds}s) too short, not sending update.`);
-                if(isFinal) progressSent = true; // Mark as "sent" to prevent re-sending
+                if(isFinal) progressSent = true; 
                 return;
             }
+
+            // --- NEW COMPLETION LOGIC ---
+            // Check if user met the 30-second threshold for completion
+            const shouldMarkComplete = (timeSpentSeconds >= 30);
+            // --- END NEW LOGIC ---
 
             // Reset counter *before* sending to avoid double-counting
             activeSeconds = 0; 
@@ -557,11 +562,13 @@
                 algorithm: ALGORITHM_ID,
                 data: {
                     timeSpentViz: timeSpentSeconds, // Use the time tracking field
-                    lastAttemptViz: new Date()
+                    lastAttemptViz: new Date(),
+                    // --- ADD THIS LINE ---
+                    ...(shouldMarkComplete && { completed: true }) // Add 'completed: true' if threshold met
                 }
             };
             
-            console.log(`Sending active time update: ${timeSpentSeconds}s`);
+            console.log(`Sending active time update: ${timeSpentSeconds}s. Completed: ${shouldMarkComplete}`);
 
             try {
                 const response = await fetch(`${API_BASE_URL}/auth/progress`, {
@@ -571,7 +578,7 @@
                         'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify(progressData),
-                    keepalive: isFinal // Keep request alive if page is unloading
+                    keepalive: isFinal // Important for unload scenarios
                 });
                 
                 if (!response.ok) throw new Error('Failed to send progress');
@@ -588,22 +595,33 @@
         // Beacon sender for page unload
         function sendActiveTimeBeacon() {
             const token = localStorage.getItem('authToken');
-            if (!token || progressSent || activeSeconds < 5) return;
+            if (!token || progressSent) return;
+
+            // --- NEW COMPLETION LOGIC ---
+            const timeSpentSeconds = activeSeconds; // Capture time before resetting
+            if (timeSpentSeconds < 5) return; // Don't send trivial times
+            
+            const shouldMarkComplete = (timeSpentSeconds >= 30);
+            // --- END NEW LOGIC ---
 
             progressSent = true; // Mark as sent
             const progressData = {
                 category: TOPIC_ID,
                 algorithm: ALGORITHM_ID,
-                data: { timeSpentViz: activeSeconds, lastAttemptViz: new Date() }
+                data: {
+                    timeSpentViz: timeSpentSeconds, // Use captured time
+                    lastAttemptViz: new Date(),
+                    // --- ADD THIS LINE ---
+                    ...(shouldMarkComplete && { completed: true }) // Add 'completed: true' if threshold met
+                }
             };
             
-            console.log(`Sending final active time update via Beacon: ${activeSeconds}s`);
+            console.log(`Sending final active time update via Beacon: ${timeSpentSeconds}s. Completed: ${shouldMarkComplete}`);
             const blob = new Blob([JSON.stringify(progressData)], { type: 'application/json' });
             
-            // Note: Add token to URL if beacon doesn't support Auth headers (requires backend adjustment)
             const beaconURL = `${API_BASE_URL}/auth/progress?authToken=${encodeURIComponent(token)}`;
             navigator.sendBeacon(beaconURL, blob);
-            activeSeconds = 0;
+            activeSeconds = 0; // Reset
         }
 
 
@@ -660,3 +678,4 @@
 
 
 </html>
+
