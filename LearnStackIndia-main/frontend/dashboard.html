@@ -1821,7 +1821,7 @@
                 msgDiv.className = `chat-message ${isMentor ? 'mentor' : 'user'}`;
 
                 msgDiv.innerHTML = `
-                <div class="message-sender">${msg.senderId?.username || 'User'} (${formatRelativeTime(msg.createdAt)})</div>
+                <div class="message-sender">${msg.senderId ? msg.senderId.username : 'Unknown User'} (${formatRelativeTime(msg.createdAt)})</div>
                 <div class="message-bubble">${msg.message.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>
             `;
                 messagesContainer.appendChild(msgDiv);
@@ -1940,3 +1940,4 @@
 </body>
 
 </html>
+
