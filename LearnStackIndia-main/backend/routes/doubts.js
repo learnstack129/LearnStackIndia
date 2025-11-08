@@ -2,10 +2,10 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const auth = require('../middleware/auth');
+const User = require('../models/User'); // <-- MOVED UP
 const DoubtThread = require('../models/DoubtThread');
 const DoubtMessage = require('../models/DoubtMessage');
-const User = require('../models/User');
-const { checkSubjectAccess } = require('../utils/accessControl'); // <-- Our security check
+const { checkSubjectAccess } = require('../utils/accessControl'); 
 const router = express.Router();
 
 // 1. POST: User creates a new doubt
