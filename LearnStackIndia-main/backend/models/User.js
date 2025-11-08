@@ -336,7 +336,6 @@ userSchema.pre('save', async function (next) {
     if (this.isNew) {
         console.log('[User Pre-Save] Initializing progress for new user...');
         
-        // --- FIX 1: Initialize ALL default objects for a new user ---
         console.log('[User Pre-Save] Initializing default stats and learningPath...');
         if (!this.stats) { this.stats = {}; } // Ensure stats object itself exists
         this.stats.rank = { level: 'Bronze', points: 0 };
@@ -344,13 +343,10 @@ userSchema.pre('save', async function (next) {
         this.stats.timeSpent = { total: 0, today: 0, thisWeek: 0, thisMonth: 0 };
         
         if (!this.learningPath) { this.learningPath = {}; } // <-- Fixes "cannot set topicOrder of undefined"
-        // --- END FIX 1 ---
 
         try {
-            // --- FIX 2: Move Topic import inside the function ---
-            // This avoids a Mongoose model race condition on Vercel
-            const Topic = require('./Topic'); 
-            // --- END FIX 2 ---
+            // This require is already at the top of the file
+            // const Topic = require('./Topic'); 
             
             const topics = await Topic.find({ isActive: true }).sort({ order: 1 }).select('id algorithms isGloballyLocked order').lean();
             const topicOrder = [];
@@ -387,13 +383,34 @@ userSchema.pre('save', async function (next) {
     if (!this.isNew) {
         console.log('[User Pre-Save] Recalculating derived stats...');
         
-        // --- FIX 3: Add safety checks for existing users who might have null stats ---
+        // Safety checks for existing users who might have null stats
         if (!this.stats) { this.stats = {}; } 
         if (!this.stats.rank) { this.stats.rank = { level: 'Bronze', points: 0 }; }
         if (!this.stats.streak) { this.stats.streak = { current: 0, longest: 0, lastActiveDate: null }; }
         if (!this.stats.timeSpent) { this.stats.timeSpent = { total: 0, today: 0, thisWeek: 0, thisMonth: 0 }; }
         if (!this.learningPath) { this.learningPath = { completedTopics: [] }; }
-        // --- END FIX 3 ---
+
+        
+        // --- *** NEW: FETCH TOPIC DEFINITIONS *** ---
+        let topicDefinitions;
+        let topicAlgoCountMap = new Map();
+        let totalDefinedAlgorithms = 0;
+        try {
+            // This require is already at the top of the file
+            // const Topic = require('./Topic'); 
+            topicDefinitions = await Topic.find({ isActive: true }).select('id algorithms').lean();
+            topicDefinitions.forEach(topic => {
+                const count = topic.algorithms ? topic.algorithms.length : 0;
+                topicAlgoCountMap.set(topic.id, count);
+                totalDefinedAlgorithms += count;
+            });
+        } catch (e) {
+            console.error("[User Pre-Save] CRITICAL: Could not fetch Topic definitions to calculate progress.", e);
+            // Don't block save, but stats will be wrong
+            totalDefinedAlgorithms = -1; // Flag error
+        }
+        // --- *** END NEW FETCH *** ---
+
 
         let totalCompleted = 0;
         let totalTrackedAlgos = 0;
@@ -404,13 +421,19 @@ userSchema.pre('save', async function (next) {
 
         this.progress.forEach((topicProgress, topicId) => {
             let topicCompletedAlgos = 0;
-            let topicTotalAlgos = 0;
+            // --- *** THE FIX *** ---
+            // Get the *defined* total, not the *tracked* total
+            let topicTotalAlgos = topicAlgoCountMap.get(topicId) || 0; 
+            // --- *** END FIX *** ---
 
             if (topicProgress.algorithms && topicProgress.algorithms.size > 0) {
-                activeTopicCount++;
+                // We still count active topics based on user progress
+                if (topicTotalAlgos > 0) { // Only count topics that still exist
+                     activeTopicCount++;
+                }
+                
                 topicProgress.algorithms.forEach((algoProgress) => {
-                    topicTotalAlgos++;
-                    totalTrackedAlgos++;
+                    totalTrackedAlgos++; // This is fine (total *tracked* algos)
                     if (algoProgress.completed) {
                         topicCompletedAlgos++;
                         totalCompleted++;
@@ -420,11 +443,14 @@ userSchema.pre('save', async function (next) {
                         practiceAlgoCount++;
                     }
                 });
+
+                // --- *** THE FIX *** ---
+                // Use the correct denominator
                 topicProgress.completion = topicTotalAlgos > 0 ? Math.round((topicCompletedAlgos / topicTotalAlgos) * 100) : 0;
                 totalTopicCompletionSum += topicProgress.completion;
 
                 if (topicProgress.status !== 'locked') {
-                    if (topicProgress.completion === 100 && topicProgress.status !== 'completed') {
+                    if (topicProgress.completion === 100 && topicTotalAlgos > 0) { // Add check for algos > 0
                         topicProgress.status = 'completed';
                         if (!this.learningPath.completedTopics.includes(topicId)) {
                             this.learningPath.completedTopics.push(topicId);
@@ -435,12 +461,25 @@ userSchema.pre('save', async function (next) {
                     }
                 }
             } else {
-                topicProgress.completion = 0;
+                topicProgress.completion = 0; // No progress, 0%
             }
         });
 
         this.stats.algorithmsCompleted = totalCompleted;
-        this.stats.overallProgress = activeTopicCount > 0 ? Math.round(totalTopicCompletionSum / activeTopicCount) : 0;
+
+        // --- *** THE FIX for OverallProgress *** ---
+        // Calculate as (Total Completed Algos / Total Defined Algos)
+        if (totalDefinedAlgorithms > 0) {
+             this.stats.overallProgress = Math.round((totalCompleted / totalDefinedAlgorithms) * 100);
+        } else if (totalDefinedAlgorithms === 0) {
+             this.stats.overallProgress = 100; // No algos defined, 100% complete
+        } else {
+             // Error case, fallback to old (safer) method
+             this.stats.overallProgress = activeTopicCount > 0 ? Math.round(totalTopicCompletionSum / activeTopicCount) : 0;
+        }
+        // --- *** END FIX *** ---
+
+
         this.stats.averageAccuracy = practiceAlgoCount > 0 ? Math.round(totalAccuracySum / practiceAlgoCount) : 0;
 
         console.log(`[User Pre-Save] Stats updated: Completed=${totalCompleted}, Overall%=${this.stats.overallProgress}, AvgAcc%=${this.stats.averageAccuracy}`);
@@ -717,6 +756,7 @@ userSchema.methods.findOrCreateDailyAttempt = function(problemId) {
 };
 
 module.exports = mongoose.model('User', userSchema);
+
 
 
 
