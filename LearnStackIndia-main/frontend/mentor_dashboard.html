@@ -120,6 +120,79 @@
             font-size: 0.875rem;
         }
         
+        /* --- NEW: Doubt Chat Styles --- */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 60vh; /* Fixed height for chat */
+        }
+        .chat-messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            background-color: #f9fafb; /* bg-gray-50 */
+            border: 1px solid #e5e7eb; /* border-gray-200 */
+            border-radius: 0.5rem; /* rounded-lg */
+        }
+        .dark .chat-messages {
+            background-color: #1f2937; /* dark:bg-gray-800 */
+            border-color: #374151; /* dark:border-gray-700 */
+        }
+        .chat-message {
+            margin-bottom: 1rem;
+            max-width: 80%;
+        }
+        .chat-message.user {
+            margin-left: auto;
+            text-align: right;
+        }
+        .chat-message.mentor {
+            margin-right: auto;
+            text-align: left;
+        }
+        .message-bubble {
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem; /* rounded-xl */
+            display: inline-block;
+            text-align: left;
+        }
+        .chat-message.user .message-bubble {
+            background-color: #dbeafe; /* bg-blue-100 */
+            color: #1e3a8a; /* text-blue-900 */
+            border-bottom-right-radius: 0.25rem;
+        }
+        .dark .chat-message.user .message-bubble {
+            background-color: #2563eb; /* dark:bg-blue-600 */
+            color: #ffffff; /* dark:text-white */
+        }
+        .chat-message.mentor .message-bubble {
+            background-color: #e5e7eb; /* bg-gray-200 */
+            color: #1f2937; /* text-gray-800 */
+            border-bottom-left-radius: 0.25rem;
+        }
+        .dark .chat-message.mentor .message-bubble {
+            background-color: #4b5563; /* dark:bg-gray-600 */
+            color: #f3f4f6; /* dark:text-gray-100 */
+        }
+        .message-sender {
+            font-size: 0.75rem; /* text-xs */
+            font-weight: 600;
+            color: #6b7280; /* text-gray-500 */
+            margin-bottom: 0.25rem;
+        }
+        .dark .message-sender {
+            color: #9ca3af; /* dark:text-gray-400 */
+        }
+        .chat-input-area {
+            display: flex;
+            gap: 0.75rem; /* space-x-3 */
+            margin-top: 1rem;
+        }
+        .chat-input {
+            flex-grow: 1;
+        }
+        /* --- End Doubt Chat Styles --- */
+
         @media (max-width: 768px) {
             .content { margin-left: 0 !important; }
             thead { display: none; }
@@ -180,6 +253,15 @@
             .questions-sub-table td:last-child {
                 text-align: center; /* Center actions */
             }
+
+            /* --- NEW: Responsive Chat --- */
+            .chat-container {
+                height: 50vh; /* Slightly smaller height on mobile */
+            }
+            .chat-message {
+                max-width: 90%; /* Allow messages to be a bit wider */
+            }
+            /* --- End Responsive Chat --- */
         }
         
         /* Form Input Field */
@@ -266,7 +348,6 @@
             cursor: pointer;
         }
         
-    /* --- ADD THIS NEW STYLE FOR CODE TEXTAREAS --- */
         .code-textarea {
             font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
             font-size: 0.875rem; /* text-sm */
@@ -287,40 +368,39 @@
             border-color: #3b82f6;
             box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
         }
-        /* --- END NEW STYLE --- */
 
-        /* Ensure responsive tables work */
-        @media (max-width: 768px) {
-            tbody > tr > td {
-                display: block;
-                text-align: right;
-                padding-left: 50%;
-                position: relative;
-                border: none;
-                padding-top: 0.5rem;
-                padding-bottom: 0.5rem;
-            }
-            tbody > tr > td::before {
-                content: attr(data-label);
-                position: absolute;
-                left: 0.5rem;
-                width: calc(50% - 1rem);
-                padding-right: 0.5rem;
-                font-weight: bold;
-                text-align: left;
-                white-space: nowrap;
-                color: #6b7280;
-            }
-             .dark tbody > tr > td::before {
-                color: #9ca3af;
-            }
-             .actions-cell {
-                text-align: center !important;
-                padding-left: 0 !important;
-                width: 100%;
-            }
-            .actions-cell::before { display: none; }
+        /* --- NEW: Tab Styles --- */
+        .tab-list {
+            display: flex;
+            border-bottom: 2px solid var(--border-color);
         }
+        .tab-button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            background: none;
+            color: var(--text-secondary-light);
+            font-weight: 500;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px; /* Overlap the parent border */
+        }
+        .tab-button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+        .tab-button:hover:not(.active) {
+            color: var(--text-primary-light);
+        }
+        .tab-content {
+            display: none; /* Hidden by default */
+            padding-top: 1.5rem;
+        }
+        .tab-content.active {
+            display: block; /* Shown when active */
+        }
+        /* --- End Tab Styles --- */
     </style>
 </head>
 <body class="dark:bg-gray-900">
@@ -334,6 +414,11 @@
                     <li class="mb-2"><a href="#my-tests" class="nav-link block p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 active"><i class="fas fa-file-alt mr-2 w-4 inline-block text-center"></i>My Tests</a></li>
                     
                     <li class="mb-2"><a href="#daily-challenges" class="nav-link block p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700"><i class="fas fa-calendar-day mr-2 w-4 inline-block text-center"></i>Daily Challenges</a></li>
+                    
+                    <li class="mb-2"><a href="#doubts" class="nav-link block p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700">
+                        <i class="fas fa-question-circle mr-2 w-4 inline-block text-center"></i>Doubts
+                        <span id="new-doubts-badge" class="hidden ml-2 px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full"></span>
+                    </a></li>
                     <li class="mb-2"><a href="#review-submissions" class="nav-link block p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700"><i class="fas fa-user-check mr-2 w-4 inline-block text-center"></i>Review Submissions</a></li>
                     <li class="mb-2"><a href="#leaderboard" class="nav-link block p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700"><i class="fas fa-trophy mr-2 w-4 inline-block text-center"></i>Leaderboard</a></li>
                     <li class="mb-2"><a href="#monitoring" class="nav-link block p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700"><i class="fas fa-eye mr-2 w-4 inline-block text-center"></i>Live Monitoring</a></li>
@@ -373,7 +458,7 @@
                                 </tr>
                             </thead>
                             <tbody id="testsTableBody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                </tbody>
+                            </tbody>
                         </table>
                     </div>
                 </div>
@@ -398,12 +483,65 @@
                                 </tr>
                             </thead>
                             <tbody id="dailyChallengesTableBody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                </tbody>
+                            </tbody>
                         </table>
                     </div>
                 </div>
             </section>
 
+            <section id="doubts" class="mb-8 mentor-section hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-gray-700 dark:text-gray-300">Doubt Center</h2>
+                </div>
+
+                <div class="tab-list mb-4">
+                    <button class="tab-button active" data-tab="new-doubts-tab">
+                        New Queue
+                        <span id="new-doubts-count-badge" class="hidden ml-2 px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full"></span>
+                    </button>
+                    <button class="tab-button" data-tab="my-doubts-tab">My Active Doubts</button>
+                </div>
+
+                <div id="new-doubts-tab" class="tab-content active">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+                        <div class="overflow-x-auto p-4">
+                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                <thead class="bg-gray-50 dark:bg-gray-700">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">User</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Subject</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Question</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Received</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider actions-cell">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="newDoubtsTableBody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                    </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="my-doubts-tab" class="tab-content">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+                        <div class="overflow-x-auto p-4">
+                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                <thead class="bg-gray-50 dark:bg-gray-700">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">User</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Subject</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Question</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Last Activity</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider actions-cell">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="myDoubtsTableBody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                    </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
             <section id="review-submissions" class="mb-8 mentor-section hidden">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl font-semibold text-gray-700 dark:text-gray-300">Review Submissions</h2>
@@ -424,7 +562,7 @@
                                 </tr>
                             </thead>
                             <tbody id="reviewSubmissionsTableBody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                </tbody>
+                            </tbody>
                         </table>
                     </div>
                 </div>
@@ -493,211 +631,58 @@
                     </div>
                 </div>
             </section>
-
         </main>
     </div>
 
     <div id="createTestModal" class="modal fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full items-center justify-center z-50">
-        <div class="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-800 modal-content-anim">
-            <div class="mt-3">
-                <div class="flex justify-between items-center mb-4 pb-3 border-b dark:border-gray-600">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white">Create New Test</h3>
-                    <button onclick="closeCreateTestModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 focus:outline-none"><i class="fas fa-times text-xl"></i></button>
-                </div>
-                <form id="createTestForm" class="space-y-4 px-7 py-3">
-                    <div>
-                        <label for="newTestTitle" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Test Title*</label>
-                        <input type="text" id="newTestTitle" required class="input-field">
-                    </div>
-                    <div>
-                        <label for="newTestPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Test Password*</label>
-                        <input type="password" id="newTestPassword" required class="input-field">
-                    </div>
-                    <p id="createTestError" class="text-red-500 text-sm h-4"></p>
-                </form>
-                <div class="items-center px-4 py-3 border-t border-gray-200 dark:border-gray-700 mt-4 flex justify-end space-x-3">
-                    <button onclick="closeCreateTestModal()" type="button" class="btn-secondary">Cancel</button>
-                    <button id="saveTestBtn" type="button" class="btn-primary">Create Test</button>
-                </div>
-            </div>
         </div>
-    </div>
     
     <div id="addQuestionModal" class="modal fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full items-center justify-center z-50">
-        <div class="relative mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white dark:bg-gray-800 modal-content-anim">
-             <div class="mt-3">
-                <div class="flex justify-between items-center mb-4 pb-3 border-b dark:border-gray-600">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white" id="addQuestionModalTitle">Add Question</h3>
-                    <button onclick="closeAddQuestionModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 focus:outline-none"><i class="fas fa-times text-xl"></i></button>
-                </div>
-                
-                <form id="addQuestionForm" class="space-y-4 px-7 py-3 max-h-[70vh] overflow-y-auto">
-                    <input type="hidden" id="addQuestionTestId">
-                    <input type="hidden" id="editQuestionId"> <div>
-                        <label for="questionText" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Question Text*</label>
-                        <textarea id="questionText" rows="3" required class="input-field"></textarea>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="questionType" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Question Type*</label>
-                            <select id="questionType" required class="input-field">
-                                <option value="mcq" selected>Multiple Choice (MCQ)</option>
-                                <option value="short_answer">Short Answer</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="questionTimeLimit" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time Limit (seconds)*</label>
-                            <input type="number" id="questionTimeLimit" required class="input-field" value="90" min="10">
-                        </div>
-                    </div>
-                    <div id="mcqFields" class="space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label for="questionOption0" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Option 1*</label>
-                                <input type="text" id="questionOption0" class="input-field option-input">
-                            </div>
-                            <div>
-                                <label for="questionOption1" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Option 2*</label>
-                                <input type="text" id="questionOption1" class="input-field option-input">
-                            </div>
-                            <div>
-                                <label for="questionOption2" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Option 3</label>
-                                <input type="text" id="questionOption2" class="input-field option-input">
-                            </div>
-                            <div>
-                                <label for="questionOption3" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Option 4</label>
-                                <input type="text" id="questionOption3" class="input-field option-input">
-                            </div>
-                        </div>
-                        <div>
-                            <label for="correctAnswerIndex" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Correct Answer*</label>
-                            <select id="correctAnswerIndex" class="input-field">
-                                <option value="" disabled selected>Select correct option</option>
-                                <option value="0">Option 1</option>
-                                <option value="1">Option 2</option>
-                                <option value="2">Option 3</option>
-                                <option value="3">Option 4</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div id="shortAnswerFields" class="space-y-4 hidden">
-                         <div>
-                            <label for="shortAnswers" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Acceptable Answers*</label>
-                            <textarea id="shortAnswers" rows="4" class="input-field" placeholder="Enter acceptable answers, one per line."></textarea>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Note: Answers are typically case-insensitive, but exact matches are preferred.</p>
-                        </div>
-                    </div>
-                    <p id="addQuestionError" class="text-red-500 text-sm h-4"></p>
-                </form>
-                <div class="items-center px-4 py-3 border-t border-gray-200 dark:border-gray-700 mt-4 flex justify-end space-x-3">
-                    <button onclick="closeAddQuestionModal()" type="button" class="btn-secondary">Cancel</button>
-                    <button id="saveQuestionBtn" type="button" class="btn-primary">Save Question</button>
-                </div>
-            </div>
         </div>
-    </div>
     
     <div id="createDailyProblemModal" class="modal fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full items-center justify-center z-50">
-        <div class="relative mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-md bg-white dark:bg-gray-800 modal-content-anim">
-            <div class="mt-3">
-                <div class="flex justify-between items-center mb-4 pb-3 border-b dark:border-gray-600">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white" id="dailyProblemModalTitle">Create New Challenge</h3>
-                    <button onclick="closeCreateDailyProblemModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 focus:outline-none"><i class="fas fa-times text-xl"></i></button>
-                </div>
-                <form id="createDailyProblemForm" class="space-y-4 px-7 py-3 max-h-[70vh] overflow-y-auto">
-                    <input type="hidden" id="editDailyProblemId">
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label for="dpTitle" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title*</label>
-                            <input type="text" id="dpTitle" required class="input-field">
-                        </div>
-                        <div>
-                            <label for="dpSubject" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subject*</label>
-                            <input type="text" id="dpSubject" required class="input-field" placeholder="e.g., DSA Visualizer">
-                        </div>
-                         <div>
-                            <label for="dpPoints" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Points for First Attempt*</label>
-                            <input type="number" id="dpPoints" required class="input-field" value="20" min="0">
-                        </div>
-                    </div>
-
-                    <div>
-                        <label for="dpDescription" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description (Markdown supported)*</label>
-                        <textarea id="dpDescription" rows="5" required class="input-field code-textarea"></textarea>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="dpLanguage" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Language*</label>
-                            <input type="text" id="dpLanguage" required class="input-field" value="javascript" placeholder="e.g., javascript, python">
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">OneCompiler name (e.g., "javascript", "python", "c")</p>
-                        </div>
-                        <div>
-                            <label for="dpTestCases" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Test Cases (JSON)*</label>
-                            <textarea id="dpTestCases" rows="4" required class="input-field code-textarea" placeholder='[{"input":"5 10","expectedOutput":"15"},{"input":"1 2","expectedOutput":"3"}]'></textarea>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Use "input" for stdin and "expectedOutput" for stdout.</p>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label for="dpBoilerplate" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Boilerplate Code (for user)</label>
-                        <textarea id="dpBoilerplate" rows="6" class="input-field code-textarea" placeholder="function solve(input) {\n  // Your code here\n}"></textarea>
-                    </div>
-
-                    <div>
-                        <label for="dpSolution" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Solution Code (for user review)*</label>
-                        <textarea id="dpSolution" rows="6" required class="input-field code-textarea" placeholder="function solve(input) {\n  const [a, b] = input.split(' ').map(Number);\n  return a + b;\n}"></textarea>
-                    </div>
-                    
-                    <p id="createDailyProblemError" class="text-red-500 text-sm h-4"></p>
-                </form>
-                <div class="items-center px-4 py-3 border-t border-gray-200 dark:border-gray-700 mt-4 flex justify-end space-x-3">
-                    <button onclick="closeCreateDailyProblemModal()" type="button" class="btn-secondary">Cancel</button>
-                    <button id="saveDailyProblemBtn" type="button" class="btn-primary">Save Challenge</button>
-                </div>
-            </div>
         </div>
-    </div>
 
     <div id="reviewSubmissionModal" class="modal fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full items-center justify-center z-50">
-        <div class="relative mx-auto p-5 border w-full max-w-3xl shadow-lg rounded-md bg-white dark:bg-gray-800 modal-content-anim">
+        </div>
+    
+    <div id="doubtChatModal" class="modal fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full items-center justify-center z-50">
+        <div class="relative mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white dark:bg-gray-800 modal-content-anim">
             <div class="mt-3">
                 <div class="flex justify-between items-center mb-4 pb-3 border-b dark:border-gray-600">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white" id="reviewModalTitle">Review Submission</h3>
-                    <button onclick="closeReviewSubmissionModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 focus:outline-none"><i class="fas fa-times text-xl"></i></button>
+                    <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white" id="doubtChatModalTitle">Doubt Conversation</h3>
+                    <button onclick="closeDoubtChatModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 focus:outline-none"><i class="fas fa-times text-xl"></i></button>
                 </div>
-                <form id="reviewSubmissionForm" class="space-y-4 px-7 py-3 max-h-[70vh] overflow-y-auto">
-                    <input type="hidden" id="reviewUserId">
-                    <input type="hidden" id="reviewProblemId">
-                    
-                    <div>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">User: <span id="reviewUsername" class="font-semibold">...</span></p>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">Problem: <span id="reviewProblemTitle" class="font-semibold">...</span></p>
-                        <p class="text-sm text-red-600 dark:text-red-400">Result: <span id="reviewLastResult" class="font-semibold">...</span></p>
-                    </div>
+                
+                <input type="hidden" id="currentChatThreadId">
+                <div id="doubtChatLoading" class="text-center p-8 hidden">
+                    <i class="fas fa-spinner fa-spin text-4xl text-blue-500"></i>
+                    <p class="mt-2 text-gray-600 dark:text-gray-400">Loading conversation...</p>
+                </div>
 
-                    <div>
-                        <label for="reviewSubmittedCode" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">User's Submitted Code</label>
-                        <textarea id="reviewSubmittedCode" rows="10" readonly class="input-field code-textarea bg-gray-100 dark:bg-gray-900"></textarea>
-                    </div>
-
-                    <div>
-                        <label for="reviewMentorFeedback" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Your Feedback / Suggestion</label>
-                        <textarea id="reviewMentorFeedback" rows="5" required class="input-field code-textarea"></textarea>
-                    </div>
+                <div id="doubtChatError" class="text-red-500 text-center p-8 hidden"></div>
+                
+                <div id="doubtChatArea" class="chat-container hidden">
+                    <div id="doubtChatMessages" class="chat-messages">
+                        </div>
                     
-                    <p id="reviewSubmissionError" class="text-red-500 text-sm h-4"></p>
-                </form>
+                    <div class="chat-input-area">
+                        <textarea id="doubtReplyMessage" class="input-field chat-input" placeholder="Type your answer..." rows="3"></textarea>
+                        <button id="sendDoubtReplyBtn" class="btn-primary self-end" onclick="sendDoubtReply()">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+
                 <div class="items-center px-4 py-3 border-t border-gray-200 dark:border-gray-700 mt-4 flex justify-end space-x-3">
-                    <button onclick="closeReviewSubmissionModal()" type="button" class="btn-secondary">Cancel</button>
-                    <button id="saveFeedbackBtn" type="button" class="btn-primary">Submit Feedback</button>
+                    <button onclick="closeDoubtChatModal()" type="button" class="btn-secondary">Close</button>
+                    <button id="resolveDoubtBtn" type="button" class="btn-primary bg-green-500 hover:bg-green-600" onclick="resolveDoubtThread()">
+                        <i class="fas fa-check-circle mr-2"></i>Mark as Resolved
+                    </button>
                 </div>
             </div>
         </div>
     </div>
-
-
     <div id="globalAlert" class="fixed bottom-5 right-5 z-50 hidden max-w-sm rounded-md p-4 shadow-lg flex items-center justify-between transition-opacity duration-300 opacity-0">
         <p id="globalAlertMessage" class="mr-4"></p>
         <button onclick="hideGlobalAlert()" aria-label="Close alert">&times;</button>
@@ -802,18 +787,15 @@
             document.querySelectorAll('.nav-link').forEach(link => { link.classList.remove('active'); if (link.getAttribute('href') === `#${sectionIdToShow}`) link.classList.add('active'); });
             closeMobileMenu();
             
-            // --- *** MODIFIED: Load data for the shown section *** ---
             if(sectionIdToShow === 'my-tests') {
                 loadMentorTests();
             }
-            // --- *** ADDED THIS *** ---
             if(sectionIdToShow === 'daily-challenges') {
                 loadDailyChallenges();
             }
             if(sectionIdToShow === 'review-submissions') {
                 loadSubmissionsForReview();
             }
-            // --- *** END ADDITION *** ---
             if(sectionIdToShow === 'monitoring') {
                 populateMonitorTestSelect();
                 loadTestAttempts(); 
@@ -823,6 +805,12 @@
                 populateLeaderboardTestSelect();
                 loadLeaderboard(); 
             }
+            // --- NEW: Load Doubts ---
+            if(sectionIdToShow === 'doubts') {
+                loadDoubtsQueue(); // Load the new doubts queue
+                loadMyActiveDoubts(); // Load mentor's active doubts
+            }
+            // --- END NEW ---
         }
         function toggleMobileMenu() {
             const sidebar = document.querySelector('.sidebar'), overlay = document.getElementById('overlay'), isOpen = sidebar.classList.contains('translate-x-0');
@@ -837,7 +825,7 @@
             } 
         }
 
-        // --- LEADERBOARD SECTION (Your existing functions) ---
+        // --- LEADERBOARD SECTION (no changes) ---
         async function loadLeaderboard() {
             const tbody = document.getElementById('leaderboardTableBody');
             const testId = document.getElementById('leaderboardTestSelect').value;
@@ -874,7 +862,7 @@
             }
         }
         
-        // --- "MY TESTS" SECTION (Your existing functions) ---
+        // --- "MY TESTS" SECTION (no changes) ---
         async function loadMentorTests() {
             const tbody = document.getElementById('testsTableBody');
             tbody.innerHTML = '<tr><td colspan="4" class="p-4" data-label="Loading"><div class="loading-skeleton h-8 w-full"></div></td></tr>';
@@ -972,7 +960,7 @@
                         <td class="px-4 py-3 text-gray-700 dark:text-gray-200" data-label="Question">${q.text}</td>
                         <td class="px-4 py-3 text-gray-500 dark:text-gray-400" data-label="Time">${q.timeLimit}s</td>
                         <td class="px-4 py-3 text-sm font-medium actions-cell" data-label="Actions">
-                            <button onclick="openAddQuestionModal('${testId}', '${q._id}')" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-3" title="Edit Question"><i class="fas fa-edit"></i></button>
+                            <button onclick="openAddQuestionModal('${test._id}', '${q._id}')" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-3" title="Edit Question"><i class="fas fa-edit"></i></button>
                             <button onclick="deleteQuestion('${testId}', '${q._id}')" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300" title="Delete Question"><i class="fas fa-trash"></i></button>
                         </td>
                     </tr>
@@ -1222,7 +1210,7 @@
             }
         }
 
-        // --- MONITORING SECTION (Your existing functions) ---
+        // --- MONITORING SECTION (no changes) ---
         async function populateMonitorTestSelect() {
             const select = document.getElementById('monitorTestSelect');
             const currentVal = select.value; 
@@ -1331,10 +1319,7 @@
         }
         
         
-        // --- *** ADD ALL THE FUNCTIONS BELOW *** ---
-        
-        // --- DAILY CHALLENGE FUNCTIONS ---
-        
+        // --- DAILY CHALLENGE FUNCTIONS (no changes) ---
         async function loadDailyChallenges() {
             const tbody = document.getElementById('dailyChallengesTableBody');
             tbody.innerHTML = '<tr><td colspan="4" class="p-4" data-label="Loading"><div class="loading-skeleton h-8 w-full"></div></td></tr>';
@@ -1378,9 +1363,6 @@
             const saveBtn = document.getElementById('saveDailyProblemBtn');
 
             if (problemId) {
-                // --- Logic to load existing data for editing ---
-                // This version focuses on creation, so we'll just show a message.
-                // In a full implementation, you'd fetch /daily-problem/:problemId
                 titleEl.textContent = 'Edit Challenge';
                 saveBtn.innerHTML = 'Save Changes';
                 saveBtn.disabled = true; // Disabling edit for this example
@@ -1405,7 +1387,6 @@
                     return;
                 }
             } else {
-                // --- Logic for creating a new problem ---
                 titleEl.textContent = 'Create New Challenge';
                 saveBtn.innerHTML = 'Save Challenge';
                 saveBtn.disabled = false;
@@ -1425,7 +1406,6 @@
             const saveButton = document.getElementById('saveDailyProblemBtn');
             errorP.textContent = '';
             
-            // --- Stop if editing ---
             if (isEditing) {
                 errorP.textContent = "Editing is not supported in this demo. Please create a new challenge.";
                 return;
@@ -1486,8 +1466,7 @@
             }
         }
 
-        // --- REVIEW SUBMISSIONS FUNCTIONS ---
-        
+        // --- REVIEW SUBMISSIONS FUNCTIONS (no changes) ---
         async function loadSubmissionsForReview() {
             const tbody = document.getElementById('reviewSubmissionsTableBody');
             tbody.innerHTML = '<tr><td colspan="5" class="p-4" data-label="Loading"><div class="loading-skeleton h-8 w-full"></div></td></tr>';
@@ -1565,6 +1544,268 @@
                 errorP.textContent = result?.message || 'Failed to send feedback.';
             }
         }
+
+        // --- NEW: DOUBT MANAGEMENT FUNCTIONS ---
+
+        function setupTabListeners() {
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    const tabId = button.dataset.tab;
+                    
+                    // Update buttons
+                    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    
+                    // Update content
+                    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+        }
+
+        function formatRelativeTime(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffSeconds = Math.round(diffMs / 1000);
+            const diffMinutes = Math.round(diffSeconds / 60);
+            const diffHours = Math.round(diffMinutes / 60);
+            const diffDays = Math.round(diffHours / 24);
+
+            if (diffSeconds < 60) return `${diffSeconds}s ago`;
+            if (diffMinutes < 60) return `${diffMinutes}m ago`;
+            if (diffHours < 24) return `${diffHours}h ago`;
+            if (diffDays === 1) return `Yesterday`;
+            if (diffDays < 7) return `${diffDays}d ago`;
+            return date.toLocaleDateString();
+        }
+
+        async function loadDoubtsQueue() {
+            const tbody = document.getElementById('newDoubtsTableBody');
+            tbody.innerHTML = '<tr><td colspan="5" class="p-4" data-label="Loading"><div class="loading-skeleton h-8 w-full"></div></td></tr>';
+            
+            const data = await makeMentorAPICall('/doubts/queue');
+            tbody.innerHTML = '';
+            
+            const badge = document.getElementById('new-doubts-badge');
+            
+            if (data?.success && data.doubts) {
+                if (data.doubts.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500 dark:text-gray-400" data-label="Result">The new doubts queue is empty.</td></tr>';
+                    badge.classList.add('hidden');
+                    badge.textContent = '0';
+                    return;
+                }
+                
+                badge.textContent = data.doubts.length;
+                badge.classList.remove('hidden');
+                
+                data.doubts.forEach(doubt => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors";
+                    const escapedQuestion = doubt.initialQuestion.replace(/'/g, "\\'");
+
+                    tr.innerHTML = `
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white" data-label="User">${doubt.userId.username}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300" data-label="Subject">${doubt.subject} (${doubt.topicId})</td>
+                        <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300 truncate" data-label="Question" title="${doubt.initialQuestion}">${doubt.initialQuestion}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300" data-label="Received">${formatRelativeTime(doubt.createdAt)}</td>
+                        <td class="px-6 py-4 text-sm font-medium actions-cell" data-label="Actions">
+                            <button onclick="claimDoubt('${doubt._id}', '${escapedQuestion}')" class="btn-primary" style="padding: 0.25rem 0.75rem; font-size: 0.75rem;">
+                                <i class="fas fa-hand-paper mr-1"></i> Claim
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-red-500 dark:text-red-400" data-label="Error">Failed to load new doubts.</td></tr>';
+                badge.classList.add('hidden');
+            }
+        }
+
+        async function loadMyActiveDoubts() {
+            const tbody = document.getElementById('myDoubtsTableBody');
+            tbody.innerHTML = '<tr><td colspan="5" class="p-4" data-label="Loading"><div class="loading-skeleton h-8 w-full"></div></td></tr>';
+            
+            const data = await makeMentorAPICall('/doubts/active');
+            tbody.innerHTML = '';
+            
+            if (data?.success && data.doubts) {
+                if (data.doubts.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500 dark:text-gray-400" data-label="Result">You have no active doubts assigned.</td></tr>';
+                    return;
+                }
+                
+                data.doubts.forEach(doubt => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors";
+                    tr.innerHTML = `
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white" data-label="User">${doubt.userId.username}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300" data-label="Subject">${doubt.subject} (${doubt.topicId})</td>
+                        <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300 truncate" data-label="Question" title="${doubt.initialQuestion}">${doubt.initialQuestion}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300" data-label="Last Activity">${formatRelativeTime(doubt.updatedAt)}</td>
+                        <td class="px-6 py-4 text-sm font-medium actions-cell" data-label="Actions">
+                            <button onclick="openDoubtChatModal('${doubt._id}')" class="btn-primary" style="padding: 0.25rem 0.75rem; font-size: 0.75rem; background-color: #059669; hover:bg-green-700">
+                                <i class="fas fa-comments mr-1"></i> Open
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-red-500 dark:text-red-400" data-label="Error">Failed to load your active doubts.</td></tr>';
+            }
+        }
+
+        async function claimDoubt(threadId, question) {
+            if (!confirm(`Claim this doubt?\n\n"${question}"`)) {
+                return;
+            }
+            showGlobalAlert('Claiming doubt...', 'info');
+            const result = await makeMentorAPICall(`/doubts/claim/${threadId}`, { method: 'POST' });
+            
+            if (result?.success) {
+                showGlobalAlert(result.message, 'success');
+                // Switch to "My Active Doubts" tab and open the chat
+                document.querySelector('.tab-button[data-tab="my-doubts-tab"]').click();
+                loadDoubtsQueue(); // Refresh queue
+                loadMyActiveDoubts(); // Refresh active list
+                openDoubtChatModal(threadId); // Open the chat modal
+            }
+        }
+
+        function closeDoubtChatModal() {
+            document.getElementById('doubtChatModal').classList.remove('show');
+            document.getElementById('currentChatThreadId').value = '';
+            // Refresh lists in case status changed
+            loadDoubtsQueue();
+            loadMyActiveDoubts();
+        }
+
+        async function openDoubtChatModal(threadId) {
+            const modal = document.getElementById('doubtChatModal');
+            const loadingDiv = document.getElementById('doubtChatLoading');
+            const errorDiv = document.getElementById('doubtChatError');
+            const chatArea = document.getElementById('doubtChatArea');
+            const messagesContainer = document.getElementById('doubtChatMessages');
+            
+            document.getElementById('currentChatThreadId').value = threadId;
+            loadingDiv.classList.remove('hidden');
+            errorDiv.classList.add('hidden');
+            chatArea.classList.add('hidden');
+            messagesContainer.innerHTML = '';
+            modal.classList.add('show');
+            
+            const data = await makeMentorAPICall(`/doubts/thread/${threadId}`);
+            
+            loadingDiv.classList.add('hidden');
+            if (data?.success && data.thread && data.messages) {
+                document.getElementById('doubtChatModalTitle').textContent = `Chat with ${data.messages[0]?.senderId?.username || 'User'}`;
+                renderMessages(data.messages);
+                chatArea.classList.remove('hidden');
+                document.getElementById('doubtReplyMessage').value = '';
+                
+                // Set resolve button status
+                const resolveBtn = document.getElementById('resolveDoubtBtn');
+                if (data.thread.status === 'resolved') {
+                    resolveBtn.disabled = true;
+                    resolveBtn.textContent = 'Resolved';
+                } else {
+                    resolveBtn.disabled = false;
+                    resolveBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Mark as Resolved';
+                }
+            } else {
+                errorDiv.textContent = 'Error loading conversation.';
+                errorDiv.classList.remove('hidden');
+            }
+        }
+
+        function renderMessages(messages) {
+            const messagesContainer = document.getElementById('doubtChatMessages');
+            messagesContainer.innerHTML = '';
+            const myUserId = JSON.parse(localStorage.getItem('currentUser')).id;
+            
+            messages.forEach(msg => {
+                const isMentor = msg.senderRole === 'mentor';
+                
+                const msgDiv = document.createElement('div');
+                msgDiv.className = `chat-message ${isMentor ? 'mentor' : 'user'}`;
+                
+                msgDiv.innerHTML = `
+                    <div class="message-sender">${msg.senderId?.username || 'User'} (${formatRelativeTime(msg.createdAt)})</div>
+                    <div class="message-bubble">${msg.message}</div>
+                `;
+                messagesContainer.appendChild(msgDiv);
+            });
+            // Scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        async function sendDoubtReply() {
+            const threadId = document.getElementById('currentChatThreadId').value;
+            const messageInput = document.getElementById('doubtReplyMessage');
+            const sendBtn = document.getElementById('sendDoubtReplyBtn');
+            const message = messageInput.value.trim();
+            
+            if (!message || !threadId) return;
+            
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            
+            const data = await makeMentorAPICall(`/doubts/thread/${threadId}/reply`, {
+                method: 'POST',
+                body: JSON.stringify({ message })
+            });
+            
+            if (data?.success && data.newMessage) {
+                messageInput.value = ''; // Clear input
+                // Add the new message to the UI
+                const messagesContainer = document.getElementById('doubtChatMessages');
+                const msgDiv = document.createElement('div');
+                msgDiv.className = `chat-message mentor`; // It's always the mentor replying here
+                msgDiv.innerHTML = `
+                    <div class="message-sender">${data.newMessage.senderId?.username || 'Mentor'} (just now)</div>
+                    <div class="message-bubble">${data.newMessage.message}</div>
+                `;
+                messagesContainer.appendChild(msgDiv);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight; // Scroll to bottom
+            } else {
+                showGlobalAlert(data.message || 'Failed to send reply.', 'error');
+            }
+            
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+        }
+
+        async function resolveDoubtThread() {
+            const threadId = document.getElementById('currentChatThreadId').value;
+            if (!threadId) return;
+            
+            if (!confirm('Are you sure you want to resolve this thread?\nThe user can reopen it by replying. The thread will be deleted 24 hours after resolution.')) {
+                return;
+            }
+            
+            const resolveBtn = document.getElementById('resolveDoubtBtn');
+            resolveBtn.disabled = true;
+            resolveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Resolving...';
+            
+            const data = await makeMentorAPICall(`/doubts/thread/${threadId}/resolve`, {
+                method: 'POST'
+            });
+            
+            if (data?.success) {
+                showGlobalAlert(data.message, 'success');
+                resolveBtn.textContent = 'Resolved'; // Keep it disabled
+                closeDoubtChatModal(); // Close modal on success
+            } else {
+                showGlobalAlert(data.message || 'Failed to resolve thread.', 'error');
+                resolveBtn.disabled = false;
+                resolveBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Mark as Resolved';
+            }
+        }
+        
+        // --- END NEW DOUBT FUNCTIONS ---
         
         // --- DOMContentLoaded (Modified) ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -1583,7 +1824,6 @@
             document.getElementById('monitorTestSelect').addEventListener('change', loadTestAttempts);
             document.getElementById('refreshMonitorBtn').addEventListener('click', loadTestAttempts);
 
-            // --- *** ADD THESE NEW LISTENERS *** ---
             document.getElementById('saveDailyProblemBtn').addEventListener('click', saveDailyProblem);
             document.getElementById('createDailyProblemModal').addEventListener('click', (e) => {
                 if (e.target === e.currentTarget) closeCreateDailyProblemModal();
@@ -1592,7 +1832,13 @@
             document.getElementById('reviewSubmissionModal').addEventListener('click', (e) => {
                 if (e.target === e.currentTarget) closeReviewSubmissionModal();
             });
-            // --- *** END NEW LISTENERS *** ---
+            
+            // --- NEW LISTENERS ---
+            setupTabListeners(); // For the new "Doubts" section tabs
+            document.getElementById('doubtChatModal').addEventListener('click', (e) => {
+                if (e.target.id === 'doubtChatModal') closeDoubtChatModal();
+            });
+            // --- END NEW ---
         
             // Initial Navigation
             window.addEventListener('hashchange', handleNavigation);
