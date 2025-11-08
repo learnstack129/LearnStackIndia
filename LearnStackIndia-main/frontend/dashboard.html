@@ -819,7 +819,7 @@
                     <i class="fas fa-spinner fa-spin text-4xl text-blue-500"></i>
                 </div>
 
-                <div id="userChatArea" class_name="chat-container hidden">
+                <div id="userChatArea" class="chat-container hidden">
                     <div id="userChatMessages" class="chat-messages">
                     </div>
                     <div class="chat-input-area">
@@ -1545,6 +1545,22 @@
         function handleLogout() {
             if (confirm('Are you sure you want to logout?')) {
                 redirectToAuth();
+            }
+        }
+
+        function setButtonLoading(buttonId, textElementId, spinnerElementId, isLoading = true) {
+            const button = document.getElementById(buttonId);
+            const textElement = document.getElementById(textElementId);
+            const spinnerElement = document.getElementById(spinnerElementId);
+
+            if (isLoading) {
+                button.disabled = true;
+                textElement.classList.add('hidden');
+                spinnerElement.classList.remove('hidden');
+            } else {
+                button.disabled = false;
+                textElement.classList.remove('hidden');
+                spinnerElement.classList.add('hidden');
             }
         }
 
