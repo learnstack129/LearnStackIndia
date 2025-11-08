@@ -691,10 +691,12 @@ router.post('/progress', auth, async (req, res) => { //
 
         let algorithmProgress = topicProgress.algorithms.get(algorithm); //
 
+        // --- FIX: Fetch topic definition to get REAL algorithm count ---
+        let topicDef;
         // Ensure algorithm progress exists or initialize it
         if (!algorithmProgress) { //
             // Verify algorithm exists in Topic model before initializing
-            const topicDef = await Topic.findOne({ id: category }).select('algorithms._id algorithms.id').lean(); //
+            topicDef = await Topic.findOne({ id: category }).select('algorithms._id algorithms.id').lean(); //
             const algoExistsInDef = topicDef?.algorithms?.some(a => a.id === algorithm); //
             if (!algoExistsInDef) { //
                 return res.status(404).json({ message: `Algorithm '${algorithm}' not defined for topic '${category}'.` }); //
@@ -703,6 +705,8 @@ router.post('/progress', auth, async (req, res) => { //
             topicProgress.algorithms.set(algorithm, algorithmProgress); //
             console.log(`Initialized progress map entry for ${category}.${algorithm}`); //
         }
+        // --- END FIX ---
+
 
         // --- Update Specific Fields ---
         let pointsEarnedThisUpdate = 0; //
@@ -717,14 +721,12 @@ router.post('/progress', auth, async (req, res) => { //
             timeIncrementSeconds += data.timeSpentViz; //
         }
 
-        // --- *** THIS BLOCK IS MOVED *** ---
         // Standalone Completion Check (for conceptual lessons OR practice quizzes)
         if (data.completed === true && algorithmProgress.completed !== true) { 
             algorithmProgress.completed = true; 
             completedPractice = true; // Mark completion occurred now
             console.log(`[Progress Update] Marked ${category}.${algorithm} as COMPLETED.`);
         }
-        // --- *** END MOVED BLOCK *** ---
 
         // Practice Data Update
         if (data.timeSpentPractice !== undefined && typeof data.timeSpentPractice === 'number') { //
@@ -748,11 +750,8 @@ router.post('/progress', auth, async (req, res) => { //
         }
 
         // --- Mark Modified (Crucial for Maps) ---
-        // Set the potentially modified algorithmProgress back into the map
         topicProgress.algorithms.set(algorithm, algorithmProgress); //
-        // Set the potentially modified topicProgress back into the main map
         user.progress.set(category, topicProgress); //
-        // Mark the top-level progress field as modified
         user.markModified('progress'); //
         // --- End Mark Modified ---
 
@@ -772,7 +771,6 @@ router.post('/progress', auth, async (req, res) => { //
                 session: sessionData //
             });
         } else if (data.lastAttemptViz || data.lastAttemptPractice) { //
-            // If only lastAttempt was updated, still update streak
             user.updateDailyActivity({}); // Call with empty object
         }
 
@@ -780,31 +778,37 @@ router.post('/progress', auth, async (req, res) => { //
         if (pointsEarnedThisUpdate > 0) { //
             user.stats.rank.points = (user.stats.rank.points || 0) + pointsEarnedThisUpdate; //
             user.markModified('stats.rank'); // Mark rank points change
-            // Rank level is updated in pre-save hook based on points
         }
 
-        // --- Trigger unlock check if a topic was potentially completed ---
-        // (Pre-save hook handles the actual completion logic and status update)
-        // *Correction*: Check completion percentage directly from the topicProgress object AFTER potential updates within this scope
+        // --- *** FIX: Recalculate Topic Completion Correctly *** ---
+        if (!topicDef) { // Fetch topic def if we didn't already
+            topicDef = await Topic.findOne({ id: category }).select('algorithms.id').lean();
+        }
+
         let currentTopicCompletion = 0;
         let topicAlgoCount = 0;
         let topicCompletedCount = 0;
-        if (topicProgress.algorithms && topicProgress.algorithms.size > 0) {
-            topicAlgoCount = topicProgress.algorithms.size;
-            topicProgress.algorithms.forEach(algoProg => {
-                if (algoProg.completed) {
-                    topicCompletedCount++;
-                }
-            });
-            currentTopicCompletion = topicAlgoCount > 0 ? Math.round((topicCompletedCount / topicAlgoCount) * 100) : 0;
-            // Update the completion directly on the object before save (pre-save will confirm)
-            topicProgress.completion = currentTopicCompletion;
+        
+        if (topicDef && topicDef.algorithms) {
+            topicAlgoCount = topicDef.algorithms.length; // Denominator is DEFINED count
         }
 
-        if (completedPractice && currentTopicCompletion === 100) { // Check the recalculated completion
-            console.log(`[Progress Update] Triggering unlock check after completing algo ${algorithm} in topic ${category}.`); //
-            // unlockNextTopic might need to be async if it fetches data
-            await user.unlockNextTopic(); // Call unlock logic
+        if (topicProgress.algorithms && topicProgress.algorithms.size > 0) {
+            topicProgress.algorithms.forEach(algoProg => {
+                if (algoProg.completed) {
+                    topicCompletedCount++; // Numerator is COMPLETED count
+                }
+            });
+        }
+        
+        currentTopicCompletion = topicAlgoCount > 0 ? Math.round((topicCompletedCount / topicAlgoCount) * 100) : 0;
+        topicProgress.completion = currentTopicCompletion; // Save the CORRECT percentage
+        // --- *** END FIX *** ---
+
+
+        if (completedPractice && currentTopicCompletion === 100) { 
+            console.log(`[Progress Update] Triggering unlock check after completing algo ${algorithm} in topic ${category}.`); 
+            await user.unlockNextTopic(); 
         }
 
         // --- Save User (Pre-save hook recalculates derived stats) ---
@@ -812,7 +816,6 @@ router.post('/progress', auth, async (req, res) => { //
         console.log(`User ${user.id} progress saved for ${category}.${algorithm}.`); //
 
         // --- Prepare Response Data ---
-        // Convert updated progress back to objects
         const updatedAlgorithmProgressResponse = user.progress.get(category)?.algorithms.get(algorithm)?.toObject() || {}; //
         const updatedTopicProgressResponse = user.progress.get(category)?.toObject() || {}; // Get the updated topic data after save
 
@@ -929,6 +932,7 @@ router.get('/me', auth, async (req, res) => { //
 
 
 module.exports = router;
+
 
 
 
