@@ -1,14 +1,72 @@
-// backend/routes/doubts.js
+// backend/routes/doubt.js
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const Doubt = require('../models/Doubt');
-const User = require('../models/User'); // For senderRole
-const mongoose = require('mongoose');
+const User = require('../models/User');
+const Topic = require('../models/Topic');
 
-// @route   POST /api/doubts/ask
-// @desc    User creates a new doubt
-// @access  Private (User)
+// --- Helper function (from dailyProblem.js) to check subject access ---
+async function checkSubjectAccess(userId, subjectName) {
+    try {
+        const [user, topicsInSubject] = await Promise.all([
+            User.findById(userId).select('progress learningPath').lean(),
+            Topic.find({ subject: subjectName }).select('id isGloballyLocked prerequisites').lean()
+        ]);
+
+        if (!user) throw new Error('User not found');
+        if (topicsInSubject.length === 0) return false; // No topics = no access
+
+        const userProgressMap = new Map(Object.entries(user.progress || {}));
+        const completedTopicsSet = new Set(user.learningPath?.completedTopics || []);
+
+        const isSubjectAccessible = topicsInSubject.some(topic => {
+            const userProgressForTopic = userProgressMap.get(topic.id);
+            let prereqsMet = true;
+            if (topic.prerequisites && topic.prerequisites.length > 0) {
+                prereqsMet = topic.prerequisites.every(prereqId => completedTopicsSet.has(prereqId));
+            }
+            let userSpecificStatus = userProgressForTopic?.status || (topic.isGloballyLocked ? 'locked' : 'available');
+            
+            let finalEffectiveStatus = 'available';
+            if (topic.isGloballyLocked) {
+                finalEffectiveStatus = (userSpecificStatus !== 'locked') ? userSpecificStatus : 'locked';
+            } else if (!prereqsMet) {
+                finalEffectiveStatus = (userSpecificStatus !== 'locked') ? userSpecificStatus : 'locked';
+            } else {
+                finalEffectiveStatus = userSpecificStatus;
+            }
+            return finalEffectiveStatus !== 'locked';
+        });
+        
+        return isSubjectAccessible;
+    } catch (error) {
+        console.error(`Error in checkSubjectAccess for user ${userId}, subject ${subjectName}:`, error);
+        return false;
+    }
+}
+
+// GET /api/doubt/subjects
+// Get a list of *unlocked* subjects a user can ask doubts in.
+router.get('/subjects', auth, async (req, res) => {
+    try {
+        const allSubjects = await Topic.distinct('subject');
+        const accessibleSubjects = [];
+        for (const subjectName of allSubjects) {
+            const hasAccess = await checkSubjectAccess(req.user.id, subjectName);
+            if (hasAccess) {
+                accessibleSubjects.push(subjectName);
+            }
+        }
+        res.json({ success: true, subjects: accessibleSubjects.sort() });
+    } catch (error) {
+        console.error("Error fetching accessible subjects:", error);
+        res.status(500).json({ message: 'Error fetching subjects' });
+    }
+});
+
+// POST /api/doubt/ask
+// Create a new doubt thread.
 router.post('/ask', auth, async (req, res) => {
     try {
         const { subject, title, message } = req.body;
@@ -16,168 +74,138 @@ router.post('/ask', auth, async (req, res) => {
             return res.status(400).json({ message: 'Subject, title, and message are required.' });
         }
 
-        // We need the user's role to set senderRole
-        const user = await User.findById(req.user.id).select('role');
-        if (!user) {
-             return res.status(404).json({ message: 'User not found.' });
+        const hasAccess = await checkSubjectAccess(req.user.id, subject);
+        if (!hasAccess) {
+            return res.status(403).json({ message: 'You must unlock this subject before asking doubts in it.' });
         }
+        
+        const user = await User.findById(req.user.id).select('role');
 
-        // Create the first message
-        const firstMessage = {
-            sender: req.user.id,
-            senderRole: 'user', // First message is always from the user
-            message: message
-        };
-
-        // Create the new doubt thread
         const newDoubt = new Doubt({
-            user: req.user.id,
-            subject: subject,
-            title: title,
-            messages: [firstMessage],
+            subject,
+            title,
+            student: req.user.id,
             status: 'open',
-            lastReplier: req.user.id
+            messages: [{
+                sender: req.user.id,
+                senderRole: user.role, // 'user'
+                message: message
+            }]
         });
 
         await newDoubt.save();
-        
-        // Populate sender info for the first message to return to UI
-        const populatedDoubt = await newDoubt.populate('messages.sender', 'username profile.avatar');
-
-        res.status(201).json({ success: true, message: 'Doubt submitted successfully.', doubt: populatedDoubt });
-
+        res.status(201).json({ success: true, message: 'Doubt submitted successfully.', doubt: newDoubt });
     } catch (error) {
-        console.error("Error asking doubt:", error);
-        res.status(500).json({ message: 'Server error while submitting doubt.' });
+        console.error("Error creating doubt:", error);
+        res.status(500).json({ message: 'Error creating doubt' });
     }
 });
 
-// @route   GET /api/doubts/my-doubts
-// @desc    Get all doubt threads for the logged-in user
-// @access  Private (User)
+// GET /api/doubt/my-doubts
+// Get all doubt threads (open and closed) for the logged-in user.
 router.get('/my-doubts', auth, async (req, res) => {
     try {
-        const doubts = await Doubt.find({ user: req.user.id })
-            .populate('user', 'username') // User who asked
-            .populate('lastReplier', 'username role') // Who replied last
-            .populate('messages.sender', 'username profile.avatar role') // Populate all senders in thread
-            .sort({ status: 1, updatedAt: -1 }); // Show 'open' doubts first, then by last update
+        const doubts = await Doubt.find({ student: req.user.id })
+            .populate('mentor', 'username profile.avatar')
+            .select('-messages') // Exclude full message history for the list view
+            .sort({ status: 1, updatedAt: -1 }); // Show open/answered first, then newest
 
-        res.json({ success: true, doubts: doubts });
+        res.json({ success: true, doubts });
     } catch (error) {
         console.error("Error fetching user's doubts:", error);
-        res.status(500).json({ message: 'Server error fetching doubts.' });
+        res.status(500).json({ message: 'Error fetching doubts' });
     }
 });
 
-// @route   POST /api/doubts/:doubtId/reply
-// @desc    User or Mentor adds a reply to a doubt thread
-// @access  Private (User or Mentor)
-router.post('/:doubtId/reply', auth, async (req, res) => {
+// GET /api/doubt/thread/:doubtId
+// Get the full conversation for one doubt (user must be the student).
+router.get('/thread/:doubtId', auth, async (req, res) => {
     try {
-        const { doubtId } = req.params;
-        const { message } = req.body;
-        const userId = req.user.id;
+        const doubt = await Doubt.findById(req.params.doubtId)
+            .populate('student', 'username profile.avatar')
+            .populate('mentor', 'username profile.avatar')
+            .populate('messages.sender', 'username profile.avatar');
 
-        if (!message) {
-            return res.status(400).json({ message: 'Message cannot be empty.' });
-        }
-        if (!mongoose.Types.ObjectId.isValid(doubtId)) {
-            return res.status(400).json({ message: 'Invalid doubt ID.' });
-        }
-
-        const [user, doubt] = await Promise.all([
-            User.findById(userId).select('role'),
-            Doubt.findById(doubtId)
-        ]);
-
-        if (!user) {
-            return res.status(404).json({ message: 'User not found.' });
-        }
         if (!doubt) {
             return res.status(404).json({ message: 'Doubt thread not found.' });
         }
-
-        // Authorization: Must be the user who asked OR a mentor/admin
-        if (doubt.user.toString() !== userId && user.role === 'user') {
-            return res.status(403).json({ message: 'Access denied. You did not create this doubt.' });
+        if (doubt.student._id.toString() !== req.user.id) {
+            return res.status(403).json({ message: 'Access denied.' });
         }
         
-        // Check if thread is finished
-        if (doubt.status === 'finished') {
-            return res.status(400).json({ message: 'This doubt thread is finished and cannot be replied to.' });
+        res.json({ success: true, doubt });
+    } catch (error) {
+        console.error("Error fetching doubt thread:", error);
+        res.status(500).json({ message: 'Error fetching thread' });
+    }
+});
+
+// POST /api/doubt/reply/:doubtId
+// Add a new message (reply) to a doubt thread (as the student).
+router.post('/reply/:doubtId', auth, async (req, res) => {
+    try {
+        const { message } = req.body;
+        if (!message) {
+            return res.status(400).json({ message: 'Message is required.' });
         }
 
-        // Determine sender role for the message
-        const senderRole = (user.role === 'mentor' || user.role === 'admin') ? 'mentor' : 'user';
+        const doubt = await Doubt.findById(req.params.doubtId);
+        if (!doubt) {
+            return res.status(404).json({ message: 'Doubt thread not found.' });
+        }
+        if (doubt.student.toString() !== req.user.id) {
+            return res.status(403).json({ message: 'Access denied.' });
+        }
+        if (doubt.status === 'closed') {
+             return res.status(400).json({ message: 'This doubt is closed. Please create a new one.' });
+        }
+        
+        const user = await User.findById(req.user.id).select('role');
 
-        const newReply = {
-            sender: userId,
-            senderRole: senderRole,
+        const newMessage = {
+            sender: req.user.id,
+            senderRole: user.role, // 'user'
             message: message
         };
-
-        doubt.messages.push(newReply);
-        doubt.lastReplier = userId;
-        // If thread was 'finished' and someone replies, re-open it.
-        // (Decided against this based on user flow, but could be added)
-        // doubt.status = 'open'; 
-        // doubt.expireAt = undefined; // Clear expiration
+        
+        doubt.messages.push(newMessage);
+        doubt.status = 'open'; // Re-open the doubt (user needs a reply)
         
         await doubt.save();
         
-        // Populate the new message's sender info before sending back
-        const populatedDoubt = await doubt.populate('messages.sender', 'username profile.avatar role');
-        const populatedReply = populatedDoubt.messages[populatedDoubt.messages.length - 1];
+        // Populate the new message to send back to the client
+        const populatedDoubt = await Doubt.findById(doubt._id)
+            .populate('messages.sender', 'username profile.avatar');
+        const populatedMessage = populatedDoubt.messages[populatedDoubt.messages.length - 1];
 
-        res.json({ success: true, message: 'Reply posted.', newReply: populatedReply });
-
+        res.status(201).json({ success: true, message: 'Reply sent.', new_message: populatedMessage });
     } catch (error) {
-        console.error("Error posting reply:", error);
-        res.status(500).json({ message: 'Server error while posting reply.' });
+        console.error("Error replying to doubt:", error);
+        res.status(500).json({ message: 'Error sending reply' });
     }
 });
 
-// @route   POST /api/doubts/:doubtId/finish
-// @desc    User or Mentor marks a doubt as finished
-// @access  Private (User or Mentor)
-router.post('/:doubtId/finish', auth, async (req, res) => {
+// POST /api/doubt/close/:doubtId
+// Mark a doubt as "closed" (by the student).
+router.post('/close/:doubtId', auth, async (req, res) => {
     try {
-        const { doubtId } = req.params;
-        const userId = req.user.id;
-
-        if (!mongoose.Types.ObjectId.isValid(doubtId)) {
-            return res.status(400).json({ message: 'Invalid doubt ID.' });
+        const doubt = await Doubt.findById(req.params.doubtId);
+        if (!doubt) {
+            return res.status(404).json({ message: 'Doubt thread not found.' });
+        }
+        if (doubt.student.toString() !== req.user.id) {
+            return res.status(403).json({ message: 'Access denied.' });
         }
 
-        const [user, doubt] = await Promise.all([
-            User.findById(userId).select('role'),
-            Doubt.findById(doubtId)
-        ]);
+        doubt.status = 'closed';
+        // pre-save hook will set 'closedAt' and 'autoDeleteAt'
+        await doubt.save(); 
         
-        if (!user) return res.status(404).json({ message: 'User not found.' });
-        if (!doubt) return res.status(404).json({ message: 'Doubt thread not found.' });
-
-        // Authorization: Must be the user who asked OR a mentor/admin
-        if (doubt.user.toString() !== userId && user.role === 'user') {
-            return res.status(403).json({ message: 'Access denied. You cannot close this doubt.' });
-        }
-        
-        if (doubt.status === 'finished') {
-             return res.status(400).json({ message: 'This doubt is already finished.' });
-        }
-
-        doubt.status = 'finished';
-        // The pre-save hook in Doubt.js will set 'finishedAt' and 'expireAt'
-        await doubt.save();
-
-        res.json({ success: true, message: 'Doubt thread has been marked as finished.' });
-
+        res.json({ success: true, message: 'Doubt thread closed.' });
     } catch (error) {
-        console.error("Error finishing doubt:", error);
-        res.status(500).json({ message: 'Server error while finishing doubt.' });
+        console.error("Error closing doubt:", error);
+        res.status(500).json({ message: 'Error closing doubt' });
     }
 });
-
 
 module.exports = router;
