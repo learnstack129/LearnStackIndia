@@ -81,8 +81,8 @@ router.get('/thread/:threadId', auth, async (req, res) => {
         }
 
         // Fetch all messages for this thread
-        const messages = await DoubtMessage.find({ threadId: threadId })
-            .populate({ path: 'senderId', select: 'username profile.avatar', model: 'User' })
+       const messages = await DoubtMessage.find({ threadId: threadId })
+            .populate({ path: 'senderId', select: 'username profile.avatar' })
             .sort({ createdAt: 1 }); // Show in chronological order
 
         res.json({ success: true, thread, messages });
@@ -134,7 +134,7 @@ router.post('/thread/:threadId/reply', auth, async (req, res) => {
         
         // Populate the sender info to send back to the chat UI
         const populatedMessage = await DoubtMessage.findById(newMessage._id)
-            .populate({ path: 'senderId', select: 'username profile.avatar', model: 'User' })
+            .populate({ path: 'senderId', select: 'username profile.avatar' })
 
         res.status(201).json({ success: true, message: 'Reply sent.', newMessage: populatedMessage });
 
