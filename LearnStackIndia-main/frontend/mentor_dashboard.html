@@ -2185,7 +2185,7 @@
                     const escapedQuestion = doubt.initialQuestion.replace(/'/g, "\\'");
 
                     tr.innerHTML = `
-                        <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white" data-label="User">${doubt.userId.username}</td>
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white" data-label="User">${doubt.userId ? doubt.userId.username : 'Deleted User'}</td>
                         <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300" data-label="Subject">${doubt.subject} (${doubt.topicId})</td>
                         <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300 truncate" data-label="Question" title="${doubt.initialQuestion}">${doubt.initialQuestion}</td>
                         <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300" data-label="Received">${formatRelativeTime(doubt.createdAt)}</td>
@@ -2281,7 +2281,7 @@
             
             loadingDiv.classList.add('hidden');
             if (data?.success && data.thread && data.messages) {
-                document.getElementById('doubtChatModalTitle').textContent = `Chat with ${data.messages[0]?.senderId?.username || 'User'}`;
+                document.getElementById('doubtChatModalTitle').textContent = `Chat with ${data.messages[0]?.senderId ? data.messages[0].senderId.username : 'Unknown User'}`;
                 renderMessages(data.messages);
                 chatArea.classList.remove('hidden');
                 document.getElementById('doubtReplyMessage').value = '';
@@ -2313,7 +2313,7 @@
                 msgDiv.className = `chat-message ${isMentor ? 'mentor' : 'user'}`;
                 
                 msgDiv.innerHTML = `
-                    <div class="message-sender">${msg.senderId?.username || 'User'} (${formatRelativeTime(msg.createdAt)})</div>
+                    <div class="message-sender">${msg.senderId ? msg.senderId.username : 'Unknown User'} (${formatRelativeTime(msg.createdAt)})</div>
                     <div class="message-bubble">${msg.message.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>
                 `;
                 messagesContainer.appendChild(msgDiv);
