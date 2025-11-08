@@ -1,7 +1,7 @@
 // routes/leaderboard.js - Leaderboard routes
 const express = require('express');
+const User = require('../models/User'); // <-- MOVED UP
 const Leaderboard = require('../models/Leaderboard');
-const User = require('../models/User');
 const auth = require('../middleware/auth');
 
 const router = express.Router();
@@ -189,5 +189,6 @@ function getPeriod(type) {
   
   return { start, end: now };
 }
+
 
 module.exports = router;
