@@ -296,8 +296,8 @@ router.post('/login', async (req, res) => { //
         }
 
         // Update daily activity & streak on login
-        user.updateDailyActivity({}); // Pass empty object to just update date/streak
-        await user.save({ validateBeforeSave: false }); // Save streak/daily update
+        // user.updateDailyActivity({}); // <-- REMOVE THIS
+        // await user.save({ validateBeforeSave: false }); // <-- REMOVE THIS
 
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }); //
 
@@ -452,6 +452,9 @@ router.get('/dashboard', auth, async (req, res) => {
             console.error(`[Dashboard Error] User not found for ID: ${userId}`);
             return res.status(404).json({ message: 'User not found' });
         }
+
+        user.updateDailyActivity({}); // This is the logic moved from login
+        await user.save({ validateBeforeSave: false }); // Save the update
 
         // --- 3. CREATE A MAP FROM THE METADATA ---
         const subjectMetaMap = new Map(subjectMetaDocs.map(meta => [meta.name, { icon: meta.icon, color: meta.color }]));
@@ -978,3 +981,4 @@ router.get('/me', auth, async (req, res) => { //
 
 
 module.exports = router;
+
