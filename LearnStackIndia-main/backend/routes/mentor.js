@@ -6,6 +6,9 @@ const Question = require('../models/Question');
 const User = require('../models/User');
 const mongoose = require('mongoose');
 const DailyProblem = require('../models/DailyProblem');
+const DoubtThread = require('../models/DoubtThread'); 
+const DoubtMessage = require('../models/DoubtMessage'); 
+const { checkSubjectAccess } = require('../utils/accessControl'); 
 
 const router = express.Router();
 
@@ -532,5 +535,173 @@ router.post('/feedback', mentorAuth, async (req, res) => {
         res.status(500).json({ message: 'Error submitting feedback' });
     }
 });
+
+// --- Doubt Management ---
+
+// GET: Fetch new, unclaimed doubts for the queue
+router.get('/doubts/queue', mentorAuth, async (req, res) => {
+    try {
+        const newDoubts = await DoubtThread.find({ status: 'new' })
+            .populate('userId', 'username') // Get the user's name
+            .sort({ createdAt: 1 }); // Oldest first
+
+        res.json({ success: true, doubts: newDoubts });
+    } catch (error) {
+        console.error("Error fetching new doubts queue:", error);
+        res.status(500).json({ message: "Error fetching new doubts" });
+    }
+});
+
+// GET: Fetch mentor's active, claimed doubts
+router.get('/doubts/active', mentorAuth, async (req, res) => {
+    try {
+        const myDoubts = await DoubtThread.find({
+            mentorId: req.user.id,
+            status: 'in-progress'
+        })
+        .populate('userId', 'username')
+        .sort({ updatedAt: -1 }); // Most recently active first
+
+        res.json({ success: true, doubts: myDoubts });
+    } catch (error) {
+        console.error("Error fetching mentor's active doubts:", error);
+        res.status(500).json({ message: "Error fetching active doubts" });
+    }
+});
+
+// POST: Mentor claims a doubt from the queue
+router.post('/doubts/claim/:threadId', mentorAuth, async (req, res) => {
+    try {
+        const { threadId } = req.params;
+        const mentorId = req.user.id;
+
+        const thread = await DoubtThread.findById(threadId);
+
+        if (!thread) {
+            return res.status(404).json({ message: 'Doubt thread not found.' });
+        }
+        if (thread.status !== 'new') {
+            return res.status(400).json({ message: 'This doubt has already been claimed.' });
+        }
+
+        thread.status = 'in-progress';
+        thread.mentorId = mentorId;
+        await thread.save();
+
+        res.json({ success: true, message: 'Doubt claimed successfully.', thread });
+
+    } catch (error) {
+        console.error("Error claiming doubt:", error);
+        res.status(500).json({ message: "Error claiming doubt" });
+    }
+});
+
+// GET: Mentor gets all messages for a thread (must be their thread)
+router.get('/doubts/thread/:threadId', mentorAuth, async (req, res) => {
+    try {
+        const { threadId } = req.params;
+        const mentorId = req.user.id;
+
+        // Find thread, ensure it's either assigned to this mentor or is new (admin/mentor might check)
+        const thread = await DoubtThread.findOne({
+             _id: threadId,
+             $or: [ { mentorId: mentorId }, { status: 'new' } ]
+        });
+        
+        if (!thread) {
+            return res.status(404).json({ message: 'Doubt thread not found or access denied.' });
+        }
+
+        // Fetch all messages
+        const messages = await DoubtMessage.find({ threadId: threadId })
+            .populate('senderId', 'username profile.avatar')
+            .sort({ createdAt: 1 });
+
+        res.json({ success: true, thread, messages });
+
+    } catch (error) {
+        console.error('Error fetching mentor thread messages:', error);
+        res.status(500).json({ message: 'Server error fetching messages.' });
+    }
+});
+
+// POST: Mentor sends a reply to a thread
+router.post('/doubts/thread/:threadId/reply', mentorAuth, async (req, res) => {
+    try {
+        const { threadId } = req.params;
+        const { message } = req.body;
+        const mentorId = req.user.id;
+
+        if (!message) {
+            return res.status(400).json({ message: 'Message content is required.' });
+        }
+
+        // Verify this thread is assigned to this mentor
+        const thread = await DoubtThread.findOne({ _id: threadId, mentorId: mentorId });
+        if (!thread) {
+            return res.status(404).json({ message: 'Doubt thread not found or not assigned to you.' });
+        }
+        if (thread.status === 'resolved') {
+             return res.status(400).json({ message: 'This thread is already resolved.' });
+        }
+
+        // Mark the thread as updated
+        thread.updatedAt = new Date();
+        await thread.save();
+
+        // Create the new message
+        const newMessage = new DoubtMessage({
+            threadId: thread._id,
+            senderId: mentorId,
+            senderRole: 'mentor',
+            message: message
+        });
+        await newMessage.save();
+        
+        // Populate the sender info to send back to the chat UI
+        const populatedMessage = await DoubtMessage.findById(newMessage._id)
+            .populate('senderId', 'username profile.avatar');
+
+        res.status(201).json({ success: true, message: 'Reply sent.', newMessage: populatedMessage });
+
+    } catch (error) {
+        console.error('Error sending mentor reply:', error);
+        res.status(500).json({ message: 'Server error sending reply.' });
+    }
+});
+
+// POST: Mentor resolves a thread
+router.post('/doubts/thread/:threadId/resolve', mentorAuth, async (req, res) => {
+    try {
+        const { threadId } = req.params;
+        const mentorId = req.user.id;
+        const resolutionTime = new Date();
+
+        // Find the thread and update it (must be assigned to this mentor)
+        const thread = await DoubtThread.findOneAndUpdate(
+            { _id: threadId, mentorId: mentorId }, 
+            { $set: { status: 'resolved', resolvedAt: resolutionTime } },
+            { new: true }
+        );
+
+        if (!thread) {
+            return res.status(404).json({ message: 'Doubt thread not found or not assigned to you.' });
+        }
+
+        // Start the 24-hour deletion timer for all messages in this thread
+        await DoubtMessage.updateMany(
+            { threadId: thread._id },
+            { $set: { resolvedAt: resolutionTime } }
+        );
+
+        res.json({ success: true, message: 'Thread marked as resolved. It will be deleted in 24 hours.', thread });
+
+    } catch (error) {
+        console.error('Error resolving thread by mentor:', error);
+        res.status(500).json({ message: 'Server error resolving thread.' });
+    }
+});
+
+// module.exports = router; // <-- This line should already exist
 
 module.exports = router;
