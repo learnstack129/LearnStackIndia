@@ -16,7 +16,7 @@
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="mentor_dashboard.css">
+    
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -34,6 +34,12 @@
             background-color: #0f172a;
             color: #e2e8f0;
         }
+        
+        /* --- THIS IS THE FIX --- */
+        .hidden {
+            display: none;
+        }
+        /* --- END FIX --- */
         
         .sidebar {
             width: 250px;
@@ -374,6 +380,9 @@
             display: flex;
             border-bottom: 2px solid var(--border-color);
         }
+        .dark .tab-list {
+            border-bottom-color: #4b5563; /* dark:border-gray-600 */
+        }
         .tab-button {
             padding: 0.75rem 1.5rem;
             border: none;
@@ -402,6 +411,7 @@
         }
         /* --- End Tab Styles --- */
     </style>
+</head>
 </head>
 <body class="dark:bg-gray-900">
     <div class="flex h-screen bg-gray-100 dark:bg-gray-900 overflow-hidden">
