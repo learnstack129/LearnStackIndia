@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const auth = require('../middleware/auth');
 const DoubtThread = require('../models/DoubtThread');
 const DoubtMessage = require('../models/DoubtMessage');
+const User = require('../models/User');
 const { checkSubjectAccess } = require('../utils/accessControl'); // <-- Our security check
 const router = express.Router();
 
@@ -82,9 +83,8 @@ router.get('/thread/:threadId', auth, async (req, res) => {
 
         // Fetch all messages for this thread
        const messages = await DoubtMessage.find({ threadId: threadId })
-            .populate({ path: 'senderId', select: 'username profile.avatar' })
+            .populate('senderId', 'username profile.avatar')
             .sort({ createdAt: 1 }); // Show in chronological order
-
         res.json({ success: true, thread, messages });
 
     } catch (error) {
@@ -134,7 +134,7 @@ router.post('/thread/:threadId/reply', auth, async (req, res) => {
         
         // Populate the sender info to send back to the chat UI
         const populatedMessage = await DoubtMessage.findById(newMessage._id)
-            .populate({ path: 'senderId', select: 'username profile.avatar' })
+            .populate('senderId', 'username profile.avatar')
 
         res.status(201).json({ success: true, message: 'Reply sent.', newMessage: populatedMessage });
 
