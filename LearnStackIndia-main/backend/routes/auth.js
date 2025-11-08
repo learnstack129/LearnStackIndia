@@ -12,6 +12,15 @@ const SubjectMeta = require('../models/SubjectMeta');
 
 const router = express.Router();
 
+// --- NEW: In-memory cache for static dashboard data ---
+let staticDataCache = {
+    data: null,
+    expiresAt: null,
+};
+const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
+// --- End New ---
+
+
 // --- Email configuration and OTP functions ---
 let transporter;
 if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) {
@@ -398,18 +407,46 @@ router.post('/reset-password', async (req, res) => { //
 });
 
 
-// backend/routes/auth.js - MODIFIED GET /dashboard route
+// --- MODIFIED GET /dashboard route with Caching ---
 router.get('/dashboard', auth, async (req, res) => {
     try {
         const userId = req.user.id;
-        // Fetch all data as before
-        const [user, topics, achievementTemplates, leaderboard, subjectMetaDocs] = await Promise.all([
+        const now = Date.now();
+        
+        // --- 1. Handle Static Data Cache ---
+        let topics, achievementTemplates, subjectMetaDocs;
+
+        if (staticDataCache.data && staticDataCache.expiresAt > now) {
+            console.log(`[Dashboard] Using cached static data for user ${userId}.`);
+            ({ topics, achievementTemplates, subjectMetaDocs } = staticDataCache.data);
+        } else {
+            console.log(`[Dashboard] Fetching and caching new static data for user ${userId}.`);
+            
+            // Fetch the three static collections in parallel
+            const [fetchedTopics, fetchedTemplates, fetchedMeta] = await Promise.all([
+                Topic.find({ isActive: true }).select('id name subject description icon color order estimatedTime difficulty prerequisites algorithms isActive isGloballyLocked').sort({ order: 1 }).lean(),
+                AchievementTemplate.find({ isActive: true }).select('id name category').lean(),
+                SubjectMeta.find().lean()
+            ]);
+            
+            topics = fetchedTopics;
+            achievementTemplates = fetchedTemplates;
+            subjectMetaDocs = fetchedMeta;
+            
+            // Store in cache
+            staticDataCache = {
+                data: { topics, achievementTemplates, subjectMetaDocs },
+                expiresAt: now + CACHE_DURATION_MS
+            };
+        }
+        // --- End Static Data ---
+
+        // --- 2. Fetch Dynamic (User & Leaderboard) Data ---
+        const [user, leaderboard] = await Promise.all([
             User.findById(userId).select('-password -emailVerificationToken -passwordResetToken -dailyActivity._id -dailyActivity.sessions._id'),
-            Topic.find({ isActive: true }).select('id name subject description icon color order estimatedTime difficulty prerequisites algorithms isActive isGloballyLocked').sort({ order: 1 }).lean(),
-            AchievementTemplate.find({ isActive: true }).select('id name category').lean(),
-            Leaderboard.findOne({ type: 'all-time' }).sort({ 'period.start': -1 }).limit(10).populate('rankings.user', 'username profile.avatar stats.rank.level').lean(),
-            SubjectMeta.find().lean() // <-- ADDED THIS
+            Leaderboard.findOne({ type: 'all-time' }).sort({ 'period.start': -1 }).limit(10).populate('rankings.user', 'username profile.avatar stats.rank.level').lean()
         ]);
+        // --- End Dynamic Data ---
 
         if (!user) {
             console.error(`[Dashboard Error] User not found for ID: ${userId}`);
@@ -419,7 +456,7 @@ router.get('/dashboard', auth, async (req, res) => {
         // --- 3. CREATE A MAP FROM THE METADATA ---
         const subjectMetaMap = new Map(subjectMetaDocs.map(meta => [meta.name, { icon: meta.icon, color: meta.color }]));
 
-        // --- User Position Logic (remains the same) ---
+        // --- User Position Logic ---
         let userPosition = null;
         const userRankEntry = await Leaderboard.findOne(
             { type: 'all-time', 'rankings.user': userId },
@@ -429,7 +466,7 @@ router.get('/dashboard', auth, async (req, res) => {
             userPosition = userRankEntry.rankings[0].position;
         }
 
-        // --- Algorithm Count Logic (remains the same) ---
+        // --- Algorithm Count Logic ---
         let currentTotalAlgorithms = 0;
         topics.forEach(topic => {
             currentTotalAlgorithms += topic.algorithms?.length || 0;
@@ -448,13 +485,13 @@ router.get('/dashboard', auth, async (req, res) => {
             ? Math.round((userCompletedAlgorithms / currentTotalAlgorithms) * 100)
             : 0;
 
-        // --- MODIFICATION START: Group Topics by Subject ---
-        const subjects = {}; // This will replace topicsWithProgress
+        // --- Group Topics by Subject ---
+        const subjects = {}; 
 
-        topics.forEach(topic => { // topic here is the definition from Topic model
-            const userProgressForTopic = user.progress.get(topic.id); // User's progress data
+        topics.forEach(topic => { 
+            const userProgressForTopic = user.progress.get(topic.id); 
 
-            // --- Determine Topic Effective Status (remains the same) ---
+            // --- Determine Topic Effective Status ---
             let topicUserSpecificStatus = 'available';
             let prereqsMet = true; 
             if (topic.prerequisites && topic.prerequisites.length > 0) {
@@ -469,21 +506,19 @@ router.get('/dashboard', auth, async (req, res) => {
             let topicEffectiveStatus;
             if (topic.isGloballyLocked) {
                 topicEffectiveStatus = (topicUserSpecificStatus !== 'locked') ? topicUserSpecificStatus : 'locked';
-            } else if (!prereqsMet) { // Check prerequisites only if not globally locked
+            } else if (!prereqsMet) { 
                 topicEffectiveStatus = 'locked';
             } else {
                 topicEffectiveStatus = topicUserSpecificStatus;
             }
             // --- End Topic Status ---
 
-            // --- Process Algorithms (remains the same) ---
+            // --- Process Algorithms ---
             const algorithmsProgressObject = {};
             const algorithmDefinitions = topic.algorithms || []; 
             
-            // --- *** ADD THESE *** ---
-            let topicCompletedAlgos = 0; // Numerator
-            let topicTotalAlgos = algorithmDefinitions.length; // Denominator
-            // --- *** END ADD *** ---
+            let topicCompletedAlgos = 0; 
+            let topicTotalAlgos = algorithmDefinitions.length; 
 
             algorithmDefinitions.forEach(algoDef => {
                 const userAlgoProgress = userProgressForTopic?.algorithms?.get(algoDef.id);
@@ -492,20 +527,18 @@ router.get('/dashboard', auth, async (req, res) => {
                 let algoEffectiveStatus = 'available'; 
 
                 if (algoIsGloballyLocked) {
-                    algoEffectiveStatus = (algoUserSpecificStatus === 'available') ? 'available' : 'locked';
+                     algoEffectiveStatus = (algoUserSpecificStatus === 'available') ? 'available' : 'locked';
                 } else {
-                    algoEffectiveStatus = algoUserSpecificStatus;
+                     algoEffectiveStatus = algoUserSpecificStatus;
                 }
                 
                 if (topicEffectiveStatus === 'locked') {
                     algoEffectiveStatus = 'locked';
                 }
 
-                // --- *** ADD THIS *** ---
                 if (userAlgoProgress?.completed) {
                     topicCompletedAlgos++;
                 }
-                // --- *** END ADD *** ---
 
                 algorithmsProgressObject[algoDef.id] = {
                     ...(userAlgoProgress?.toObject ? userAlgoProgress.toObject() : userAlgoProgress),
@@ -514,63 +547,56 @@ router.get('/dashboard', auth, async (req, res) => {
             });
             // --- End Process Algorithms ---
 
-            // --- *** NEW: Real-time Topic Completion Calculation *** ---
+            // --- Real-time Topic Completion Calculation ---
             const realTimeTopicCompletion = topicTotalAlgos > 0 
                 ? Math.round((topicCompletedAlgos / topicTotalAlgos) * 100)
                 : 0;
-            // --- *** END NEW CALCULATION *** ---
-
 
             // --- Create the combined topic object ---
             const combinedTopicData = {
-                // ... (all topic config data: id, name, etc.) ...
                 id: topic.id, name: topic.name, subject: topic.subject, description: topic.description, icon: topic.icon,
                 color: topic.color, order: topic.order, estimatedTime: topic.estimatedTime,
                 difficulty: topic.difficulty,
                 algorithms: topic.algorithms || [], 
-                // User progress data:
                 status: topicEffectiveStatus,
-                // --- *** THE FIX *** ---
-                completion: realTimeTopicCompletion, // <-- Use the real-time value
-                // --- *** END FIX *** ---
+                completion: realTimeTopicCompletion, 
                 userAlgoProgress: algorithmsProgressObject
             };
 
             // --- Group into subjects object ---
             const subjectName = topic.subject || 'General';
             if (!subjects[subjectName]) {
-                // First time seeing this subject. Get its metadata.
-                const meta = subjectMetaMap.get(subjectName) || { icon: 'book', color: 'gray' }; // Default icon/color
+                const meta = subjectMetaMap.get(subjectName) || { icon: 'book', color: 'gray' }; 
                 subjects[subjectName] = {
-                    icon: meta.icon,  // <-- ADDED
-                    color: meta.color, // <-- ADDED
-                    topics: []         // <-- Initialize topics array
+                    icon: meta.icon,  
+                    color: meta.color, 
+                    topics: []         
                 };
             }
-            subjects[subjectName].topics.push(combinedTopicData); // Add the topic to its subject's array
+            subjects[subjectName].topics.push(combinedTopicData); 
         });
 
         // Sort topics within each subject by 'order'
         for (const subjectName in subjects) {
             subjects[subjectName].topics.sort((a, b) => (a.order || 0) - (b.order || 0));
         }
-        // --- MODIFICATION END ---
+        // --- End Grouping ---
 
 
-        // --- Prepare Achievements (remains the same) ---
+        // --- Prepare Achievements ---
         const totalUserAchievements = user.totalAchievements;
         const recentAchievements = [...user.achievements]
             .sort((a, b) => b.earnedAt - a.earnedAt)
             .slice(0, 6)
             .map(ach => ach.toObject ? ach.toObject() : ach);
 
-        // --- Access stats safely (remains the same) ---
+        // --- Access stats safely ---
         const userStats = user.stats || {};
         const userRank = userStats.rank || {};
         const userTimeSpent = userStats.timeSpent || {};
         const userStreak = userStats.streak || {};
 
-        // --- Assemble Dashboard Data (MODIFIED) ---
+        // --- Assemble Dashboard Data ---
         const dashboardData = {
             user: { username: user.username, profile: user.profile?.toObject(), rank: userRank.level ?? 'Bronze', totalUserAchievements, testAttempts: user.testAttempts?.map(attempt => attempt.toObject ? attempt.toObject() : attempt) },
             stats: {
@@ -581,7 +607,7 @@ router.get('/dashboard', auth, async (req, res) => {
                 rank: { level: userRank.level ?? 'Bronze', points: userRank.points ?? 0, position: userPosition || 'Unranked' },
                 averageAccuracy: userStats.averageAccuracy ?? 0
             },
-            subjects: subjects, // <-- SEND SUBJECTS, NOT TOPICS
+            subjects: subjects, 
             achievements: { recent: recentAchievements, total: totalUserAchievements, available: achievementTemplates.length },
             learningPath: user.learningPath?.toObject(),
             leaderboard: leaderboard ? {
@@ -952,14 +978,3 @@ router.get('/me', auth, async (req, res) => { //
 
 
 module.exports = router;
-
-
-
-
-
-
-
-
-
-
-
