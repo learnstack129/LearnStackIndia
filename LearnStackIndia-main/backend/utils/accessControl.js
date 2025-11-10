@@ -54,10 +54,11 @@ async function checkSubjectAccess(userId, subjectName) {
             
             if (topic.isGloballyLocked) {
                 // If globally locked, only a user-specific 'available' (admin override) unlocks it
-                finalEffectiveStatus = (userSpecificStatus !== 'locked') ? userSpecificStatus : 'locked';
+                finalEffectiveStatus = (userSpecificStatus === 'available') ? 'available' : 'locked';
             } else if (!prereqsMet) {
                 // If prereqs not met, it's locked (unless admin unlocked it)
-                finalEffectiveStatus = (userSpecificStatus !== 'locked') ? userSpecificStatus : 'locked';
+                // --- THIS IS THE FIX ---
+                finalEffectiveStatus = (userSpecificStatus === 'available') ? 'available' : 'locked';
             } else {
                 // Not globally locked, prereqs met. Status is the user's status.
                 finalEffectiveStatus = userSpecificStatus;
